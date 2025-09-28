@@ -9,14 +9,31 @@ import { exportJSON, importJSON, loadProject, saveProject } from '@/utils/persis
 import type { AnyTakeoffObject, ProjectSave } from '@/types';
 import { pathLength } from '@/utils/geometry';
 
-export default function App() {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [pdf, setPdf] = useState<PDFDoc | null>(null);
-  const [tagsOpen, setTagsOpen] = useState(false);
-  const [bomOpen, setBomOpen] = useState(true);
+/* Tag shape used by the DB + project bar */
+type TagLite = { id: string; code: string; name: string; color: string; category?: string };
 
+export default function App() {
+  /* ---------- refs ---------- */
+  const pdfFileRef = useRef<HTMLInputElement>(null);
+  const projFileRef = useRef<HTMLInputElement>(null);
+
+  /* ---------- viewer/pdf ---------- */
+  const [pdf, setPdf] = useState<PDFDoc | null>(null);
+
+  /* ---------- Tag Manager modal ---------- */
+  const [tagsOpen, setTagsOpen] = useState(false);
+
+  /* ---------- File menu ---------- */
+  const [fileMenuOpen, setFileMenuOpen] = useState(false);
+  const [lastSaveBase, setLastSaveBase] = useState<string | null>(null); // basename without extension
+
+  /* ---------- per-project “Project Tags” (starts empty) ---------- */
+  const [projectTags, setProjectTags] = useState<TagLite[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerSel, setPickerSel] = useState<string>('');
+
+  /* ---------- store ---------- */
   const {
-    // global state (from store)
     tool, setTool,
     zoom, setZoom,
     fileName, setFileName,
@@ -24,66 +41,110 @@ export default function App() {
     pageCount, setPageCount,
     pageLabels, setPageLabels,
     activePage, setActivePage,
-    tags, currentTag, setCurrentTag,
+    tags,                 // Tag Database (not the Project Tags)
+    currentTag, setCurrentTag,
     setSelectedIds,
   } = useStore();
 
-  /* -------------------- OPEN PDF -------------------- */
-  const openFile = useCallback(async (file: File) => {
+  /* =========================================================================================
+     FILE MENU  — New / Open (.skdproj) / Save (.skdproj) / Save As (.skdproj) / Print / Close
+     ========================================================================================= */
+
+  const makeBundle = useCallback(() => {
+    // bundle the store's project data + the Project Tags list
+    const core: ProjectSave = useStore.getState().toProject();
+    return { kind: 'skdproj', version: 1, projectTags, core };
+  }, [projectTags]);
+
+  const downloadBundle = useCallback((basename?: string) => {
+    const base = (basename || lastSaveBase || 'project').replace(/\.(skdproj|json)$/i, '');
+    const filename = `${base}.skdproj`;
+    const blob = new Blob([JSON.stringify(makeBundle(), null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+    setLastSaveBase(base);
+  }, [makeBundle, lastSaveBase]);
+
+  function doNewProject() {
+    if (!confirm('Start a new project? Unsaved changes will be lost.')) return;
+    // clear viewer + store
+    setPdf(null);
+    setFileName('');
+    setPages([]);
+    setPageCount(0);
+    setPageLabels([]);
+    setActivePage(0);
+    setSelectedIds([]);
+    setCurrentTag('');
+    setProjectTags([]);
+    setLastSaveBase(null);
+  }
+
+  function doOpenProject(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = String(reader.result || '');
+        const parsed = JSON.parse(text);
+        const bundle = parsed?.kind === 'skdproj'
+          ? parsed
+          : { kind: 'skdproj', version: 1, core: parsed, projectTags: [] };
+        // load the store portion
+        useStore.getState().fromProject(bundle.core);
+        // restore project tags
+        setProjectTags(bundle.projectTags || []);
+        // reset PDF (user must open the matching PDF)
+        setPdf(null);
+        setFileName('');
+        setLastSaveBase(file.name.replace(/\.skdproj$/i, '').replace(/\.json$/i, ''));
+        alert('Project opened. Now open the matching PDF.');
+      } catch (e: any) {
+        alert('Invalid .skdproj: ' + e.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function doSave() { downloadBundle(); }
+  function doSaveAs() {
+    const name = prompt('Save As (.skdproj basename):', lastSaveBase ?? 'project');
+    if (!name) return;
+    downloadBundle(name);
+  }
+  function doPrint() { window.print(); }
+  function doCloseProject() { doNewProject(); }
+
+  /* =========================================================================================
+     OPEN PDF
+     ========================================================================================= */
+  const openPdf = useCallback(async (file: File) => {
     const doc = await loadPdf(file);
     setPdf(doc);
     setFileName(file.name);
-    setPages([]); // reset page objects/state
+    setPages([]);
     setPageCount(doc.numPages);
 
-    // Try to read embedded page labels; fall back to "Page N"
+    // page labels if available, else Page N
     let labels: string[] = [];
     try {
       // @ts-ignore optional in pdf.js
       const raw = await (doc as any).getPageLabels?.();
       labels = raw && Array.isArray(raw)
-        ? raw.map((l: string, i: number) => l || `Page ${i + 1}`)
-        : Array.from({ length: doc.numPages }, (_, i) => `Page ${i + 1}`);
+        ? raw.map((l: string, i: number) => l || `Page ${i+1}`)
+        : Array.from({ length: doc.numPages }, (_, i) => `Page ${i+1}`);
     } catch {
-      labels = Array.from({ length: doc.numPages }, (_, i) => `Page ${i + 1}`);
+      labels = Array.from({ length: doc.numPages }, (_, i) => `Page ${i+1}`);
     }
     setPageLabels(labels);
     setActivePage(0);
     setSelectedIds([]);
   }, [setFileName, setPages, setPageCount, setPageLabels, setActivePage, setSelectedIds]);
 
-  /* -------------------- IMPORT / EXPORT -------------------- */
-  function onImport() {
-    const s = prompt('Paste JSON:'); if (!s) return;
-    try {
-      const data = importJSON(s);
-      useStore.getState().fromProject(data);
-      setPdf(null);
-      alert('Imported project. Now open the matching PDF file.');
-    } catch (err: any) {
-      alert('Invalid JSON: ' + err.message);
-    }
-  }
-  function onExport() {
-    const data = useStore.getState().toProject();
-    const text = exportJSON(data);
-    navigator.clipboard.writeText(text);
-    alert('Copied project JSON to clipboard.');
-  }
-  function onSave() {
-    const data: ProjectSave = useStore.getState().toProject();
-    saveProject(data);
-    alert('Saved locally.');
-  }
-  function onLoad() {
-    const data = loadProject();
-    if (!data) { alert('No local save found.'); return; }
-    useStore.getState().fromProject(data);
-    setPdf(null);
-    alert('Loaded local project. Open the matching PDF file.');
-  }
-
-  /* -------------------- SIMPLE BOM (embedded) -------------------- */
+  /* =========================================================================================
+     SIMPLE SUMMARY (BOM) — unchanged logic
+     ========================================================================================= */
   const bom = useMemo(() => {
     let totalTags = 0;
     let segLF = 0, plLF = 0, ffLF = 0;
@@ -91,7 +152,6 @@ export default function App() {
 
     for (const pg of pages) {
       const ppf = pg.pixelsPerFoot || 0;
-
       for (const obj of (pg.objects ?? [])) {
         if (obj.type === 'count') {
           totalTags++;
@@ -101,7 +161,6 @@ export default function App() {
           byCode.set(code, box);
           continue;
         }
-
         const verts = (obj as AnyTakeoffObject).vertices ?? [];
         const lenPx = pathLength(verts);
         const lf = ppf > 0 ? lenPx / ppf : 0;
@@ -125,29 +184,81 @@ export default function App() {
       .sort((a, b) => a.code.localeCompare(b.code));
 
     return {
-      totalTags,
-      segLF, plLF, ffLF,
-      totalLF: segLF + plLF + ffLF,
+      totalTags, segLF, plLF, ffLF, totalLF: segLF + plLF + ffLF,
       rows,
       calibratedCount: pages.filter(p => (p.pixelsPerFoot || 0) > 0).length,
       totalPages: pages.length,
     };
   }, [pages]);
 
-  /* -------------------- RENDER -------------------- */
+  /* =========================================================================================
+     UI HELPERS
+     ========================================================================================= */
+  function colorForTag(t: TagLite) {
+    return (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color;
+  }
+  const availableForPicker = tags
+    .filter(t => !projectTags.some(p => p.code.toUpperCase() === (t.code || '').toUpperCase()))
+    .sort((a, b) => (a.code || '').localeCompare(b.code || ''));
+
+  /* =========================================================================================
+     RENDER
+     ========================================================================================= */
   return (
     <div className="app_root" style={{display:'flex', flexDirection:'column', height:'100vh'}}>
-      {/* Toolbar */}
-      <div className="toolbar" style={{display:'flex', alignItems:'center', gap:8, padding:'8px 12px', borderBottom:'1px solid #e6e6e6', position:'sticky', top:0, background:'#fff', zIndex:5}}>
-        {/* Open */}
-        <input ref={fileRef} type="file" accept="application/pdf" style={{display:'none'}}
-               onChange={(e)=>{ const f=e.target.files?.[0]; if (f) openFile(f); }} />
-        <button className="btn" onClick={()=>fileRef.current?.click()}>Open PDF</button>
-        <span className="label" style={{marginLeft:8, minWidth:160, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{fileName}</span>
+      {/* FILE MENU BAR */}
+      <div style={{display:'flex', alignItems:'center', gap:12, padding:'8px 12px', background:'#0d3b66', color:'#fff', position:'sticky', top:0, zIndex:10}}>
+        <div style={{position:'relative'}}>
+          <button className="btn" style={{color:'#fff', borderColor:'#2d5c8f', background:'#124a85'}} onClick={()=>setFileMenuOpen(v=>!v)}>File ▾</button>
+          {fileMenuOpen && (
+            <div
+              style={{
+                position:'absolute', top:'110%', left:0, background:'#fff', color:'#111',
+                border:'1px solid #ddd', borderRadius:6, boxShadow:'0 6px 24px rgba(0,0,0,.14)',
+                width:220, overflow:'hidden', zIndex:100
+              }}
+              onMouseLeave={()=>setFileMenuOpen(false)}
+            >
+              <MenuItem label="New" onClick={()=>{setFileMenuOpen(false); doNewProject();}} />
+              <MenuItem label="Open…" onClick={()=>{setFileMenuOpen(false); projFileRef.current?.click();}} />
+              <MenuItem label="Save" onClick={()=>{setFileMenuOpen(false); doSave();}} />
+              <MenuItem label="Save As…" onClick={()=>{setFileMenuOpen(false); doSaveAs();}} />
+              <MenuItem label="Print" onClick={()=>{setFileMenuOpen(false); doPrint();}} />
+              <div style={{borderTop:'1px solid #eee'}} />
+              <MenuItem label="Close Project" onClick={()=>{setFileMenuOpen(false); doCloseProject();}} />
+            </div>
+          )}
+        </div>
+        <div style={{fontSize:16, fontWeight:700}}>SKD Services</div>
 
+        {/* hidden project file input (.skdproj) */}
+        <input
+          ref={projFileRef}
+          type="file"
+          accept=".skdproj,application/json"
+          style={{display:'none'}}
+          onChange={(e)=>{ const f = e.target.files?.[0]; if (f) doOpenProject(f); e.currentTarget.value=''; }}
+        />
+
+        <div style={{flex:1}} />
+
+        {/* quick open PDF right from the menu bar */}
+        <input
+          ref={pdfFileRef}
+          type="file"
+          accept="application/pdf"
+          style={{display:'none'}}
+          onChange={(e)=>{ const f=e.target.files?.[0]; if (f) openPdf(f); e.currentTarget.value=''; }}
+        />
+        <button className="btn" onClick={()=>pdfFileRef.current?.click()}>Open PDF</button>
+        <span style={{marginLeft:8, maxWidth:240, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}} title={fileName}>{fileName}</span>
+      </div>
+
+      {/* TOOLBAR (tools + zoom) */}
+      <div className="toolbar" style={{display:'flex', alignItems:'center', gap:8, padding:'8px 12px', borderBottom:'1px solid #e6e6e6', position:'sticky', top:42, background:'#fff', zIndex:5}}>
         {/* Page nav */}
         {pageCount > 0 && (
-          <div style={{display:'flex', alignItems:'center', gap:6, marginLeft:12}}>
+          <div style={{display:'flex', alignItems:'center', gap:6}}>
             <button className="btn" onClick={()=>setActivePage(Math.max(0, activePage-1))} disabled={activePage<=0}>◀</button>
             <select className="btn" value={activePage} onChange={(e)=>setActivePage(parseInt(e.target.value,10))}>
               {Array.from({length: pageCount}, (_, i) => (
@@ -160,7 +271,6 @@ export default function App() {
 
         <div style={{flex:1}} />
 
-        {/* Tools */}
         <div style={{display:'flex', alignItems:'center', gap:6}}>
           <button className={`btn ${tool==='hand'?'active':''}`} onClick={()=>setTool('hand')}>Hand</button>
           <button className={`btn ${tool==='count'?'active':''}`} onClick={()=>setTool('count')}>Count</button>
@@ -170,11 +280,7 @@ export default function App() {
           <button className={`btn ${tool==='calibrate'?'active':''}`} onClick={()=>setTool('calibrate')}>Calibrate</button>
 
           <span className="badge">Tag:</span>
-          <input
-            value={currentTag}
-            onChange={(e)=>setCurrentTag(e.target.value.toUpperCase())}
-            style={{width:60, padding:'.25rem .4rem'}}
-          />
+          <input value={currentTag} onChange={(e)=>setCurrentTag(e.target.value.toUpperCase())} style={{width:60, padding:'.25rem .4rem'}} />
 
           <button className="btn" onClick={()=>setZoom(zoom*0.9)}>-</button>
           <span className="badge">{Math.round(zoom*100)}%</span>
@@ -183,68 +289,91 @@ export default function App() {
 
         <div style={{flex:1}} />
 
+        {/* optional legacy local save/load (kept) */}
         <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
-        <button className="btn" onClick={onSave}>Save</button>
-        <button className="btn" onClick={onLoad}>Load</button>
-        <button className="btn" onClick={onExport}>Export JSON</button>
-        <button className="btn" onClick={onImport}>Import JSON</button>
+        <button className="btn" onClick={()=>{ const data: ProjectSave = useStore.getState().toProject(); saveProject(data); alert('Saved locally. Use File ▸ Save for .skdproj.'); }}>Save (Local)</button>
+        <button className="btn" onClick={()=>{ const data = loadProject(); if (data){ useStore.getState().fromProject(data); setPdf(null); alert('Loaded local project. Use File ▸ Open for .skdproj.'); } else alert('No local save.');}}>Load (Local)</button>
+        <button className="btn" onClick={()=>{ navigator.clipboard.writeText(exportJSON(useStore.getState().toProject())); alert('Copied JSON.'); }}>Export JSON</button>
+        <button className="btn" onClick={()=>{ const s=prompt('Paste JSON:'); if(!s)return; try{ useStore.getState().fromProject(importJSON(s)); setPdf(null); alert('Imported. Open the matching PDF.'); }catch(e:any){ alert('Invalid JSON: '+e.message);} }}>Import JSON</button>
       </div>
 
-      {/* Project Tags */}
-      <div className="quickbar" style={{display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderBottom:'1px solid #eee', position:'sticky', top:42, background:'#fff', zIndex:4}}>
-        <div className="label" style={{minWidth:100, fontWeight:600}}>Project Tags</div>
-        <div style={{display:'flex', gap:8, flexWrap:'wrap', maxHeight:48, overflow:'auto'}}>
-          {tags.map(t => {
-            const isActive = (t.code || '').toUpperCase() === (currentTag || '').toUpperCase();
-            const color = (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color;
+      {/* PROJECT TAGS BAR (starts empty, add from DB, removable) */}
+      <div className="quickbar" style={{display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderBottom:'1px solid #eee', position:'sticky', top:84, background:'#fff', zIndex:4}}>
+        <div className="label" style={{minWidth:110, fontWeight:700}}>Project Tags</div>
+
+        {/* tag chips */}
+        <div style={{display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', flex:1}}>
+          {projectTags.length === 0 && <span style={{color:'#777'}}>None yet — add from Tag Database ▼</span>}
+          {projectTags.map(t => {
+            const active = (t.code || '').toUpperCase() === (currentTag || '').toUpperCase();
             return (
               <button
                 key={t.id}
-                className={`btn ${isActive ? 'active' : ''}`}
-                onClick={() => { setTool('count'); setCurrentTag(t.code); }}
+                className={`btn ${active ? 'active' : ''}`}
+                onClick={()=>{ setTool('count'); setCurrentTag(t.code); }}
                 title={`${t.code} — ${t.name}`}
-                style={{
-                  display:'flex', alignItems:'center', gap:6,
-                  boxShadow: isActive ? '0 0 0 2px #0d6efd inset' : undefined,
-                  background: isActive ? '#eef5ff' : undefined
-                }}
+                style={{display:'flex', alignItems:'center', gap:6, position:'relative'}}
               >
-                <span style={{width:20, height:20, borderRadius:4, border:'1px solid #444', background: color}}/>
-                <span style={{minWidth:26, textAlign:'center', fontWeight: isActive ? 700 : 600}}>{t.code}</span>
+                <span style={{width:20, height:20, borderRadius:4, border:'1px solid #444', background: colorForTag(t)}} />
+                <span style={{minWidth:26, textAlign:'center', fontWeight: active ? 700 : 600}}>{t.code}</span>
+                {/* remove tag from Project */}
+                <span
+                  onClick={(e)=>{ e.stopPropagation(); setProjectTags(list => list.filter(x => x.id !== t.id)); if (currentTag === t.code) setCurrentTag(''); }}
+                  title="Remove from Project Tags"
+                  style={{position:'absolute', top:-6, right:-6, width:18, height:18, lineHeight:'16px', textAlign:'center',
+                          border:'1px solid #bbb', borderRadius:'50%', background:'#fff', cursor:'pointer', fontSize:11}}
+                >×</span>
               </button>
             );
           })}
         </div>
+
+        {/* add-from-DB picker */}
+        <div style={{position:'relative'}}>
+          <button className="btn" onClick={()=>setPickerOpen(v=>!v)}>Add from DB</button>
+          {pickerOpen && (
+            <div style={{position:'absolute', top:'110%', right:0, background:'#fff', border:'1px solid #ddd', borderRadius:6, padding:8, width:280, zIndex:20, boxShadow:'0 6px 22px rgba(0,0,0,.12)'}}
+                 onMouseLeave={()=>setPickerOpen(false)}>
+              <div style={{display:'flex', gap:8}}>
+                <select className="btn" value={pickerSel} onChange={(e)=>setPickerSel(e.target.value)} style={{flex:1}}>
+                  <option value="">— Select tag —</option>
+                  {availableForPicker.map(t => <option key={t.id} value={t.id}>{t.code} — {t.name}</option>)}
+                </select>
+                <button className="btn" onClick={()=>{
+                  const pick = availableForPicker.find(t => t.id === pickerSel);
+                  if (!pick) return;
+                  setProjectTags(list => [...list, { id: pick.id, code: pick.code, name: pick.name, color: pick.color, category: pick.category }]);
+                  setPickerSel(''); setPickerOpen(false);
+                }}>Add</button>
+              </div>
+              <div style={{marginTop:6, fontSize:12, color:'#666'}}>Tip: open “Tags” to edit DB entries or import a master set.</div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Main viewer area */}
-      <div className="viewer" style={{display:'grid', gridTemplateColumns: bomOpen ? '320px 1fr' : '0 1fr', transition:'grid-template-columns .2s', minHeight:0, flex:1}}>
-        {/* BOM panel */}
+      {/* MAIN AREA: Sidebar (BOM) + Viewer */}
+      <div className="viewer" style={{display:'grid', gridTemplateColumns:'320px 1fr', minHeight:0, flex:1}}>
+        {/* BOM */}
         <div className="sidebar" style={{borderRight:'1px solid #eee', overflow:'auto'}}>
           <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 10px 6px 10px'}}>
-            <div className="label" style={{fontWeight:600}}>BOM Summary</div>
-            <div style={{display:'flex', gap:6}}>
-              <button className="btn" onClick={()=>setBomOpen(!bomOpen)}>{bomOpen ? 'Hide' : 'Show'}</button>
-              <button className="btn" onClick={()=>{
-                // very simple CSV export of summary
-                const rows = [
-                  ['Total Tags', String(bom.totalTags)],
-                  ['Segment LF', bom.segLF.toFixed(2)],
-                  ['Polyline LF', bom.plLF.toFixed(2)],
-                  ['Freeform LF', bom.ffLF.toFixed(2)],
-                  ['Total LF', (bom.totalLF).toFixed(2)],
-                  [],
-                  ['Code','Tag Markers','Measurements','Linear Ft'],
-                  ...bom.rows.map(r => [r.code, String(r.tags), String(r.meas), r.lf.toFixed(2)])
-                ];
-                const csv = rows.map(r=>r.join(',')).join('\n');
-                const blob = new Blob([csv], {type:'text/csv'});
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = 'bom_summary.csv'; a.click();
-                URL.revokeObjectURL(url);
-              }}>Export CSV</button>
-            </div>
+            <div className="label" style={{fontWeight:700}}>BOM Summary</div>
+            <button className="btn" onClick={()=>{
+              const rows = [
+                ['Total Tags', String(bom.totalTags)],
+                ['Segment LF', bom.segLF.toFixed(2)],
+                ['Polyline LF', bom.plLF.toFixed(2)],
+                ['Freeform LF', bom.ffLF.toFixed(2)],
+                ['Total LF', (bom.totalLF).toFixed(2)],
+                [],
+                ['Code','Tag Markers','Measurements','Linear Ft'],
+                ...bom.rows.map(r => [r.code, String(r.tags), String(r.meas), r.lf.toFixed(2)])
+              ];
+              const csv = rows.map(r=>r.join(',')).join('\n');
+              const blob = new Blob([csv], {type:'text/csv'});
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href=url; a.download='bom_summary.csv'; a.click(); URL.revokeObjectURL(url);
+            }}>Export CSV</button>
           </div>
 
           <div style={{padding:'0 10px 12px 10px', color:'#666', fontSize:13}}>
@@ -278,42 +407,4 @@ export default function App() {
                   <tr key={r.code} style={{borderBottom:'1px solid #f3f3f3'}}>
                     <td style={{padding:'6px 4px', fontWeight:600}}>{r.code}</td>
                     <td style={{padding:'6px 4px'}}>{r.tags}</td>
-                    <td style={{padding:'6px 4px'}}>{r.meas}</td>
-                    <td style={{padding:'6px 4px'}}>{r.lf.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* PDF viewport */}
-        <div style={{position:'relative', overflow:'auto'}}>
-          <PDFViewport pdf={pdf} />
-        </div>
-      </div>
-
-      {/* Footer HUD */}
-      <div className="hud" style={{borderTop:'1px solid #eee', padding:'6px 10px', fontSize:12, color:'#555'}}>
-        Tool: {tool} • Zoom: {Math.round(zoom*100)}% • Page {pageCount ? (activePage+1) : 0}/{pageCount}
-      </div>
-
-      {/* Tag manager modal */}
-      <TagManager open={tagsOpen} onClose={()=>setTagsOpen(false)} />
-    </div>
-  );
-}
-
-/* ---------- light button styles (keep your existing CSS if you have it) ---------- */
-/* If you already style .btn/.badge elsewhere, this inline fallback won’t hurt. */
-declare global { interface HTMLElementTagNameMap { } }
-const style = document.createElement('style');
-style.innerHTML = `
-  .btn{border:1px solid #ccc;background:#fff;padding:.35rem .55rem;border-radius:6px;cursor:pointer}
-  .btn:hover{background:#f7f7f7}
-  .btn.active{border-color:#0d6efd;color:#0d6efd;background:#eef5ff}
-  .badge{padding:0 .35rem;color:#555}
-`;
-if (typeof document !== 'undefined' && !document.getElementById('app-inline-styles')) {
-  style.id = 'app-inline-styles'; document.head.appendChild(style);
-}
+                    <td style={{padding:'6px 4px'}}>{r.meas}
