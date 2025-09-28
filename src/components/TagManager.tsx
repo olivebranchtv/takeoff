@@ -4,12 +4,12 @@ import type { Tag } from '@/types';
 import { downloadTagsFile } from '@/utils/persist';
 
 type Props = { open: boolean; onClose: () => void };
-
 type Draft = Omit<Tag, 'id'>;
 
 const emptyDraft: Draft = { code: '', name: '', category: '', color: '#FFA500' };
 
 export default function TagManager({ open, onClose }: Props) {
+  // ---- hooks (must be called every render, regardless of `open`) ----
   const {
     tags, palette, addTag, updateTag, deleteTag, importTags, exportTags
   } = useStore();
@@ -29,8 +29,6 @@ export default function TagManager({ open, onClose }: Props) {
     }
   }, [open]);
 
-  if (!open) return null;
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = [...tags].sort((a, b) =>
@@ -44,6 +42,10 @@ export default function TagManager({ open, onClose }: Props) {
     );
   }, [tags, query]);
 
+  // If not open, render nothing (after all hooks have run)
+  if (!open) return null;
+
+  // ---- actions ----
   function startNew() {
     setEditId(null);
     setDraft(d => ({ ...emptyDraft, color: d.color || '#FFA500' }));
@@ -81,7 +83,6 @@ export default function TagManager({ open, onClose }: Props) {
     if (!editId) return;
     const next: Draft = { ...draft, code: draft.code.trim().toUpperCase() };
     const msg = validate(next);
-    // allow same-code for the row we’re editing
     if (msg && msg.includes('already exists')) {
       const conflict = tags.find(t => t.code.toUpperCase() === next.code.toUpperCase());
       if (!conflict || conflict.id !== editId) { setError(msg); return; }
@@ -106,9 +107,7 @@ export default function TagManager({ open, onClose }: Props) {
         if (!Array.isArray(parsed)) throw new Error('Expected an array of tags');
         importTags(parsed as Tag[]);
         alert('Tags imported.');
-      } catch (err:any) {
-        alert('Invalid tags file: ' + err.message);
-      }
+      } catch (err:any) { alert('Invalid tags file: ' + err.message); }
     };
     reader.readAsText(f);
   }
@@ -270,7 +269,7 @@ export default function TagManager({ open, onClose }: Props) {
   );
 }
 
-/* ---------- Inline “design system” styles (kept local to the modal) ---------- */
+/* ---------- Inline styles ---------- */
 const S: Record<string, React.CSSProperties> = {
   backdrop: {
     position:'fixed', inset:0, background:'rgba(0,0,0,0.35)', zIndex:9999,
@@ -292,8 +291,7 @@ const S: Record<string, React.CSSProperties> = {
     padding:'10px 16px', borderBottom:'1px solid #f2f2f2', background:'#fff'
   },
   search: {
-    flex:1, padding:'8px 10px', border:'1px solid #ccc', borderRadius:8,
-    fontSize:14
+    flex:1, padding:'8px 10px', border:'1px solid #ccc', borderRadius:8, fontSize:14
   },
   card: {
     padding:'12px 16px', borderBottom:'1px solid #f2f2f2', background:'#fff'
@@ -333,7 +331,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   thCat: {
     width:200, textAlign:'left', padding:'10px 6px', fontSize:12, color:'#555',
-    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff'
+    borderBottom:'1px solid '#eee', position:'sticky', top:0, background:'#fff'
   },
   thActions: {
     width:170, textAlign:'right', padding:'10px 6px', fontSize:12, color:'#555',
