@@ -8,55 +8,95 @@ import type { ProjectSave, AnyTakeoffObject } from '@/types';
 import { pathLength } from '@/utils/geometry';
 
 /* -------------------------------------------------------
-   Inline BOM PANEL (no import needed)
+   Inline BOM PANEL (detailed + per-code rollups)
 ------------------------------------------------------- */
 type BomProps = { open: boolean; onToggle: () => void };
-type BomSummary = {
-  totalTags: number;
-  totalLF: number;
-  byType: { segment: number; polyline: number; freeform: number };
-  countsByCode: { code: string; count: number }[];
-  calibratedPages: number;
-  totalPages: number;
+
+type LineRow = {
+  id: string;
+  page: number;
+  code: string;
+  feet: number;
+  px: number;
 };
 
 function BomPanel({ open, onToggle }: BomProps) {
   const { pages } = useStore();
 
-  const data: BomSummary = React.useMemo(() => {
+  const {
+    segments, polylines, freeforms,
+    totalTags, segLF, plLF, ffLF, totalLF,
+    byCode,
+    calibratedPages, totalPages
+  } = React.useMemo(() => {
+    const segments: LineRow[] = [];
+    const polylines: LineRow[] = [];
+    const freeforms: LineRow[] = [];
     let totalTags = 0;
     let segLF = 0, plLF = 0, ffLF = 0;
-    const counts = new Map<string, number>();
     let calibratedPages = 0;
+
+    // by-code rollup: tag markers + linear ft
+    const byCode = new Map<string, { tags: number; lf: number }>();
 
     for (const pg of pages) {
       const ppf = pg.pixelsPerFoot;
       if (ppf && ppf > 0) calibratedPages++;
+
       for (const obj of (pg.objects ?? [])) {
         if (obj.type === 'count') {
-          totalTags += 1;
-          const c = (obj as any).code || '';
-          counts.set(c, (counts.get(c) ?? 0) + 1);
-        } else {
-          const verts = (obj as AnyTakeoffObject).vertices ?? [];
-          const lenPx = pathLength(verts);
-          const lf = ppf && ppf > 0 ? lenPx / ppf : 0;
-          if (obj.type === 'segment') segLF += lf;
-          else if (obj.type === 'polyline') plLF += lf;
-          else if (obj.type === 'freeform') ffLF += lf;
+          totalTags++;
+          const code = (obj as any).code || '';
+          const box = byCode.get(code) ?? { tags: 0, lf: 0 };
+          box.tags += 1;
+          byCode.set(code, box);
+          continue;
+        }
+
+        const verts = (obj as AnyTakeoffObject).vertices ?? [];
+        const lenPx = pathLength(verts);
+        const lf = ppf && ppf > 0 ? lenPx / ppf : 0;
+        const rec: LineRow = {
+          id: obj.id,
+          page: obj.pageIndex + 1,
+          code: (obj as any).code || '',
+          feet: lf,
+          px: lenPx
+        };
+
+        if (obj.type === 'segment') {
+          segLF += lf;
+          segments.push(rec);
+        } else if (obj.type === 'polyline') {
+          plLF += lf;
+          polylines.push(rec);
+        } else if (obj.type === 'freeform') {
+          ffLF += lf;
+          freeforms.push(rec);
+        }
+
+        // roll up linear ft by code (if tagged)
+        const code = (obj as any).code || '';
+        if (code) {
+          const box = byCode.get(code) ?? { tags: 0, lf: 0 };
+          box.lf += lf;
+          byCode.set(code, box);
         }
       }
     }
 
-    const countsByCode = Array.from(counts.entries())
-      .map(([code, count]) => ({ code, count }))
-      .sort((a, b) => a.code.localeCompare(b.code));
+    // sort each list by page then code
+    const byPageCode = (a:LineRow,b:LineRow)=>(a.page-b.page)||a.code.localeCompare(b.code);
+    segments.sort(byPageCode);
+    polylines.sort(byPageCode);
+    freeforms.sort(byPageCode);
 
     return {
-      totalTags,
-      totalLF: segLF + plLF + ffLF,
-      byType: { segment: segLF, polyline: plLF, freeform: ffLF },
-      countsByCode,
+      segments, polylines, freeforms,
+      totalTags, segLF, plLF, ffLF, totalLF: segLF + plLF + ffLF,
+      byCode: Array.from(byCode.entries())
+        .map(([code, v]) => ({ code, tags: v.tags, lf: v.lf }))
+        .sort((a, b) => a.code.localeCompare(b.code)),
       calibratedPages,
       totalPages: pages.length
     };
@@ -64,22 +104,66 @@ function BomPanel({ open, onToggle }: BomProps) {
 
   function exportCSV() {
     const rows: string[][] = [];
-    rows.push(['Metric', 'Value']);
-    rows.push(['Total Tags', String(data.totalTags)]);
-    rows.push(['Total LF', data.totalLF.toFixed(2)]);
-    rows.push(['Segment LF', data.byType.segment.toFixed(2)]);
-    rows.push(['Polyline LF', data.byType.polyline.toFixed(2)]);
-    rows.push(['Freeform LF', data.byType.freeform.toFixed(2)]);
+    rows.push(['Totals','','','','']);
+    rows.push(['Total Tags', String(totalTags), '', '', '']);
+    rows.push(['Segment LF', segLF.toFixed(2), '', '', '']);
+    rows.push(['Polyline LF', plLF.toFixed(2), '', '', '']);
+    rows.push(['Freeform LF', ffLF.toFixed(2), '', '', '']);
+    rows.push(['Total LF', totalLF.toFixed(2), '', '', '']);
     rows.push([]);
-    rows.push(['Code', 'Count']);
-    for (const row of data.countsByCode) rows.push([row.code, String(row.count)]);
+
+    rows.push(['By Code','Tags','Linear Ft','','']);
+    for (const r of byCode) rows.push([r.code, String(r.tags), r.lf.toFixed(2), '', '']);
+    rows.push([]);
+
+    const pushList = (title: string, list: LineRow[]) => {
+      rows.push([title,'Page','Code','Feet','Pixels']);
+      for (const r of list) rows.push(['', String(r.page), r.code, r.feet.toFixed(2), String(Math.round(r.px))]);
+      rows.push([]);
+    };
+    pushList('Segments', segments);
+    pushList('Polylines', polylines);
+    pushList('Freeforms', freeforms);
+
     const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'bom_summary.csv'; a.click();
+    a.href = url; a.download = 'bom_detailed.csv'; a.click();
     URL.revokeObjectURL(url);
   }
+
+  const Section = ({title, items}:{title:string; items:LineRow[]}) => (
+    <div className="card" style={{marginTop:10}}>
+      <div className="label" style={{marginBottom:6}}>{title}</div>
+      <div style={{maxHeight:220, overflow:'auto'}}>
+        {items.length === 0 ? (
+          <div style={{color:'#666', fontSize:13}}>No records.</div>
+        ) : (
+          <table style={{width:'100%', borderCollapse:'collapse', fontSize:14}}>
+            <thead>
+              <tr style={{textAlign:'left', borderBottom:'1px solid #eee'}}>
+                <th style={{padding:'6px 4px'}}>Page</th>
+                <th style={{padding:'6px 4px'}}>Code</th>
+                <th style={{padding:'6px 4px'}}>Feet</th>
+                <th style={{padding:'6px 4px'}}>Pixels</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map(r => (
+                <tr key={r.id} style={{borderBottom:'1px solid #f4f4f4'}}>
+                  <td style={{padding:'6px 4px'}}>{r.page}</td>
+                  <td style={{padding:'6px 4px', fontWeight:600}}>{r.code}</td>
+                  <td style={{padding:'6px 4px'}}>{r.feet ? r.feet.toFixed(2) : '—'}</td>
+                  <td style={{padding:'6px 4px'}}>{Math.round(r.px)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
@@ -99,45 +183,47 @@ function BomPanel({ open, onToggle }: BomProps) {
       {open ? (
         <div style={{padding:'10px', overflow:'auto'}}>
           <div style={{fontSize:13, color:'#555', marginBottom:8}}>
-            {data.calibratedPages}/{data.totalPages} page(s) calibrated.
+            {calibratedPages}/{totalPages} page(s) calibrated.
           </div>
 
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:12}}>
             <div className="card">
               <div className="label" style={{marginBottom:6}}>Totals</div>
               <div style={{fontSize:14}}>
-                <div><strong>Total Tags:</strong> {data.totalTags}</div>
-                <div><strong>Total LF:</strong> {data.totalLF.toFixed(2)}</div>
+                <div><strong>Total Tags:</strong> {totalTags}</div>
+                <div><strong>Total LF:</strong> {totalLF.toFixed(2)}</div>
               </div>
             </div>
             <div className="card">
               <div className="label" style={{marginBottom:6}}>Linear Feet</div>
               <div style={{fontSize:14}}>
-                <div>Segment: {data.byType.segment.toFixed(2)}</div>
-                <div>Polyline: {data.byType.polyline.toFixed(2)}</div>
-                <div>Freeform: {data.byType.freeform.toFixed(2)}</div>
+                <div>Segment: {segLF.toFixed(2)}</div>
+                <div>Polyline: {plLF.toFixed(2)}</div>
+                <div>Freeform: {ffLF.toFixed(2)}</div>
               </div>
             </div>
           </div>
 
           <div className="card">
-            <div className="label" style={{marginBottom:6}}>Counts by Code</div>
-            <div style={{maxHeight:300, overflow:'auto'}}>
-              {data.countsByCode.length === 0 ? (
-                <div style={{color:'#666', fontSize:13}}>No tags yet.</div>
+            <div className="label" style={{marginBottom:6}}>By Code</div>
+            <div style={{maxHeight:220, overflow:'auto'}}>
+              {byCode.length === 0 ? (
+                <div style={{color:'#666', fontSize:13}}>No codes yet.</div>
               ) : (
                 <table style={{width:'100%', borderCollapse:'collapse', fontSize:14}}>
                   <thead>
                     <tr style={{textAlign:'left', borderBottom:'1px solid #eee'}}>
                       <th style={{padding:'6px 4px'}}>Code</th>
-                      <th style={{padding:'6px 4px'}}>Count</th>
+                      <th style={{padding:'6px 4px'}}>Tag Markers</th>
+                      <th style={{padding:'6px 4px'}}>Linear Ft</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {data.countsByCode.map(r => (
+                    {byCode.map(r => (
                       <tr key={r.code} style={{borderBottom:'1px solid #f4f4f4'}}>
                         <td style={{padding:'6px 4px', fontWeight:600}}>{r.code}</td>
-                        <td style={{padding:'6px 4px'}}>{r.count}</td>
+                        <td style={{padding:'6px 4px'}}>{r.tags}</td>
+                        <td style={{padding:'6px 4px'}}>{r.lf.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -145,6 +231,10 @@ function BomPanel({ open, onToggle }: BomProps) {
               )}
             </div>
           </div>
+
+          <Section title="Segments"  items={segments} />
+          <Section title="Polylines" items={polylines} />
+          <Section title="Freeforms" items={freeforms} />
         </div>
       ) : (
         <div style={{padding:'8px', color:'#666', fontSize:12}} />
@@ -154,13 +244,13 @@ function BomPanel({ open, onToggle }: BomProps) {
 }
 
 /* -------------------------------------------------------
-   App
+   App shell (unchanged UI: sticky toolbars, quick tags, etc.)
 ------------------------------------------------------- */
 export default function App() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pdf, setPdf] = useState<Awaited<ReturnType<typeof loadPdf>> | null>(null);
   const [tagsOpen, setTagsOpen] = useState(false);
-  const [bomOpen, setBomOpen] = useState(true); // collapsible BOM
+  const [bomOpen, setBomOpen] = useState(true);
 
   const {
     tool, setTool, zoom, setZoom, fileName, setFileName, setPages,
@@ -251,7 +341,7 @@ export default function App() {
           <button className={`btn ${tool==='freeform'?'active':''}`} onClick={()=>setTool('freeform')}>Freeform</button>
           <button className={`btn ${tool==='calibrate'?'active':''}`} onClick={()=>setTool('calibrate')}>Calibrate</button>
           <span className="badge">Tag:</span>
-          <input value={currentTag} onChange={e=>setCurrentTag(e.target.value.toUpperCase())} style={{width:60, padding:'.25rem .4rem'}} />
+          <input value={currentTag} onChange={e=>useStore.getState().setCurrentTag(e.target.value.toUpperCase())} style={{width:60, padding:'.25rem .4rem'}} />
           <button className="btn" onClick={()=>setZoom(zoom*0.9)}>-</button>
           <span className="badge">{Math.round(zoom*100)}%</span>
           <button className="btn" onClick={()=>setZoom(zoom*1.1)}>+</button>
@@ -266,14 +356,14 @@ export default function App() {
         <button className="btn" onClick={onImport}>Import JSON</button>
       </div>
 
-      {/* Sticky QUICK TAGS under toolbar */}
+      {/* Sticky QUICK TAGS */}
       <div className="quickbar sticky-under">
         <div className="label" style={{marginRight:6}}>Quick Tags</div>
         <div style={{display:'flex', gap:8, flexWrap:'wrap', maxHeight:48, overflow:'auto'}}>
           {tags.map(t => (
             <button key={t.id} title={`${t.code} — ${t.name}`}
               className="btn"
-              onClick={()=>{ useStore.getState().setTool('count'); setCurrentTag(t.code); }}
+              onClick={()=>{ useStore.getState().setTool('count'); useStore.getState().setCurrentTag(t.code); }}
               style={{display:'flex', alignItems:'center', gap:6}}
             >
               <span style={{
@@ -286,10 +376,10 @@ export default function App() {
         </div>
       </div>
 
-      {/* VIEWER with collapsible BOM */}
+      {/* VIEWER + BOM */}
       <div className="viewer">
-        <div className="sidebar" style={{ width: bomOpen ? 300 : 36 }}>
-          <BomPanel open={bomOpen} onToggle={()=>setBomOpen(v=>!v)} />
+        <div className="sidebar" style={{ width: 300 }}>
+          <BomPanel open={true} onToggle={()=>{}} />
         </div>
         <PDFViewport pdf={pdf} />
       </div>
