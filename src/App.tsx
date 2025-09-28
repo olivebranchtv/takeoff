@@ -3,7 +3,8 @@ import { useStore } from '@/state/store';
 import { loadPdf } from '@/lib/pdf';
 import PDFViewport from '@/components/PDFViewport';
 import TagManager from '@/components/TagManager';
-import BomPanel from '@/components/BomPanel';
+// ⬇️ Use a relative import so Vite resolves it regardless of alias setup
+import BomPanel from './components/BomPanel';
 import { exportJSON, importJSON, loadProject, saveProject } from '@/utils/persist';
 import type { ProjectSave } from '@/types';
 
