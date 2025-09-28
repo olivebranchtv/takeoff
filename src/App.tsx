@@ -8,7 +8,8 @@ import type { ProjectSave, AnyTakeoffObject } from '@/types';
 import { pathLength } from '@/utils/geometry';
 
 /* -------------------------------------------------------
-   Inline BOM PANEL (detailed + per-code rollups) WITH DELETE
+   Inline BOM PANEL (detailed + per-code rollups)
+   Now includes per-code "Measurements" count
 ------------------------------------------------------- */
 type BomProps = { open: boolean; onToggle: () => void };
 
@@ -43,8 +44,8 @@ function BomPanel({ open, onToggle }: BomProps) {
     let segLF = 0, plLF = 0, ffLF = 0;
     let calibratedPages = 0;
 
-    // by-code rollup: tag markers + linear ft
-    const byCode = new Map<string, { tags: number; lf: number }>();
+    // by-code rollup: tag markers + measurements + linear ft
+    const byCode = new Map<string, { tags: number; meas: number; lf: number }>();
 
     for (const pg of pages) {
       const ppf = pg.pixelsPerFoot;
@@ -54,7 +55,7 @@ function BomPanel({ open, onToggle }: BomProps) {
         if (obj.type === 'count') {
           totalTags++;
           const code = (obj as any).code || '';
-          const box = byCode.get(code) ?? { tags: 0, lf: 0 };
+          const box = byCode.get(code) ?? { tags: 0, meas: 0, lf: 0 };
           box.tags += 1;
           byCode.set(code, box);
           continue;
@@ -83,10 +84,11 @@ function BomPanel({ open, onToggle }: BomProps) {
           freeforms.push(row);
         }
 
-        // roll up linear ft by code (if tagged)
+        // roll up measurements + linear ft by code (if tagged)
         const code = (obj as any).code || '';
         if (code) {
-          const box = byCode.get(code) ?? { tags: 0, lf: 0 };
+          const box = byCode.get(code) ?? { tags: 0, meas: 0, lf: 0 };
+          box.meas += 1; // <-- each measurement object counts as 1
           box.lf += lf;
           byCode.set(code, box);
         }
@@ -103,7 +105,7 @@ function BomPanel({ open, onToggle }: BomProps) {
       segments, polylines, freeforms,
       totalTags, segLF, plLF, ffLF, totalLF: segLF + plLF + ffLF,
       byCode: Array.from(byCode.entries())
-        .map(([code, v]) => ({ code, tags: v.tags, lf: v.lf }))
+        .map(([code, v]) => ({ code, tags: v.tags, meas: v.meas, lf: v.lf }))
         .sort((a, b) => a.code.localeCompare(b.code)),
       calibratedPages,
       totalPages: pages.length
@@ -112,21 +114,21 @@ function BomPanel({ open, onToggle }: BomProps) {
 
   function exportCSV() {
     const rows: string[][] = [];
-    rows.push(['Totals','','','','']);
-    rows.push(['Total Tags', String(totalTags), '', '', '']);
-    rows.push(['Segment LF', segLF.toFixed(2), '', '', '']);
-    rows.push(['Polyline LF', plLF.toFixed(2), '', '', '']);
-    rows.push(['Freeform LF', ffLF.toFixed(2), '', '', '']);
-    rows.push(['Total LF', totalLF.toFixed(2), '', '', '']);
+    rows.push(['Totals','','','','','']);
+    rows.push(['Total Tags', String(totalTags), '', '', '', '']);
+    rows.push(['Segment LF', segLF.toFixed(2), '', '', '', '']);
+    rows.push(['Polyline LF', plLF.toFixed(2), '', '', '', '']);
+    rows.push(['Freeform LF', ffLF.toFixed(2), '', '', '', '']);
+    rows.push(['Total LF', totalLF.toFixed(2), '', '', '', '']);
     rows.push([]);
 
-    rows.push(['By Code','Tags','Linear Ft','','']);
-    for (const r of byCode) rows.push([r.code, String(r.tags), r.lf.toFixed(2), '', '']);
+    rows.push(['By Code','Tag Markers','Measurements','Linear Ft','','']);
+    for (const r of byCode) rows.push([r.code, String(r.tags), String(r.meas), r.lf.toFixed(2), '', '']);
     rows.push([]);
 
     const pushList = (title: string, list: LineRow[]) => {
-      rows.push([title,'Page','Code','Feet','Pixels']);
-      for (const r of list) rows.push(['', r.pageLabel, r.code, r.feet.toFixed(2), String(Math.round(r.px))]);
+      rows.push([title,'Page','Code','Feet','Pixels','']);
+      for (const r of list) rows.push(['', r.pageLabel, r.code, r.feet.toFixed(2), String(Math.round(r.px)), '']);
       rows.push([]);
     };
     pushList('Segments', segments);
@@ -245,6 +247,7 @@ function BomPanel({ open, onToggle }: BomProps) {
                     <tr style={{textAlign:'left', borderBottom:'1px solid #eee'}}>
                       <th style={{padding:'6px 4px'}}>Code</th>
                       <th style={{padding:'6px 4px'}}>Tag Markers</th>
+                      <th style={{padding:'6px 4px'}}>Measurements</th>
                       <th style={{padding:'6px 4px'}}>Linear Ft</th>
                     </tr>
                   </thead>
@@ -253,6 +256,7 @@ function BomPanel({ open, onToggle }: BomProps) {
                       <tr key={r.code} style={{borderBottom:'1px solid #f4f4f4'}}>
                         <td style={{padding:'6px 4px', fontWeight:600}}>{r.code}</td>
                         <td style={{padding:'6px 4px'}}>{r.tags}</td>
+                        <td style={{padding:'6px 4px'}}>{r.meas}</td>
                         <td style={{padding:'6px 4px'}}>{r.lf.toFixed(2)}</td>
                       </tr>
                     ))}
@@ -275,6 +279,7 @@ function BomPanel({ open, onToggle }: BomProps) {
 
 /* -------------------------------------------------------
    App shell (sticky toolbars, quick tags, viewer)
+   Quick Tags now highlight the selected code
 ------------------------------------------------------- */
 export default function App() {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -386,23 +391,39 @@ export default function App() {
         <button className="btn" onClick={onImport}>Import JSON</button>
       </div>
 
-      {/* Sticky QUICK TAGS */}
+      {/* Sticky QUICK TAGS (now highlight active selection) */}
       <div className="quickbar sticky-under">
         <div className="label" style={{marginRight:6}}>Quick Tags</div>
         <div style={{display:'flex', gap:8, flexWrap:'wrap', maxHeight:48, overflow:'auto'}}>
-          {tags.map(t => (
-            <button key={t.id} title={`${t.code} — ${t.name}`}
-              className="btn"
-              onClick={()=>{ useStore.getState().setTool('count'); useStore.getState().setCurrentTag(t.code); }}
-              style={{display:'flex', alignItems:'center', gap:6}}
-            >
-              <span style={{
-                width:20, height:20, borderRadius:4, border:'1px solid #444',
-                background: (t.category?.toLowerCase().includes('light') ? '#FFA500' : t.color)
-              }}/>
-              <span style={{minWidth:26, textAlign:'center'}}>{t.code}</span>
-            </button>
-          ))}
+          {tags.map(t => {
+            const isActive = (t.code || '').toUpperCase() === (currentTag || '').toUpperCase();
+            return (
+              <button
+                key={t.id}
+                title={`${t.code} — ${t.name}`}
+                className={`btn ${isActive ? 'active' : ''}`}
+                aria-pressed={isActive}
+                onClick={()=>{
+                  // keep behavior: selecting a quick tag also sets Count tool
+                  useStore.getState().setTool('count');
+                  useStore.getState().setCurrentTag(t.code);
+                }}
+                style={{
+                  display:'flex', alignItems:'center', gap:6,
+                  boxShadow: isActive ? '0 0 0 2px #0d6efd inset' : undefined,
+                  background: isActive ? '#eef5ff' : undefined
+                }}
+              >
+                <span style={{
+                  width:20, height:20, borderRadius:4, border:'1px solid #444',
+                  background: (t.category?.toLowerCase().includes('light') ? '#FFA500' : t.color)
+                }}/>
+                <span style={{minWidth:26, textAlign:'center', fontWeight: isActive ? 700 : 500}}>
+                  {t.code}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
