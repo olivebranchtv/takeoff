@@ -3,10 +3,7 @@ import { useStore } from '@/state/store';
 import { pathLength } from '@/utils/geometry';
 import type { AnyTakeoffObject } from '@/types';
 
-type Props = {
-  open: boolean;
-  onToggle: () => void;
-};
+type Props = { open: boolean; onToggle: () => void; };
 
 type Summary = {
   totalTags: number;
@@ -80,7 +77,6 @@ export default function BomPanel({ open, onToggle }: Props) {
 
   return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
-      {/* Header */}
       <div style={{
         display:'flex', alignItems:'center', justifyContent:'space-between',
         padding:'8px 10px', borderBottom:'1px solid #eee', background:'#fff', position:'sticky', top:0, zIndex:1
@@ -94,7 +90,6 @@ export default function BomPanel({ open, onToggle }: Props) {
         <button className="btn" onClick={exportCSV}>Export CSV</button>
       </div>
 
-      {/* Body */}
       {open ? (
         <div style={{padding:'10px', overflow:'auto'}}>
           <div style={{fontSize:13, color:'#555', marginBottom:8}}>
@@ -146,9 +141,7 @@ export default function BomPanel({ open, onToggle }: Props) {
           </div>
         </div>
       ) : (
-        <div style={{padding:'8px', color:'#666', fontSize:12}}>
-          {/* collapsed hint space */}
-        </div>
+        <div style={{padding:'8px', color:'#666', fontSize:12}} />
       )}
     </div>
   );
