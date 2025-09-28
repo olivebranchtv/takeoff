@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { PDFDoc } from '@/lib/pdf';
 import { useStore } from '@/state/store';
-import { Stage, Layer, Group, Rect, Line, Text as KText, Transformer } from 'react-konva';
+import { Stage, Layer, Group, Line, Text as KText, Transformer, Rect, Circle } from 'react-konva';
 import Konva from 'konva';
 import { pathLength, simplifyRDP } from '@/utils/geometry';
 import type { AnyTakeoffObject } from '@/types';
 
-/** Geometry saved in PAGE coords; render scales with pageScale. */
+/** All geometry saved in PAGE coords at scale=1; render maps with pageScale. */
 
 type Props = { pdf: PDFDoc | null };
 
@@ -66,40 +66,33 @@ export default function PDFViewport({ pdf }: Props) {
   const liveLabelRef = useRef<{text:string;x:number;y:number}|null>(null);
 
   const {
-    pages, upsertPage, addObject, patchObject, removeObject,
-    tool, zoom, setZoom, currentTag,
+    pages, upsertPage, addObject, patchObject, tool, zoom, setZoom, currentTag,
     setCalibration, selectedIds, selectOnly, clearSelection, deleteSelected, undo, redo,
-    activePage, setActivePage, pageCount, setPageCount, pageLabels, setPageLabels,
-    colorForCode, tagByCode
+    activePage, pageCount, tags
   } = useStore();
 
-  // Ensure per-page state
   useEffect(() => {
     if (!pdf) return;
     if (pages.length === 0) {
-      Array.from({ length: pdf.numPages }).forEach((_, idx) =>
+      Array.from({length: pdf.numPages}).forEach((_, idx) =>
         upsertPage({ pageIndex: idx, objects: [], pixelsPerFoot: undefined, unit: 'ft' })
       );
     }
-    if (pageCount === 0) setPageCount(pdf.numPages);
-    if (pageLabels.length === 0) {
-      (async () => {
-        try {
-          // @ts-ignore
-          const raw = await (pdf as any).getPageLabels?.();
-          if (raw && Array.isArray(raw)) setPageLabels(raw.map((l: string, i:number)=>l || `Page ${i+1}`));
-          else setPageLabels(Array.from({length: pdf.numPages}, (_,i)=>`Page ${i+1}`));
-        } catch {
-          setPageLabels(Array.from({length: pdf.numPages}, (_,i)=>`Page ${i+1}`));
-        }
-      })();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdf]);
 
   const info = usePageBitmap(pdf, zoom, activePage);
   const pageScale = (i: PageRenderInfo) => i.width / i.baseWidth;
+
+  const toStage = (i: PageRenderInfo, p:{x:number;y:number}) => ({ x: p.x * pageScale(i), y: p.y * pageScale(i) });
   const toPage  = (i: PageRenderInfo, spt:{x:number;y:number}) => ({ x: spt.x / pageScale(i), y: spt.y / pageScale(i) });
+
+  // color: apply "Lights => orange", otherwise tag.color, fallback gray
+  function colorForCode(code?: string) {
+    const t = tags.find(tt => tt.code.toUpperCase() === (code || '').toUpperCase());
+    if (!t) return '#444';
+    return (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color;
+  }
 
   function handleWheel(e: React.WheelEvent) {
     e.preventDefault();
@@ -136,15 +129,8 @@ export default function PDFViewport({ pdf }: Props) {
     const posStage = stage.getPointerPosition()!;
     const posPage = toPage(info, posStage);
 
-    // select / context
     if (e.target?.attrs?.name?.startsWith('obj-')) {
       const id = e.target.attrs.name.substring(4);
-      // right-click → delete that object
-      if (e.evt && (e.evt.button === 2)) {
-        e.evt.preventDefault();
-        removeObject(activePage, id);
-        return;
-      }
       selectOnly(id);
       return;
     } else {
@@ -170,8 +156,8 @@ export default function PDFViewport({ pdf }: Props) {
       freeformActive.current = true;
     } else if (tool === 'calibrate') {
       const page = pages.find(p => p.pageIndex === activePage)!;
-      const next = (page.__calibPts || []).concat(posPage);
-      page.__calibPts = next;
+      const next = (page as any).__calibPts ? [...(page as any).__calibPts, posPage] : [posPage];
+      (page as any).__calibPts = next;
       if (next.length === 2) {
         const px = pathLength(next);
         const input = prompt('Enter real length between points (feet):', '10');
@@ -180,7 +166,7 @@ export default function PDFViewport({ pdf }: Props) {
           const ppf = px / feet;
           setCalibration(activePage, ppf, 'ft');
         }
-        page.__calibPts = [];
+        (page as any).__calibPts = [];
       }
     }
     updateLiveLabel(info);
@@ -270,25 +256,11 @@ export default function PDFViewport({ pdf }: Props) {
   const s = pageScale(info);
   const pageObjects = pState?.objects ?? [];
 
-  const labelFor = (i: number) => (useStore.getState().pageLabels[i] || `Page ${i + 1}`);
-
   return (
     <div className="content" onWheel={handleWheel}>
-      {/* Fallback quick page selector */}
-      {pageCount > 1 && (
-        <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 20, display: 'flex', gap: 6 }}>
-          <button className="btn" onClick={() => setActivePage(Math.max(0, activePage - 1))}>◀</button>
-          <select className="btn" value={activePage} onChange={(e)=>setActivePage(parseInt(e.target.value,10))}>
-            {Array.from({ length: pageCount }, (_, i) => (
-              <option key={i} value={i}>{i + 1} — {labelFor(i)}</option>
-            ))}
-          </select>
-          <button className="btn" onClick={() => setActivePage(Math.min(pageCount - 1, activePage + 1))}>▶</button>
-        </div>
-      )}
-
       <div className="pageBox" style={{ width: w, height: h }}>
         <div style={{position:'absolute', inset:0}}>
+          {/* bitmap */}
           <div style={{position:'absolute', inset:0}} ref={(el)=>{
             if (el && info.canvas.parentElement !== el) { el.innerHTML = ''; el.appendChild(info.canvas); }
           }}/>
@@ -302,12 +274,14 @@ export default function PDFViewport({ pdf }: Props) {
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
             onDblClick={onDblClick}
-            onContextMenu={(e)=>{ e.evt.preventDefault(); }}
           >
             <Layer listening>
+              {/* objects */}
               {pageObjects.map(obj =>
-                renderObject(obj, selectedIds.includes(obj.id), s, activePage, patchObject, removeObject, colorForCode, tagByCode)
+                renderObject(obj, selectedIds.includes(obj.id), s, activePage, patchObject, colorForCode)
               )}
+
+              {/* live preview + tooltip */}
               {renderLive(drawingRef.current, s)}
               {liveLabelRef.current && (
                 <KText x={liveLabelRef.current.x} y={liveLabelRef.current.y} text={liveLabelRef.current.text} fontSize={12} fill="#000" />
@@ -327,15 +301,14 @@ function renderObject(
   s: number,
   pageIndex: number,
   patchObject: (pageIndex:number, id:string, patch: Partial<AnyTakeoffObject>) => void,
-  removeObject: (pageIndex:number, id:string) => void,
-  colorForCode: (code:string)=>string,
-  tagByCode: (code:string)=>ReturnType<typeof useStore.getState>['tagByCode']
+  colorForCode: (code?: string) => string
 ) {
+  // ---- COUNT TAG: 20x20 square with centered code ----
   if (obj.type === 'count') {
-    const size = 20 * s; // scale square with zoom
+    const SIZE = 20;                 // screen pixels (constant size)
     const sx = (obj as any).x * s, sy = (obj as any).y * s;
-    const color = colorForCode((obj as any).code);
-    const tag = tagByCode((obj as any).code);
+    const code = (obj as any).code || '';
+    const fill = colorForCode(code);
     return (
       <Group
         key={obj.id}
@@ -343,48 +316,66 @@ function renderObject(
         name={`obj-${obj.id}`}
         draggable
         onDragEnd={(e) => {
-          const nx = e.target.x() / s;
-          const ny = e.target.y() / s;
-          patchObject(pageIndex, obj.id, { x: nx, y: ny } as any);
-          e.target.position({ x: nx*s, y: ny*s });
+          const nx = e.target.x();
+          const ny = e.target.y();
+          // convert back to page coords
+          patchObject(pageIndex, obj.id, { x: nx / s, y: ny / s } as any);
+          e.target.position({ x: nx, y: ny });
         }}
-        onContextMenu={(e:any)=>{ e.evt.preventDefault(); removeObject(pageIndex, obj.id); }}
-        onMouseDown={(e:any)=>{ if (e.evt.button===2) { e.evt.preventDefault(); removeObject(pageIndex, obj.id); } }}
       >
-        <Rect width={size} height={size} offsetX={size/2} offsetY={size/2}
-              fill={color} stroke={selected ? '#0d6efd' : '#111'} strokeWidth={selected ? 2 : 1} cornerRadius={3}/>
-        {/* small code label */}
-        <KText text={(obj as any).code}
-               fontSize={12} fill="#000"
-               offsetX={-size/2} offsetY={-size/2 - 2} />
+        <Rect
+          width={SIZE} height={SIZE}
+          offsetX={SIZE/2} offsetY={SIZE/2}
+          fill={fill}
+          stroke={selected ? '#0d6efd' : '#222'}
+          strokeWidth={selected ? 2 : 1}
+          cornerRadius={4}
+        />
+        <KText
+          text={String(code)}
+          width={SIZE} height={SIZE}
+          offsetX={SIZE/2} offsetY={SIZE/2}
+          align="center"
+          verticalAlign="middle"
+          fontStyle="bold"
+          fontSize={12}
+          fill="#fff"
+        />
       </Group>
     );
   }
 
+  // ---- SEGMENT ----
   if (obj.type === 'segment') {
     const verts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s }));
     return (
       <Group key={obj.id} name={`obj-${obj.id}`}>
-        <Line points={verts.flatMap(v=>[v.x,v.y])} stroke="#0066FF" strokeWidth={2}/>
+        <Circle x={verts[0].x} y={verts[0].y} radius={4} fill="red"/>
+        <Circle x={verts[1].x} y={verts[1].y} radius={4} fill="red"/>
+        <Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/>
       </Group>
     );
   }
 
+  // ---- POLYLINE ----
   if (obj.type === 'polyline') {
     const verts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s }));
     const pts = verts.flatMap(v=>[v.x,v.y]);
     return (
       <Group key={obj.id} name={`obj-${obj.id}`}>
-        <Line points={pts} stroke="#0066FF" strokeWidth={2}/>
+        <Circle x={verts[0].x} y={verts[0].y} radius={4} fill="red"/>
+        <Circle x={verts[verts.length-1].x} y={verts[verts.length-1].y} radius={4} fill="red"/>
+        <Line points={pts} stroke="blue" strokeWidth={2}/>
       </Group>
     );
   }
 
+  // ---- FREEFORM ----
   if (obj.type === 'freeform') {
     const pts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s })).flatMap(v=>[v.x,v.y]);
     return (
       <Group key={obj.id} name={`obj-${obj.id}`}>
-        <Line points={pts} stroke="#0066FF" strokeWidth={2}/>
+        <Line points={pts} stroke="blue" strokeWidth={2}/>
       </Group>
     );
   }
@@ -396,11 +387,28 @@ function renderLive(
   s: number
 ) {
   if (!dr.type) return null;
-  if (dr.type === 'segment' && dr.pts.length === 1) {
-    // show a small anchor
-    const a = dr.pts[0]; const ax = a.x*s, ay = a.y*s;
-    return <Rect x={ax-3} y={ay-3} width={6} height={6} fill="red" />;
-  }
   const verts = dr.pts.map(p => ({ x: p.x * s, y: p.y * s }));
-  return <Line points={verts.flatMap(v=>[v.x,v.y])} stroke="#0066FF" strokeWidth={2}/>;
+
+  if (dr.type === 'segment' && verts.length === 1) {
+    return (
+      <Group>
+        <Circle x={verts[0].x} y={verts[0].y} radius={4} fill="red"/>
+      </Group>
+    );
+  }
+  if (dr.type === 'polyline' && verts.length >= 1) {
+    return (
+      <Group>
+        <Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/>
+      </Group>
+    );
+  }
+  if (dr.type === 'freeform' && verts.length >= 1) {
+    return (
+      <Group>
+        <Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/>
+      </Group>
+    );
+  }
+  return null;
 }
