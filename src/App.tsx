@@ -12,9 +12,9 @@ export default function App() {
   const [tagsOpen, setTagsOpen] = useState(false);
 
   const {
-    tool, setTool, zoom, setZoom, fileName, setFileName, pages, setPages,
+    tool, setTool, zoom, setZoom, fileName, setFileName, setPages,
     currentTag, setCurrentTag, activePage, setActivePage, pageCount, setPageCount,
-    pageLabels, setPageLabels, tags, colorForCode
+    pageLabels, setPageLabels, tags
   } = useStore();
 
   const openFile = useCallback(async (file: File) => {
@@ -45,16 +45,9 @@ export default function App() {
   }
 
   function onImport() {
-    const s = prompt('Paste JSON:');
-    if (!s) return;
-    try {
-      const data = importJSON(s);
-      useStore.getState().fromProject(data);
-      setPdf(null);
-      alert('Imported. Now load the corresponding PDF file.');
-    } catch (err:any) {
-      alert('Invalid JSON: ' + err.message);
-    }
+    const s = prompt('Paste JSON:'); if (!s) return;
+    try { const data = importJSON(s); useStore.getState().fromProject(data); setPdf(null); alert('Imported. Now load the corresponding PDF file.'); }
+    catch (err:any) { alert('Invalid JSON: ' + err.message); }
   }
 
   function onExport() {
@@ -66,22 +59,20 @@ export default function App() {
 
   function tryLoadSaved() {
     const data = loadProject();
-    if (data) {
-      useStore.getState().fromProject(data);
-      alert('Loaded local save. Now open the matching PDF file.');
-    } else alert('No local save found.');
+    if (data) { useStore.getState().fromProject(data); alert('Loaded local save. Now open the matching PDF file.'); }
+    else alert('No local save found.');
   }
 
   function saveLocal() {
     const data: ProjectSave = useStore.getState().toProject();
-    saveProject(data);
-    alert('Saved locally.');
+    saveProject(data); alert('Saved locally.');
   }
 
   const labelFor = (i: number) => pageLabels[i] || `Page ${i+1}`;
 
   return (
     <div style={{height:'100%', display:'flex', flexDirection:'column'}} onDragOver={(e)=>e.preventDefault()} onDrop={onDrop}>
+      {/* TOP TOOLBAR */}
       <div className="toolbar">
         <div className="fileRow">
           <input ref={inputRef} type="file" accept="application/pdf" style={{display:'none'}}
@@ -90,14 +81,11 @@ export default function App() {
           <span className="label">{fileName}</span>
         </div>
 
-        {/* PAGE PICKER */}
         {pageCount > 0 && (
           <div style={{display:'flex', alignItems:'center', gap:8, marginLeft:12}}>
             <button className="btn" onClick={()=>setActivePage(activePage-1)} disabled={activePage<=0}>◀</button>
             <select className="btn" value={activePage} onChange={(e)=>setActivePage(parseInt(e.target.value,10))}>
-              {Array.from({length: pageCount}, (_, i) => (
-                <option key={i} value={i}>{i+1} — {labelFor(i)}</option>
-              ))}
+              {Array.from({length: pageCount}, (_, i) => (<option key={i} value={i}>{i+1} — {labelFor(i)}</option>))}
             </select>
             <button className="btn" onClick={()=>setActivePage(activePage+1)} disabled={activePage>=pageCount-1}>▶</button>
           </div>
@@ -128,7 +116,7 @@ export default function App() {
         <button className="btn" onClick={onImport}>Import JSON</button>
       </div>
 
-      {/* Tag palette – color squares, click to pick */}
+      {/* QUICK TAG PALETTE */}
       <div style={{display:'flex', gap:8, alignItems:'center', padding:'6px 10px', borderBottom:'1px solid #eee'}}>
         <div className="label" style={{marginRight:6}}>Quick Tags</div>
         <div style={{display:'flex', gap:8, flexWrap:'wrap', maxHeight:48, overflow:'auto'}}>
@@ -148,22 +136,22 @@ export default function App() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* TABS */}
       {pageCount > 1 && (
         <div style={{display:'flex', gap:6, overflowX:'auto', padding:'6px 8px', borderBottom:'1px solid #ddd', background:'#f9f9f9'}}>
           {Array.from({length: pageCount}, (_, i) => (
-            <button key={i} className={`btn ${i===activePage ? 'active' : ''}`}
-                    onClick={()=>setActivePage(i)} title={`Go to ${labelFor(i)}`}>
+            <button key={i} className={`btn ${i===activePage ? 'active' : ''}`} onClick={()=>setActivePage(i)} title={`Go to ${labelFor(i)}`}>
               {labelFor(i)}
             </button>
           ))}
         </div>
       )}
 
+      {/* VIEWER */}
       <div className="viewer">
         <div className="sidebar">
           <div className="label">BOM Summary</div>
-          {/* (existing summary UI, unchanged) */}
+          {/* your existing summary UI stays here */}
         </div>
         <PDFViewport pdf={pdf} />
       </div>
