@@ -1,443 +1,485 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import type { PDFDoc } from '@/lib/pdf';
 import { useStore } from '@/state/store';
-import { loadPdf } from '@/lib/pdf';
-import PDFViewport from '@/components/PDFViewport';
-import TagManager from '@/components/TagManager';
-import { exportJSON, importJSON, loadProject, saveProject } from '@/utils/persist';
-import type { ProjectSave, AnyTakeoffObject } from '@/types';
-import { pathLength } from '@/utils/geometry';
+import { Stage, Layer, Group, Line, Text as KText, Transformer, Rect, Circle } from 'react-konva';
+import Konva from 'konva';
+import { pathLength, simplifyRDP } from '@/utils/geometry';
+import type { AnyTakeoffObject } from '@/types';
 
-/* -------------------------------------------------------
-   Inline BOM PANEL (detailed + per-code rollups)
-   Now includes per-code "Measurements" count
-------------------------------------------------------- */
-type BomProps = { open: boolean; onToggle: () => void };
+type Props = { pdf: PDFDoc | null };
 
-type LineRow = {
-  id: string;
-  pageIndex: number; // for delete/navigation
-  pageLabel: string; // display only
-  code: string;
-  feet: number;
-  px: number;
+type PageRenderInfo = {
+  pageIndex: number;
+  baseWidth: number;
+  baseHeight: number;
+  width: number;
+  height: number;
+  canvas: HTMLCanvasElement;
 };
 
-function BomPanel({ open, onToggle }: BomProps) {
+function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
+  const [info, setInfo] = useState<PageRenderInfo | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!pdf) { setInfo(null); return; }
+    const DPR = Math.max(1, window.devicePixelRatio || 1);
+
+    (async () => {
+      const page = await pdf.getPage(pageIndex + 1);
+      const baseVp = page.getViewport({ scale: 1 });
+      const vp = page.getViewport({ scale: zoom });
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      canvas.width = Math.floor(vp.width * DPR);
+      canvas.height = Math.floor(vp.height * DPR);
+      canvas.style.width = `${vp.width}px`;
+      canvas.style.height = `${vp.height}px`;
+
+      await page.render({ canvasContext: ctx, viewport: page.getViewport({ scale: zoom * DPR }) }).promise;
+      if (cancelled) return;
+      setInfo({
+        pageIndex,
+        baseWidth: baseVp.width,
+        baseHeight: baseVp.height,
+        width: vp.width,
+        height: vp.height,
+        canvas
+      });
+    })();
+
+    return () => { cancelled = true; };
+  }, [pdf, zoom, pageIndex]);
+
+  return info;
+}
+
+export default function PDFViewport({ pdf }: Props) {
+  const stageRef = useRef<Konva.Stage>(null);
+  const trRef = useRef<Konva.Transformer>(null);
+
+  const drawingRef = useRef<{ type:'segment'|'polyline'|'freeform'|null; pts:{x:number;y:number}[] }>({ type: null, pts: [] });
+  const freeformActive = useRef<boolean>(false);
+  const liveLabelRef = useRef<{text:string;x:number;y:number}|null>(null);
+
+  // NEW: track current cursor in PAGE coords so we can draw a live segment A→B
+  const cursorPageRef = useRef<{x:number;y:number} | null>(null);
+
+  // force repaint ticks (for freeform and live segment preview)
+  const [, setPaintTick] = useState(0);
+
   const {
-    pages,
-    pageLabels,
-    setActivePage,
-    selectOnly,
-    deleteSelected,
+    pages, upsertPage, addObject, patchObject, tool, zoom,
+    currentTag, setCalibration, selectedIds, selectOnly, clearSelection,
+    deleteSelected, undo, redo, activePage, tags
   } = useStore();
 
-  const {
-    segments, polylines, freeforms,
-    totalTags, segLF, plLF, ffLF, totalLF,
-    byCode,
-    calibratedPages, totalPages
-  } = React.useMemo(() => {
-    const segments: LineRow[] = [];
-    const polylines: LineRow[] = [];
-    const freeforms: LineRow[] = [];
-    let totalTags = 0;
-    let segLF = 0, plLF = 0, ffLF = 0;
-    let calibratedPages = 0;
-
-    // by-code rollup: tag markers + measurements + linear ft
-    const byCode = new Map<string, { tags: number; meas: number; lf: number }>();
-
-    for (const pg of pages) {
-      const ppf = pg.pixelsPerFoot;
-      if (ppf && ppf > 0) calibratedPages++;
-
-      for (const obj of (pg.objects ?? [])) {
-        if (obj.type === 'count') {
-          totalTags++;
-          const code = (obj as any).code || '';
-          const box = byCode.get(code) ?? { tags: 0, meas: 0, lf: 0 };
-          box.tags += 1;
-          byCode.set(code, box);
-          continue;
-        }
-
-        const verts = (obj as AnyTakeoffObject).vertices ?? [];
-        const lenPx = pathLength(verts);
-        const lf = ppf && ppf > 0 ? lenPx / ppf : 0;
-        const row: LineRow = {
-          id: obj.id,
-          pageIndex: obj.pageIndex,
-          pageLabel: (pageLabels[obj.pageIndex] || `Page ${obj.pageIndex + 1}`),
-          code: (obj as any).code || '',
-          feet: lf,
-          px: lenPx
-        };
-
-        if (obj.type === 'segment') {
-          segLF += lf;
-          segments.push(row);
-        } else if (obj.type === 'polyline') {
-          plLF += lf;
-          polylines.push(row);
-        } else if (obj.type === 'freeform') {
-          ffLF += lf;
-          freeforms.push(row);
-        }
-
-        // roll up measurements + linear ft by code (if tagged)
-        const code = (obj as any).code || '';
-        if (code) {
-          const box = byCode.get(code) ?? { tags: 0, meas: 0, lf: 0 };
-          box.meas += 1; // <-- each measurement object counts as 1
-          box.lf += lf;
-          byCode.set(code, box);
-        }
-      }
+  useEffect(() => {
+    if (!pdf) return;
+    if (pages.length === 0) {
+      Array.from({length: pdf.numPages}).forEach((_, idx) =>
+        upsertPage({ pageIndex: idx, objects: [], pixelsPerFoot: undefined, unit: 'ft' })
+      );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdf]);
 
-    // sort by page then code
-    const byPageCode = (a:LineRow,b:LineRow)=>(a.pageIndex-b.pageIndex)||a.code.localeCompare(b.code);
-    segments.sort(byPageCode);
-    polylines.sort(byPageCode);
-    freeforms.sort(byPageCode);
+  const info = usePageBitmap(pdf, zoom, activePage);
+  const pageScale = (i: PageRenderInfo) => i.width / i.baseWidth;
 
-    return {
-      segments, polylines, freeforms,
-      totalTags, segLF, plLF, ffLF, totalLF: segLF + plLF + ffLF,
-      byCode: Array.from(byCode.entries())
-        .map(([code, v]) => ({ code, tags: v.tags, meas: v.meas, lf: v.lf }))
-        .sort((a, b) => a.code.localeCompare(b.code)),
-      calibratedPages,
-      totalPages: pages.length
-    };
-  }, [pages, pageLabels]);
+  const toStage = (i: PageRenderInfo, p:{x:number;y:number}) => ({ x: p.x * pageScale(i), y: p.y * pageScale(i) });
+  const toPage  = (i: PageRenderInfo, spt:{x:number;y:number}) => ({ x: spt.x / pageScale(i), y: spt.y / pageScale(i) });
 
-  function exportCSV() {
-    const rows: string[][] = [];
-    rows.push(['Totals','','','','','']);
-    rows.push(['Total Tags', String(totalTags), '', '', '', '']);
-    rows.push(['Segment LF', segLF.toFixed(2), '', '', '', '']);
-    rows.push(['Polyline LF', plLF.toFixed(2), '', '', '', '']);
-    rows.push(['Freeform LF', ffLF.toFixed(2), '', '', '', '']);
-    rows.push(['Total LF', totalLF.toFixed(2), '', '', '', '']);
-    rows.push([]);
-
-    rows.push(['By Code','Tag Markers','Measurements','Linear Ft','','']);
-    for (const r of byCode) rows.push([r.code, String(r.tags), String(r.meas), r.lf.toFixed(2), '', '']);
-    rows.push([]);
-
-    const pushList = (title: string, list: LineRow[]) => {
-      rows.push([title,'Page','Code','Feet','Pixels','']);
-      for (const r of list) rows.push(['', r.pageLabel, r.code, r.feet.toFixed(2), String(Math.round(r.px)), '']);
-      rows.push([]);
-    };
-    pushList('Segments', segments);
-    pushList('Polylines', polylines);
-    pushList('Freeforms', freeforms);
-
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'bom_detailed.csv'; a.click();
-    URL.revokeObjectURL(url);
+  function colorForCode(code?: string) {
+    const t = tags.find(tt => tt.code.toUpperCase() === (code || '').toUpperCase());
+    if (!t) return '#444';
+    return (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color;
   }
 
-  const Section = ({title, items}:{title:string; items:LineRow[]}) => (
-    <div className="card" style={{marginTop:10}}>
-      <div className="label" style={{marginBottom:6}}>{title}</div>
-      <div style={{maxHeight:220, overflow:'auto'}}>
-        {items.length === 0 ? (
-          <div style={{color:'#666', fontSize:13}}>No records.</div>
-        ) : (
-          <table style={{width:'100%', borderCollapse:'collapse', fontSize:14}}>
-            <thead>
-              <tr style={{textAlign:'left', borderBottom:'1px solid #eee'}}>
-                <th style={{padding:'6px 4px'}}>Page</th>
-                <th style={{padding:'6px 4px'}}>Code</th>
-                <th style={{padding:'6px 4px'}}>Feet</th>
-                <th style={{padding:'6px 4px'}}>Pixels</th>
-                <th style={{padding:'6px 4px'}}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map(r => (
-                <tr key={r.id} style={{borderBottom:'1px solid #f4f4f4'}}>
-                  <td style={{padding:'6px 4px'}}>{r.pageLabel}</td>
-                  <td style={{padding:'6px 4px', fontWeight:600}}>{r.code}</td>
-                  <td style={{padding:'6px 4px'}}>{r.feet ? r.feet.toFixed(2) : '—'}</td>
-                  <td style={{padding:'6px 4px'}}>{Math.round(r.px)}</td>
-                  <td style={{padding:'6px 4px', whiteSpace:'nowrap'}}>
-                    <button
-                      className="btn"
-                      title="Go to page"
-                      onClick={()=>setActivePage(r.pageIndex)}
-                      style={{marginRight:6}}
-                    >
-                      Go
-                    </button>
-                    <button
-                      className="btn"
-                      title="Delete measurement"
-                      onClick={()=>{
-                        // select then delete to reuse store logic
-                        selectOnly(r.id);
-                        deleteSelected(r.pageIndex);
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+  function updateLiveLabel(i: PageRenderInfo) {
+    const stage = stageRef.current;
+    const posStage = stage?.getPointerPosition();
+    if (!posStage) { liveLabelRef.current = null; return; }
+    if (!drawingRef.current.type) { liveLabelRef.current = null; return; }
+
+    let vertsPage = drawingRef.current.pts.slice();
+    if (drawingRef.current.type === 'segment') {
+      if (vertsPage.length === 1) vertsPage = [vertsPage[0], toPage(i, posStage)];
+    } else if (drawingRef.current.type === 'polyline') {
+      vertsPage = [...vertsPage, toPage(i, posStage)];
+    }
+    const page = pages.find(p => p.pageIndex === activePage);
+    const px = pathLength(vertsPage);
+    const ft = page?.pixelsPerFoot ? (px / page.pixelsPerFoot) : 0;
+    const text = page?.pixelsPerFoot ? `${ft.toFixed(2)} ft` : '—';
+    liveLabelRef.current = { text, x: posStage.x + 8, y: posStage.y - 12 };
+  }
+
+  // commit helper attaches the active code to measurements
+  function commitObject(type:'segment'|'polyline'|'freeform', vertsPage:{x:number;y:number}[]) {
+    addObject(activePage, {
+      id: crypto.randomUUID(),
+      type,
+      pageIndex: activePage,
+      vertices: vertsPage,
+      code: currentTag || undefined,
+    } as AnyTakeoffObject);
+  }
+
+  // mouse button helpers
+  const isLeft = (e: any) => (e?.evt?.button ?? 0) === 0;
+  const isRight = (e: any) => (e?.evt?.button ?? 0) === 2;
+
+  function onMouseDown(e: any) {
+    if (!info) return;
+
+    // RIGHT-CLICK: delete clicked object and stop
+    if (isRight(e)) {
+      if (e.target?.attrs?.name?.startsWith('obj-')) {
+        const id = e.target.attrs.name.substring(4);
+        selectOnly(id);
+        deleteSelected(activePage);
+      }
+      return;
+    }
+
+    // LEFT-CLICK only below
+    if (!isLeft(e)) return;
+
+    const stage = stageRef.current!;
+    const posStage = stage.getPointerPosition()!;
+    const posPage = toPage(info, posStage);
+    cursorPageRef.current = posPage; // seed cursor for live preview
+    setPaintTick(t => t + 1);
+
+    // click an object -> select only
+    if (e.target?.attrs?.name?.startsWith('obj-')) {
+      const id = e.target.attrs.name.substring(4);
+      selectOnly(id);
+      return;
+    } else {
+      clearSelection();
+    }
+
+    if (tool === 'hand') return;
+
+    if (tool === 'count') {
+      addObject(activePage, {
+        id: crypto.randomUUID(),
+        type: 'count',
+        code: currentTag,
+        pageIndex: activePage, x: posPage.x, y: posPage.y, rotation: 0
+      } as any);
+    } else if (tool === 'segment') {
+      drawingRef.current = { type: 'segment', pts: [posPage] };
+    } else if (tool === 'polyline') {
+      if (!drawingRef.current.type) drawingRef.current = { type: 'polyline', pts: [posPage] };
+      else drawingRef.current.pts.push(posPage);
+    } else if (tool === 'freeform') {
+      drawingRef.current = { type: 'freeform', pts: [posPage] };
+      freeformActive.current = true;
+      // will repaint on move
+    } else if (tool === 'calibrate') {
+      const page = pages.find(p => p.pageIndex === activePage)!;
+      const next = (page as any).__calibPts ? [...(page as any).__calibPts, posPage] : [posPage];
+      (page as any).__calibPts = next;
+      if (next.length === 2) {
+        const px = pathLength(next);
+        const input = prompt('Enter real length between points (feet):', '10');
+        const feet = input ? parseFloat(input) : NaN;
+        if (!isNaN(feet) && feet > 0) setCalibration(activePage, px / feet, 'ft');
+        (page as any).__calibPts = [];
+      }
+    }
+    updateLiveLabel(info);
+  }
+
+  function onMouseMove(e?: any) {
+    if (!info) return;
+
+    const stage = stageRef.current!;
+    const posStage = stage.getPointerPosition();
+    if (posStage) {
+      cursorPageRef.current = toPage(info, posStage);
+    }
+
+    // live freeform preview (mutates pts) OR live segment redraw (no mutation)
+    if (tool === 'freeform' && freeformActive.current && (!e || isLeft(e))) {
+      // add points for freeform
+      const posPage = cursorPageRef.current!;
+      drawingRef.current.pts.push(posPage);
+      setPaintTick(t => t + 1);
+    } else if (drawingRef.current.type === 'segment' || drawingRef.current.type === 'polyline') {
+      // just force repaint so the live preview updates with cursor
+      setPaintTick(t => t + 1);
+    }
+
+    updateLiveLabel(info);
+  }
+
+  function onMouseUp(e?: any) {
+    if (!info) return;
+    if (e && !isLeft(e)) return; // finalize only on left click
+    const stage = stageRef.current!;
+    const posStage = stage.getPointerPosition();
+    if (!posStage) return;
+    if (!drawingRef.current.type) return;
+
+    if (drawingRef.current.type === 'segment') {
+      const endPage = toPage(info, posStage);
+      const pts = [...drawingRef.current.pts, endPage];
+      drawingRef.current = { type: null, pts: [] };
+      commitObject('segment', pts);
+    } else if (drawingRef.current.type === 'polyline') {
+      // commit on double click
+    } else if (drawingRef.current.type === 'freeform') {
+      freeformActive.current = false;
+      const simplified = simplifyRDP(drawingRef.current.pts, 1.5);
+      drawingRef.current = { type: null, pts: [] };
+      commitObject('freeform', simplified);
+    }
+    cursorPageRef.current = null;
+    liveLabelRef.current = null;
+  }
+
+  function onDblClick() {
+    if (drawingRef.current.type === 'polyline') {
+      const pts = drawingRef.current.pts.slice();
+      drawingRef.current = { type: null, pts: [] };
+      commitObject('polyline', pts);
+    }
+    cursorPageRef.current = null;
+    liveLabelRef.current = null;
+  }
+
+  // transformer binding
+  useEffect(() => {
+    const tr = trRef.current;
+    if (!tr) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    const layer = stage.findOne('Layer') as Konva.Layer;
+    const nodes = selectedIds
+      .map(id => stage.findOne(`.obj-${id}`))
+      .filter(Boolean) as Konva.Node[];
+    tr.nodes(nodes);
+    layer?.batchDraw();
+  }, [selectedIds, activePage]);
+
+  // shortcuts
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Delete') {
+        deleteSelected(activePage);
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        undo(activePage);
+      } else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase()==='z' && e.shiftKey))) {
+        redo(activePage);
+      } else if (e.key === 'Escape') {
+        drawingRef.current = { type: null, pts: [] };
+        cursorPageRef.current = null;
+        liveLabelRef.current = null;
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [activePage, deleteSelected, undo, redo]);
+
+  if (!pdf || !info) {
+    return (
+      <div className="content">
+        <div style={{padding:'2rem'}}><div className="drop">Drop a PDF to begin or use the file picker.</div></div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  const pState = pages.find(p => p.pageIndex === activePage);
+  const w = info.width, h = info.height;
+  const s = pageScale(info);
+  const pageObjects = pState?.objects ?? [];
 
   return (
-    <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
-      <div style={{
-        display:'flex', alignItems:'center', justifyContent:'space-between',
-        padding:'8px 10px', borderBottom:'1px solid #eee', background:'#fff', position:'sticky', top:0, zIndex:1
-      }}>
-        <div style={{display:'flex', alignItems:'center', gap:8}}>
-          <button className="btn" title={open ? 'Collapse' : 'Expand'} onClick={onToggle}>
-            {open ? '▾' : '▸'}
-          </button>
-          <div className="label">BOM Summary</div>
-        </div>
-        <button className="btn" onClick={exportCSV}>Export CSV</button>
-      </div>
-
-      {open ? (
-        <div style={{padding:'10px', overflow:'auto'}}>
-          <div style={{fontSize:13, color:'#555', marginBottom:8}}>
-            {calibratedPages}/{totalPages} page(s) calibrated.
+    // NOTE: wheel scrolls naturally (no zoom)
+    <div className="content" onContextMenu={(e)=>e.preventDefault()}>
+      <div className="pageBox" style={{ width: w, height: h }}>
+        <div style={{position:'absolute', inset:0}}>
+          {/* bitmap */}
+          <div style={{position:'absolute', inset:0}} ref={(el)=>{
+            if (el && info.canvas.parentElement !== el) { el.innerHTML = ''; el.appendChild(info.canvas); }
+          }}/>
+          <div className="calib">
+            {pState?.pixelsPerFoot ? `Calibrated: ${pState.pixelsPerFoot.toFixed(2)} px/ft` : 'Not calibrated'}
           </div>
-
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:12}}>
-            <div className="card">
-              <div className="label" style={{marginBottom:6}}>Totals</div>
-              <div style={{fontSize:14}}>
-                <div><strong>Total Tags:</strong> {totalTags}</div>
-                <div><strong>Total LF:</strong> {totalLF.toFixed(2)}</div>
-              </div>
-            </div>
-            <div className="card">
-              <div className="label" style={{marginBottom:6}}>Linear Feet</div>
-              <div style={{fontSize:14}}>
-                <div>Segment: {segLF.toFixed(2)}</div>
-                <div>Polyline: {plLF.toFixed(2)}</div>
-                <div>Freeform: {ffLF.toFixed(2)}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="label" style={{marginBottom:6}}>By Code</div>
-            <div style={{maxHeight:220, overflow:'auto'}}>
-              {byCode.length === 0 ? (
-                <div style={{color:'#666', fontSize:13}}>No codes yet.</div>
-              ) : (
-                <table style={{width:'100%', borderCollapse:'collapse', fontSize:14}}>
-                  <thead>
-                    <tr style={{textAlign:'left', borderBottom:'1px solid #eee'}}>
-                      <th style={{padding:'6px 4px'}}>Code</th>
-                      <th style={{padding:'6px 4px'}}>Tag Markers</th>
-                      <th style={{padding:'6px 4px'}}>Measurements</th>
-                      <th style={{padding:'6px 4px'}}>Linear Ft</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {byCode.map(r => (
-                      <tr key={r.code} style={{borderBottom:'1px solid #f4f4f4'}}>
-                        <td style={{padding:'6px 4px', fontWeight:600}}>{r.code}</td>
-                        <td style={{padding:'6px 4px'}}>{r.tags}</td>
-                        <td style={{padding:'6px 4px'}}>{r.meas}</td>
-                        <td style={{padding:'6px 4px'}}>{r.lf.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          <Stage
+            width={w} height={h} style={{position:'absolute', inset:0}}
+            ref={stageRef}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onDblClick={onDblClick}
+            onContextMenu={(e:any)=>e.evt?.preventDefault()}
+          >
+            <Layer listening>
+              {/* objects */}
+              {pageObjects.map(obj =>
+                renderObject(
+                  obj,
+                  selectedIds.includes(obj.id),
+                  s,
+                  activePage,
+                  patchObject,
+                  colorForCode,
+                  selectOnly,
+                  deleteSelected
+                )
               )}
-            </div>
-          </div>
 
-          <Section title="Segments"  items={segments} />
-          <Section title="Polylines" items={polylines} />
-          <Section title="Freeforms" items={freeforms} />
+              {/* live preview + tooltip */}
+              {renderLive(drawingRef.current, s, cursorPageRef.current)}
+              {liveLabelRef.current && (
+                <KText x={liveLabelRef.current.x} y={liveLabelRef.current.y} text={liveLabelRef.current.text} fontSize={12} fill="#000" />
+              )}
+              <Transformer ref={trRef} rotateEnabled={true} resizeEnabled={false} />
+            </Layer>
+          </Stage>
         </div>
-      ) : (
-        <div style={{padding:'8px', color:'#666', fontSize:12}} />
-      )}
+      </div>
     </div>
   );
 }
 
-/* -------------------------------------------------------
-   App shell (sticky toolbars, quick tags, viewer)
-   Quick Tags now highlight the selected code
-------------------------------------------------------- */
-export default function App() {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [pdf, setPdf] = useState<Awaited<ReturnType<typeof loadPdf>> | null>(null);
-  const [tagsOpen, setTagsOpen] = useState(false);
-  const [bomOpen, setBomOpen] = useState(true);
+function renderObject(
+  obj: AnyTakeoffObject,
+  selected: boolean,
+  s: number,
+  pageIndex: number,
+  patchObject: (pageIndex:number, id:string, patch: Partial<AnyTakeoffObject>) => void,
+  colorForCode: (code?: string) => string,
+  selectOnly: (id:string) => void,
+  deleteSelected: (pageIndex:number) => void
+) {
+  // Common right-click deletion for all object types
+  const onCtxDelete = (e: any) => {
+    e.evt?.preventDefault?.();
+    selectOnly(obj.id);
+    deleteSelected(pageIndex);
+  };
 
-  const {
-    tool, setTool, zoom, setZoom, fileName, setFileName, setPages,
-    currentTag, setCurrentTag, activePage, setActivePage, pageCount, setPageCount,
-    pageLabels, setPageLabels, tags
-  } = useStore();
+  // ---- COUNT TAG: 20x20 square with centered code ----
+  if (obj.type === 'count') {
+    const SIZE = 20;
+    const sx = (obj as any).x * s, sy = (obj as any).y * s;
+    const code = (obj as any).code || '';
+    const fill = colorForCode(code);
+    return (
+      <Group
+        key={obj.id}
+        x={sx} y={sy}
+        name={`obj-${obj.id}`}
+        draggable
+        onContextMenu={onCtxDelete}
+        onDragEnd={(e) => {
+          const nx = e.target.x();
+          const ny = e.target.y();
+          patchObject(pageIndex, obj.id, { x: nx / s, y: ny / s } as any);
+          e.target.position({ x: nx, y: ny });
+        }}
+      >
+        <Rect
+          width={SIZE} height={SIZE}
+          offsetX={SIZE/2} offsetY={SIZE/2}
+          fill={fill}
+          stroke={selected ? '#0d6efd' : '#222'}
+          strokeWidth={selected ? 2 : 1}
+          cornerRadius={4}
+        />
+        <KText
+          text={String(code)}
+          width={SIZE} height={SIZE}
+          offsetX={SIZE/2} offsetY={SIZE/2}
+          align="center"
+          verticalAlign="middle"
+          fontStyle="bold"
+          fontSize={12}
+          fill="#fff"
+        />
+      </Group>
+    );
+  }
 
-  const openFile = useCallback(async (file: File) => {
-    const doc = await loadPdf(file);
-    setPdf(doc);
-    setFileName(file.name);
-    setPages([]);
-    setPageCount(doc.numPages);
+  if (obj.type === 'segment') {
+    const verts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s }));
+    return (
+      <Group key={obj.id} name={`obj-${obj.id}`} onContextMenu={onCtxDelete}>
+        <Circle x={verts[0].x} y={verts[0].y} radius={4} fill="red"/>
+        <Circle x={verts[1].x} y={verts[1].y} radius={4} fill="red"/>
+        <Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/>
+      </Group>
+    );
+  }
 
-    let labels: string[] = [];
-    try {
-      // @ts-ignore
-      const raw = await (doc as any).getPageLabels?.();
-      labels = raw && Array.isArray(raw)
-        ? raw.map((l: string, i: number) => l || `Page ${i+1}`)
-        : Array.from({length: doc.numPages}, (_,i)=>`Page ${i+1}`);
-    } catch {
-      labels = Array.from({length: doc.numPages}, (_,i)=>`Page ${i+1}`);
+  if (obj.type === 'polyline') {
+    const verts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s }));
+    const pts = verts.flatMap(v=>[v.x,v.y]);
+    return (
+      <Group key={obj.id} name={`obj-${obj.id}`} onContextMenu={onCtxDelete}>
+        <Circle x={verts[0].x} y={verts[0].y} radius={4} fill="red"/>
+        <Circle x={verts[verts.length-1].x} y={verts[verts.length-1].y} radius={4} fill="red"/>
+        <Line points={pts} stroke="blue" strokeWidth={2}/>
+      </Group>
+    );
+  }
+
+  if (obj.type === 'freeform') {
+    const pts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s })).flatMap(v=>[v.x,v.y]);
+    return (
+      <Group key={obj.id} name={`obj-${obj.id}`} onContextMenu={onCtxDelete}>
+        <Line points={pts} stroke="blue" strokeWidth={2}/>
+      </Group>
+    );
+  }
+  return null;
+}
+
+function renderLive(
+  dr: {type:'segment'|'polyline'|'freeform'|null; pts:{x:number;y:number}[]},
+  s: number,
+  cursorPage: {x:number;y:number} | null
+) {
+  if (!dr.type) return null;
+
+  // --- SEGMENT live preview: show blue line from first point to current cursor ---
+  if (dr.type === 'segment') {
+    if (dr.pts.length === 1 && cursorPage) {
+      const a = { x: dr.pts[0].x * s, y: dr.pts[0].y * s };
+      const b = { x: cursorPage.x * s, y: cursorPage.y * s };
+      return (
+        <Group>
+          <Circle x={a.x} y={a.y} radius={4} fill="red"/>
+          <Line points={[a.x, a.y, b.x, b.y]} stroke="blue" strokeWidth={2}/>
+        </Group>
+      );
     }
-    setPageLabels(labels);
-    setActivePage(0);
-  }, [setFileName, setPages, setPageCount, setPageLabels, setActivePage]);
-
-  function onDrop(e: React.DragEvent) {
-    e.preventDefault();
-    const f = e.dataTransfer.files?.[0];
-    if (f && f.type === 'application/pdf') openFile(f);
+    // no preview if no first point yet
+    return null;
   }
 
-  function onImport() {
-    const s = prompt('Paste JSON:'); if (!s) return;
-    try { const data = importJSON(s); useStore.getState().fromProject(data); setPdf(null); alert('Imported. Now load the corresponding PDF file.'); }
-    catch (err:any) { alert('Invalid JSON: ' + err.message); }
+  // keep existing behavior for polyline/freeform previews
+  const verts = dr.pts.map(p => ({ x: p.x * s, y: p.y * s }));
+  if (dr.type === 'polyline' && verts.length >= 1) {
+    return (
+      <Group>
+        <Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/>
+      </Group>
+    );
   }
-
-  function onExport() {
-    const data = useStore.getState().toProject();
-    const text = exportJSON(data);
-    navigator.clipboard.writeText(text);
-    alert('Copied JSON to clipboard.');
+  if (dr.type === 'freeform' && verts.length >= 1) {
+    return (
+      <Group>
+        <Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/>
+      </Group>
+    );
   }
-
-  function tryLoadSaved() {
-    const data = loadProject();
-    if (data) { useStore.getState().fromProject(data); alert('Loaded local save. Now open the matching PDF file.'); }
-    else alert('No local save found.');
-  }
-  function saveLocal() {
-    const data: ProjectSave = useStore.getState().toProject();
-    saveProject(data); alert('Saved locally.');
-  }
-
-  const labelFor = (i: number) => pageLabels[i] || `Page ${i+1}`;
-
-  return (
-    <div style={{height:'100%', display:'flex', flexDirection:'column'}} onDragOver={(e)=>e.preventDefault()} onDrop={onDrop}>
-      {/* Sticky TOP TOOLBAR */}
-      <div className="toolbar sticky-top">
-        <div className="fileRow">
-          <input ref={fileRef} type="file" accept="application/pdf" style={{display:'none'}}
-                 onChange={(e)=>{ const f = e.target.files?.[0]; if (f) openFile(f); }} />
-          <button className="btn" onClick={()=>fileRef.current?.click()}>Open PDF</button>
-          <span className="label">{fileName}</span>
-        </div>
-
-        {pageCount > 0 && (
-          <div style={{display:'flex', alignItems:'center', gap:8, marginLeft:12}}>
-            <button className="btn" onClick={()=>setActivePage(activePage-1)} disabled={activePage<=0}>◀</button>
-            <select className="btn" value={activePage} onChange={(e)=>setActivePage(parseInt(e.target.value,10))}>
-              {Array.from({length: pageCount}, (_, i) => (<option key={i} value={i}>{i+1} — {labelFor(i)}</option>))}
-            </select>
-            <button className="btn" onClick={()=>setActivePage(activePage+1)} disabled={activePage>=pageCount-1}>▶</button>
-          </div>
-        )}
-
-        <div style={{flex:1}} />
-
-        <div className="zoomBox">
-          <button className={`btn ${tool==='hand'?'active':''}`} onClick={()=>setTool('hand')}>Hand</button>
-          <button className={`btn ${tool==='count'?'active':''}`} onClick={()=>setTool('count')}>Count</button>
-          <button className={`btn ${tool==='segment'?'active':''}`} onClick={()=>setTool('segment')}>Measure</button>
-          <button className={`btn ${tool==='polyline'?'active':''}`} onClick={()=>setTool('polyline')}>Polyline</button>
-          <button className={`btn ${tool==='freeform'?'active':''}`} onClick={()=>setTool('freeform')}>Freeform</button>
-          <button className={`btn ${tool==='calibrate'?'active':''}`} onClick={()=>setTool('calibrate')}>Calibrate</button>
-          <span className="badge">Tag:</span>
-          <input value={currentTag} onChange={e=>useStore.getState().setCurrentTag(e.target.value.toUpperCase())} style={{width:60, padding:'.25rem .4rem'}} />
-          <button className="btn" onClick={()=>setZoom(zoom*0.9)}>-</button>
-          <span className="badge">{Math.round(zoom*100)}%</span>
-          <button className="btn" onClick={()=>setZoom(zoom*1.1)}>+</button>
-        </div>
-
-        <div style={{flex:1}} />
-
-        <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
-        <button className="btn" onClick={saveLocal}>Save</button>
-        <button className="btn" onClick={tryLoadSaved}>Load</button>
-        <button className="btn" onClick={onExport}>Export JSON</button>
-        <button className="btn" onClick={onImport}>Import JSON</button>
-      </div>
-
-      {/* Sticky QUICK TAGS (now highlight active selection) */}
-      <div className="quickbar sticky-under">
-        <div className="label" style={{marginRight:6}}>Quick Tags</div>
-        <div style={{display:'flex', gap:8, flexWrap:'wrap', maxHeight:48, overflow:'auto'}}>
-          {tags.map(t => {
-            const isActive = (t.code || '').toUpperCase() === (currentTag || '').toUpperCase();
-            return (
-              <button
-                key={t.id}
-                title={`${t.code} — ${t.name}`}
-                className={`btn ${isActive ? 'active' : ''}`}
-                aria-pressed={isActive}
-                onClick={()=>{
-                  // keep behavior: selecting a quick tag also sets Count tool
-                  useStore.getState().setTool('count');
-                  useStore.getState().setCurrentTag(t.code);
-                }}
-                style={{
-                  display:'flex', alignItems:'center', gap:6,
-                  boxShadow: isActive ? '0 0 0 2px #0d6efd inset' : undefined,
-                  background: isActive ? '#eef5ff' : undefined
-                }}
-              >
-                <span style={{
-                  width:20, height:20, borderRadius:4, border:'1px solid #444',
-                  background: (t.category?.toLowerCase().includes('light') ? '#FFA500' : t.color)
-                }}/>
-                <span style={{minWidth:26, textAlign:'center', fontWeight: isActive ? 700 : 500}}>
-                  {t.code}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* VIEWER + BOM */}
-      <div className="viewer">
-        <div className="sidebar" style={{ width: 300 }}>
-          <BomPanel open={true} onToggle={()=>{}} />
-        </div>
-        <PDFViewport pdf={pdf} />
-      </div>
-
-      <div className="hud">Tool: {tool} • Zoom: {Math.round(zoom*100)}% • Page {pageCount>0? (activePage+1):0}/{pageCount}</div>
-
-      <TagManager open={tagsOpen} onClose={()=>setTagsOpen(false)} />
-    </div>
-  );
+  return null;
 }
