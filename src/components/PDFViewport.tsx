@@ -59,12 +59,14 @@ export default function PDFViewport({ pdf }: Props) {
   const stageRef = useRef<Konva.Stage>(null);
   const trRef = useRef<Konva.Transformer>(null);
 
+  // drawing state
   const drawingRef = useRef<{ type:'segment'|'polyline'|'freeform'|null; pts:{x:number;y:number}[] }>({ type: null, pts: [] });
   const freeformActive = useRef<boolean>(false);
-  const liveLabelRef = useRef<{text:string;x:number;y:number}|null>(null);
 
-  // force repaint ticks (for freeform live preview)
+  // live helpers
+  const cursorPageRef = useRef<{x:number;y:number} | null>(null);
   const [, setPaintTick] = useState(0);
+  const liveLabelRef = useRef<{text:string;x:number;y:number}|null>(null);
 
   const {
     pages, upsertPage, addObject, patchObject, tool, zoom,
@@ -97,8 +99,7 @@ export default function PDFViewport({ pdf }: Props) {
   function updateLiveLabel(i: PageRenderInfo) {
     const stage = stageRef.current;
     const posStage = stage?.getPointerPosition();
-    if (!posStage) { liveLabelRef.current = null; return; }
-    if (!drawingRef.current.type) { liveLabelRef.current = null; return; }
+    if (!posStage || !drawingRef.current.type) { liveLabelRef.current = null; return; }
 
     let vertsPage = drawingRef.current.pts.slice();
     if (drawingRef.current.type === 'segment') {
@@ -109,29 +110,27 @@ export default function PDFViewport({ pdf }: Props) {
     const page = pages.find(p => p.pageIndex === activePage);
     const px = pathLength(vertsPage);
     const ft = page?.pixelsPerFoot ? (px / page.pixelsPerFoot) : 0;
-    const text = page?.pixelsPerFoot ? `${ft.toFixed(2)} ft` : '—';
+    const text = page?.pixelsPerFoot ? `${ft.toFixed(2)} ft` : `${Math.round(px)} px`;
     liveLabelRef.current = { text, x: posStage.x + 8, y: posStage.y - 12 };
   }
 
-  // commit helper attaches the active code to measurements
   function commitObject(type:'segment'|'polyline'|'freeform', vertsPage:{x:number;y:number}[]) {
     addObject(activePage, {
       id: crypto.randomUUID(),
       type,
       pageIndex: activePage,
       vertices: vertsPage,
-      code: currentTag || undefined,   // <-- tag measured lines to a code
+      code: currentTag || undefined,
     } as AnyTakeoffObject);
   }
 
-  // mouse button helpers
-  const isLeft = (e: any) => (e?.evt?.button ?? 0) === 0;
+  const isLeft  = (e: any) => (e?.evt?.button ?? 0) === 0;
   const isRight = (e: any) => (e?.evt?.button ?? 0) === 2;
 
   function onMouseDown(e: any) {
     if (!info) return;
 
-    // RIGHT-CLICK: delete clicked object and stop (no placement)
+    // Right-click: delete object under cursor
     if (isRight(e)) {
       if (e.target?.attrs?.name?.startsWith('obj-')) {
         const id = e.target.attrs.name.substring(4);
@@ -140,15 +139,13 @@ export default function PDFViewport({ pdf }: Props) {
       }
       return;
     }
-
-    // LEFT-CLICK only
     if (!isLeft(e)) return;
 
     const stage = stageRef.current!;
     const posStage = stage.getPointerPosition()!;
     const posPage = toPage(info, posStage);
+    cursorPageRef.current = posPage;
 
-    // click an object -> select only
     if (e.target?.attrs?.name?.startsWith('obj-')) {
       const id = e.target.attrs.name.substring(4);
       selectOnly(id);
@@ -174,7 +171,6 @@ export default function PDFViewport({ pdf }: Props) {
     } else if (tool === 'freeform') {
       drawingRef.current = { type: 'freeform', pts: [posPage] };
       freeformActive.current = true;
-      setPaintTick(t => t + 1);
     } else if (tool === 'calibrate') {
       const page = pages.find(p => p.pageIndex === activePage)!;
       const next = (page as any).__calibPts ? [...(page as any).__calibPts, posPage] : [posPage];
@@ -188,45 +184,52 @@ export default function PDFViewport({ pdf }: Props) {
       }
     }
     updateLiveLabel(info);
+    setPaintTick(t => t + 1);
   }
 
   function onMouseMove(e?: any) {
     if (!info) return;
 
-    // live freeform preview
-    if (tool === 'freeform' && freeformActive.current && (!e || isLeft(e))) {
-      const stage = stageRef.current!;
-      const posStage = stage.getPointerPosition()!;
-      const posPage = toPage(info, posStage);
-      drawingRef.current.pts.push(posPage);
-      setPaintTick(t => t + 1); // force repaint while dragging
+    const stage = stageRef.current!;
+    const posStage = stage.getPointerPosition();
+    if (posStage) {
+      cursorPageRef.current = toPage(info, posStage);
     }
 
+    if (tool === 'freeform' && freeformActive.current && (!e || isLeft(e))) {
+      drawingRef.current.pts.push(cursorPageRef.current!);
+    }
     updateLiveLabel(info);
+    setPaintTick(t => t + 1);
   }
 
   function onMouseUp(e?: any) {
     if (!info) return;
-    if (e && !isLeft(e)) return; // finalize only on left click
+    if (e && !isLeft(e)) return;
+    if (!drawingRef.current.type) return;
+
     const stage = stageRef.current!;
     const posStage = stage.getPointerPosition();
-    if (!posStage) return;
-    if (!drawingRef.current.type) return;
+    if (!posStage) { drawingRef.current = { type:null, pts: [] }; return; }
 
     if (drawingRef.current.type === 'segment') {
       const endPage = toPage(info, posStage);
       const pts = [...drawingRef.current.pts, endPage];
+      const px = pathLength(pts);
       drawingRef.current = { type: null, pts: [] };
-      commitObject('segment', pts);
+      cursorPageRef.current = null;
+      liveLabelRef.current = null;
+      // avoid accidental zero-length segments
+      if (px > 0.5) commitObject('segment', pts);
     } else if (drawingRef.current.type === 'polyline') {
-      // commit on double click
+      // commit on double-click
     } else if (drawingRef.current.type === 'freeform') {
       freeformActive.current = false;
       const simplified = simplifyRDP(drawingRef.current.pts, 1.5);
       drawingRef.current = { type: null, pts: [] };
       commitObject('freeform', simplified);
     }
-    liveLabelRef.current = null;
+    setPaintTick(t => t + 1);
   }
 
   function onDblClick() {
@@ -235,7 +238,9 @@ export default function PDFViewport({ pdf }: Props) {
       drawingRef.current = { type: null, pts: [] };
       commitObject('polyline', pts);
     }
+    cursorPageRef.current = null;
     liveLabelRef.current = null;
+    setPaintTick(t => t + 1);
   }
 
   // transformer binding
@@ -263,6 +268,7 @@ export default function PDFViewport({ pdf }: Props) {
         redo(activePage);
       } else if (e.key === 'Escape') {
         drawingRef.current = { type: null, pts: [] };
+        cursorPageRef.current = null;
         liveLabelRef.current = null;
       }
     }
@@ -284,7 +290,6 @@ export default function PDFViewport({ pdf }: Props) {
   const pageObjects = pState?.objects ?? [];
 
   return (
-    // NOTE: no onWheel here => wheel scrolls naturally (no zoom)
     <div className="content" onContextMenu={(e)=>e.preventDefault()}>
       <div className="pageBox" style={{ width: w, height: h }}>
         <div style={{position:'absolute', inset:0}}>
@@ -305,7 +310,7 @@ export default function PDFViewport({ pdf }: Props) {
             onContextMenu={(e:any)=>e.evt?.preventDefault()}
           >
             <Layer listening>
-              {/* objects */}
+              {/* DRAWN OBJECTS */}
               {pageObjects.map(obj =>
                 renderObject(
                   obj,
@@ -319,8 +324,8 @@ export default function PDFViewport({ pdf }: Props) {
                 )
               )}
 
-              {/* live preview + tooltip */}
-              {renderLive(drawingRef.current, s)}
+              {/* LIVE PREVIEW + TOOLTIP */}
+              {renderLive(drawingRef.current, s, cursorPageRef.current)}
               {liveLabelRef.current && (
                 <KText x={liveLabelRef.current.x} y={liveLabelRef.current.y} text={liveLabelRef.current.text} fontSize={12} fill="#000" />
               )}
@@ -333,6 +338,8 @@ export default function PDFViewport({ pdf }: Props) {
   );
 }
 
+/* --------- Renderers --------- */
+
 function renderObject(
   obj: AnyTakeoffObject,
   selected: boolean,
@@ -343,14 +350,13 @@ function renderObject(
   selectOnly: (id:string) => void,
   deleteSelected: (pageIndex:number) => void
 ) {
-  // Common right-click deletion for all object types
   const onCtxDelete = (e: any) => {
     e.evt?.preventDefault?.();
     selectOnly(obj.id);
     deleteSelected(pageIndex);
   };
 
-  // ---- COUNT TAG: 20x20 square with centered code ----
+  // 20x20 square tag with centered code
   if (obj.type === 'count') {
     const SIZE = 20;
     const sx = (obj as any).x * s, sy = (obj as any).y * s;
@@ -428,31 +434,31 @@ function renderObject(
 
 function renderLive(
   dr: {type:'segment'|'polyline'|'freeform'|null; pts:{x:number;y:number}[]},
-  s: number
+  s: number,
+  cursorPage: {x:number;y:number} | null
 ) {
   if (!dr.type) return null;
-  const verts = dr.pts.map(p => ({ x: p.x * s, y: p.y * s }));
 
-  if (dr.type === 'segment' && verts.length === 1) {
+  // Segment: live A→B line while dragging
+  if (dr.type === 'segment' && dr.pts.length === 1 && cursorPage) {
+    const a = { x: dr.pts[0].x * s, y: dr.pts[0].y * s };
+    const b = { x: cursorPage.x * s, y: cursorPage.y * s };
     return (
       <Group>
-        <Circle x={verts[0].x} y={verts[0].y} radius={4} fill="red"/>
+        <Circle x={a.x} y={a.y} radius={4} fill="red"/>
+        <Line points={[a.x, a.y, b.x, b.y]} stroke="blue" strokeWidth={2}/>
       </Group>
     );
   }
+
+  // Polyline / Freeform live trail
+  const verts = dr.pts.map(p => ({ x: p.x * s, y: p.y * s }));
   if (dr.type === 'polyline' && verts.length >= 1) {
-    return (
-      <Group>
-        <Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/>
-      </Group>
-    );
+    // show current drawn path; (optional: add cursor segment as well)
+    return <Group><Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/></Group>;
   }
   if (dr.type === 'freeform' && verts.length >= 1) {
-    return (
-      <Group>
-        <Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/>
-      </Group>
-    );
+    return <Group><Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/></Group>;
   }
   return null;
 }
