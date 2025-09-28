@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.1.13",
     "konva": "9.3.16",
     "pdfjs-dist": "4.4.168",
     "react": "18.3.1",

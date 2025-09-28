@@ -1,5 +1,5 @@
 import * as pdfjsLib from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.js?url';
+import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 // Point pdf.js at the locally bundled worker
 (pdfjsLib as any).GlobalWorkerOptions.workerSrc = workerUrl;
