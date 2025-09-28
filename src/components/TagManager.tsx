@@ -331,7 +331,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   thCat: {
     width:200, textAlign:'left', padding:'10px 6px', fontSize:12, color:'#555',
-    borderBottom:'1px solid '#eee', position:'sticky', top:0, background:'#fff'
+    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff'
   },
   thActions: {
     width:170, textAlign:'right', padding:'10px 6px', fontSize:12, color:'#555',
