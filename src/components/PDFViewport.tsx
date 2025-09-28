@@ -6,90 +6,71 @@ import Konva from 'konva';
 import { pathLength, simplifyRDP } from '@/utils/geometry';
 import type { AnyTakeoffObject } from '@/types';
 
-/**
- * We store ALL points in PAGE coordinates at pdf.js viewport scale=1.
- * Rendering applies pageScale = renderedWidth / baseWidth.
- * Pointer events convert stage <-> page using that scale.
- */
+/** All geometry saved in PAGE coords at scale=1; render maps with pageScale. */
 
 type Props = { pdf: PDFDoc | null };
 
 type PageRenderInfo = {
   pageIndex: number;
-  baseWidth: number;   // pdf viewport width at scale=1
-  baseHeight: number;  // pdf viewport height at scale=1
-  width: number;       // rendered width for current zoom
-  height: number;      // rendered height for current zoom
+  baseWidth: number;
+  baseHeight: number;
+  width: number;
+  height: number;
   canvas: HTMLCanvasElement;
 };
 
-function usePageBitmaps(pdf: PDFDoc | null, zoom: number) {
-  const [pages, setPages] = useState<PageRenderInfo[]>([]);
+function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
+  const [info, setInfo] = useState<PageRenderInfo | null>(null);
 
   useEffect(() => {
-    if (!pdf) { setPages([]); return; }
     let cancelled = false;
+    if (!pdf) { setInfo(null); return; }
     const DPR = Math.max(1, window.devicePixelRatio || 1);
 
     (async () => {
-      const out: PageRenderInfo[] = [];
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
+      const page = await pdf.getPage(pageIndex + 1);
+      const baseVp = page.getViewport({ scale: 1 });
+      const vp = page.getViewport({ scale: zoom });
 
-        // base at scale=1 (our persistent coord space)
-        const baseVp = page.getViewport({ scale: 1 });
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      canvas.width = Math.floor(vp.width * DPR);
+      canvas.height = Math.floor(vp.height * DPR);
+      canvas.style.width = `${vp.width}px`;
+      canvas.style.height = `${vp.height}px`;
 
-        // current display viewport at zoom
-        const vp = page.getViewport({ scale: zoom });
-
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d')!;
-        canvas.width = Math.floor(vp.width * DPR);
-        canvas.height = Math.floor(vp.height * DPR);
-        canvas.style.width = `${vp.width}px`;
-        canvas.style.height = `${vp.height}px`;
-
-        await page.render({
-          canvasContext: ctx,
-          viewport: page.getViewport({ scale: zoom * DPR })
-        }).promise;
-
-        if (cancelled) return;
-
-        out.push({
-          pageIndex: i - 1,
-          baseWidth: baseVp.width,
-          baseHeight: baseVp.height,
-          width: vp.width,
-          height: vp.height,
-          canvas
-        });
-      }
-      if (!cancelled) setPages(out);
+      await page.render({ canvasContext: ctx, viewport: page.getViewport({ scale: zoom * DPR }) }).promise;
+      if (cancelled) return;
+      setInfo({
+        pageIndex,
+        baseWidth: baseVp.width,
+        baseHeight: baseVp.height,
+        width: vp.width,
+        height: vp.height,
+        canvas
+      });
     })();
 
     return () => { cancelled = true; };
-  }, [pdf, zoom]);
+  }, [pdf, zoom, pageIndex]);
 
-  return pages;
+  return info;
 }
 
 export default function PDFViewport({ pdf }: Props) {
-  const stageRefs = useRef<Record<number, Konva.Stage>>({});
+  const stageRef = useRef<Konva.Stage>(null);
   const trRef = useRef<Konva.Transformer>(null);
-  const [activePage, setActivePage] = useState<number>(0);
 
-  // drawing state is kept in PAGE coords
   const drawingRef = useRef<{ type:'segment'|'polyline'|'freeform'|null; pts:{x:number;y:number}[] }>({ type: null, pts: [] });
   const freeformActive = useRef<boolean>(false);
-  const liveLabelRef = useRef<{text:string;x:number;y:number}|null>(null); // label in STAGE coords
+  const liveLabelRef = useRef<{text:string;x:number;y:number}|null>(null);
 
   const {
-    pages, upsertPage, addObject, replaceObjects, patchObject, tool, zoom, setZoom, currentTag,
-    setCalibration, selectedIds, selectOnly, clearSelection, deleteSelected, undo, redo
+    pages, upsertPage, addObject, patchObject, tool, zoom, setZoom, currentTag,
+    setCalibration, selectedIds, selectOnly, clearSelection, deleteSelected, undo, redo,
+    activePage, pageCount
   } = useStore();
 
-  // init per-page state on new pdf
   useEffect(() => {
     if (!pdf) return;
     if (pages.length === 0) {
@@ -100,62 +81,47 @@ export default function PDFViewport({ pdf }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdf]);
 
-  const bitmaps = usePageBitmaps(pdf, zoom);
+  const info = usePageBitmap(pdf, zoom, activePage);
+  const pageScale = (i: PageRenderInfo) => i.width / i.baseWidth;
 
-  const pageScale = (info: PageRenderInfo) => info.width / info.baseWidth;
+  const toStage = (i: PageRenderInfo, p:{x:number;y:number}) => ({ x: p.x * pageScale(i), y: p.y * pageScale(i) });
+  const toPage  = (i: PageRenderInfo, spt:{x:number;y:number}) => ({ x: spt.x / pageScale(i), y: spt.y / pageScale(i) });
 
-  // helpers: stage <-> page coords
-  const toStage = (info: PageRenderInfo, p:{x:number;y:number}) => {
-    const s = pageScale(info);
-    return { x: p.x * s, y: p.y * s };
-  };
-  const toPage = (info: PageRenderInfo, spt:{x:number;y:number}) => {
-    const s = pageScale(info);
-    return { x: spt.x / s, y: spt.y / s };
-  };
-
-  // zoom on wheel
   function handleWheel(e: React.WheelEvent) {
     e.preventDefault();
     const factor = e.deltaY < 0 ? 1.1 : 0.9;
     setZoom(zoom * factor);
   }
 
-  function updateLiveLabel(info: PageRenderInfo, pageIndex:number) {
-    const stage = stageRefs.current[pageIndex];
+  function updateLiveLabel(i: PageRenderInfo) {
+    const stage = stageRef.current;
     const posStage = stage?.getPointerPosition();
     if (!posStage) { liveLabelRef.current = null; return; }
     if (!drawingRef.current.type) { liveLabelRef.current = null; return; }
 
-    // Build a preview path in PAGE coords for length calc
-    let vertsPage: {x:number;y:number}[] = drawingRef.current.pts.slice();
+    let vertsPage = drawingRef.current.pts.slice();
     if (drawingRef.current.type === 'segment') {
-      if (vertsPage.length === 1) {
-        const endPage = toPage(info, posStage);
-        vertsPage = [vertsPage[0], endPage];
-      }
+      if (vertsPage.length === 1) vertsPage = [vertsPage[0], toPage(i, posStage)];
     } else if (drawingRef.current.type === 'polyline') {
-      const endPage = toPage(info, posStage);
-      vertsPage = [...vertsPage, endPage];
-    } // freeform is already page coords while dragging
-
-    const page = pages.find(p => p.pageIndex === pageIndex);
+      vertsPage = [...vertsPage, toPage(i, posStage)];
+    }
+    const page = pages.find(p => p.pageIndex === activePage);
     const px = pathLength(vertsPage);
     const ft = page?.pixelsPerFoot ? (px / page.pixelsPerFoot) : 0;
     const text = page?.pixelsPerFoot ? `${ft.toFixed(2)} ft` : '—';
     liveLabelRef.current = { text, x: posStage.x + 8, y: posStage.y - 12 };
   }
 
-  function commitObject(pageIndex:number, type:'segment'|'polyline'|'freeform', vertsPage:{x:number;y:number}[]) {
-    addObject(pageIndex, { id: crypto.randomUUID(), type, pageIndex, vertices: vertsPage });
+  function commitObject(type:'segment'|'polyline'|'freeform', vertsPage:{x:number;y:number}[]) {
+    addObject(activePage, { id: crypto.randomUUID(), type, pageIndex: activePage, vertices: vertsPage });
   }
 
-  function onStageMouseDown(info: PageRenderInfo, pageIndex: number, e: any) {
-    const stage = stageRefs.current[pageIndex];
+  function onMouseDown(e: any) {
+    if (!info) return;
+    const stage = stageRef.current!;
     const posStage = stage.getPointerPosition()!;
     const posPage = toPage(info, posStage);
 
-    // select existing
     if (e.target?.attrs?.name?.startsWith('obj-')) {
       const id = e.target.attrs.name.substring(4);
       selectOnly(id);
@@ -167,12 +133,11 @@ export default function PDFViewport({ pdf }: Props) {
     if (tool === 'hand') return;
 
     if (tool === 'count') {
-      // store in PAGE coords
-      addObject(pageIndex, {
+      addObject(activePage, {
         id: crypto.randomUUID(),
         type: 'count',
         code: currentTag,
-        pageIndex, x: posPage.x, y: posPage.y, rotation: 0
+        pageIndex: activePage, x: posPage.x, y: posPage.y, rotation: 0
       } as any);
     } else if (tool === 'segment') {
       drawingRef.current = { type: 'segment', pts: [posPage] };
@@ -183,7 +148,7 @@ export default function PDFViewport({ pdf }: Props) {
       drawingRef.current = { type: 'freeform', pts: [posPage] };
       freeformActive.current = true;
     } else if (tool === 'calibrate') {
-      const page = pages.find(p => p.pageIndex === pageIndex)!;
+      const page = pages.find(p => p.pageIndex === activePage)!;
       const next = (page.__calibPts || []).concat(posPage);
       page.__calibPts = next;
       if (next.length === 2) {
@@ -191,27 +156,29 @@ export default function PDFViewport({ pdf }: Props) {
         const input = prompt('Enter real length between points (feet):', '10');
         const feet = input ? parseFloat(input) : NaN;
         if (!isNaN(feet) && feet > 0) {
-          const ppf = px / feet; // pixels (page coords) per foot
-          setCalibration(pageIndex, ppf, 'ft');
+          const ppf = px / feet;
+          setCalibration(activePage, ppf, 'ft');
         }
         page.__calibPts = [];
       }
     }
-    updateLiveLabel(info, pageIndex);
+    updateLiveLabel(info);
   }
 
-  function onStageMouseMove(info: PageRenderInfo, pageIndex: number) {
+  function onMouseMove() {
+    if (!info) return;
     if (tool === 'freeform' && freeformActive.current) {
-      const stage = stageRefs.current[pageIndex];
+      const stage = stageRef.current!;
       const posStage = stage.getPointerPosition()!;
       const posPage = toPage(info, posStage);
       drawingRef.current.pts.push(posPage);
     }
-    updateLiveLabel(info, pageIndex);
+    updateLiveLabel(info);
   }
 
-  function onStageMouseUp(info: PageRenderInfo, pageIndex: number) {
-    const stage = stageRefs.current[pageIndex];
+  function onMouseUp() {
+    if (!info) return;
+    const stage = stageRef.current!;
     const posStage = stage.getPointerPosition();
     if (!posStage) return;
     if (!drawingRef.current.type) return;
@@ -220,32 +187,32 @@ export default function PDFViewport({ pdf }: Props) {
       const endPage = toPage(info, posStage);
       const pts = [...drawingRef.current.pts, endPage];
       drawingRef.current = { type: null, pts: [] };
-      commitObject(pageIndex, 'segment', pts);
+      commitObject('segment', pts);
     } else if (drawingRef.current.type === 'polyline') {
       // commit on dblclick
     } else if (drawingRef.current.type === 'freeform') {
       freeformActive.current = false;
       const simplified = simplifyRDP(drawingRef.current.pts, 1.5);
       drawingRef.current = { type: null, pts: [] };
-      commitObject(pageIndex, 'freeform', simplified);
+      commitObject('freeform', simplified);
     }
     liveLabelRef.current = null;
   }
 
-  function onStageDblClick(pageIndex: number) {
+  function onDblClick() {
     if (drawingRef.current.type === 'polyline') {
       const pts = drawingRef.current.pts.slice();
       drawingRef.current = { type: null, pts: [] };
-      commitObject(pageIndex, 'polyline', pts);
+      commitObject('polyline', pts);
     }
     liveLabelRef.current = null;
   }
 
-  // attach transformer to selected nodes
+  // transformer binding
   useEffect(() => {
     const tr = trRef.current;
     if (!tr) return;
-    const stage = stageRefs.current[activePage];
+    const stage = stageRef.current;
     if (!stage) return;
     const layer = stage.findOne('Layer') as Konva.Layer;
     const nodes = selectedIds
@@ -255,7 +222,7 @@ export default function PDFViewport({ pdf }: Props) {
     layer?.batchDraw();
   }, [selectedIds, activePage]);
 
-  // key shortcuts
+  // shortcuts
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Delete') {
@@ -273,64 +240,53 @@ export default function PDFViewport({ pdf }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [activePage, deleteSelected, undo, redo]);
 
+  if (!pdf || !info) {
+    return <div className="content" onWheel={handleWheel}><div style={{padding:'2rem'}}><div className="drop">Drop a PDF to begin or use the file picker.</div></div></div>;
+  }
+
+  const pState = pages.find(p => p.pageIndex === activePage);
+  const w = info.width, h = info.height;
+  const s = pageScale(info);
+  const pageObjects = pState?.objects ?? [];
+
   return (
     <div className="content" onWheel={handleWheel}>
-      {!pdf && <div style={{padding:'2rem'}}><div className="drop">Drop a PDF to begin or use the file picker.</div></div>}
-      {pdf && bitmaps.map((info) => {
-        const { pageIndex } = info;
-        const pState = pages.find(p => p.pageIndex === pageIndex);
-        const w = info.width, h = info.height;
-        const s = pageScale(info); // render scale
-        const pageObjects = pState?.objects ?? [];
-
-        return (
-          <div
-            key={pageIndex}
-            className="pageBox"
-            style={{ width: w, height: h }}
-            onMouseEnter={() => setActivePage(pageIndex)}
-          >
-            <div style={{position:'absolute', inset:0}}>
-              {/* bitmap */}
-              <div style={{position:'absolute', inset:0}} ref={(el)=>{
-                if (el && info.canvas.parentElement !== el) { el.innerHTML = ''; el.appendChild(info.canvas); }
-              }}/>
-              {/* calibration badge */}
-              <div className="calib">
-                {pState?.pixelsPerFoot ? `Calibrated: ${pState.pixelsPerFoot.toFixed(2)} px/ft` : 'Not calibrated'}
-              </div>
-              {/* overlay */}
-              <Stage
-                width={w} height={h} style={{position:'absolute', inset:0}}
-                ref={(node)=>{ if (node) stageRefs.current[pageIndex] = node }}
-                onMouseDown={(e)=>onStageMouseDown(info, pageIndex, e)}
-                onMouseMove={()=>onStageMouseMove(info, pageIndex)}
-                onMouseUp={()=>onStageMouseUp(info, pageIndex)}
-                onDblClick={()=>onStageDblClick(pageIndex)}
-              >
-                <Layer listening>
-                  {/* existing objects */}
-                  {pageObjects.map(obj =>
-                    renderObject(obj, selectedIds.includes(obj.id), s, pageIndex, patchObject)
-                  )}
-
-                  {/* live preview + tooltip */}
-                  {renderLive(drawingRef.current, info, s)}
-                  {liveLabelRef.current && (
-                    <KText x={liveLabelRef.current.x} y={liveLabelRef.current.y} text={liveLabelRef.current.text} fontSize={12} fill="#000" />
-                  )}
-                  <Transformer ref={trRef} rotateEnabled={true} resizeEnabled={false} />
-                </Layer>
-              </Stage>
-            </div>
+      <div className="pageBox" style={{ width: w, height: h }}>
+        <div style={{position:'absolute', inset:0}}>
+          {/* bitmap */}
+          <div style={{position:'absolute', inset:0}} ref={(el)=>{
+            if (el && info.canvas.parentElement !== el) { el.innerHTML = ''; el.appendChild(info.canvas); }
+          }}/>
+          <div className="calib">
+            {pState?.pixelsPerFoot ? `Calibrated: ${pState.pixelsPerFoot.toFixed(2)} px/ft` : 'Not calibrated'}
           </div>
-        );
-      })}
+          <Stage
+            width={w} height={h} style={{position:'absolute', inset:0}}
+            ref={stageRef}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onDblClick={onDblClick}
+          >
+            <Layer listening>
+              {/* objects */}
+              {pageObjects.map(obj =>
+                renderObject(obj, selectedIds.includes(obj.id), s, activePage, patchObject)
+              )}
+
+              {/* live preview + tooltip */}
+              {renderLive(drawingRef.current, s)}
+              {liveLabelRef.current && (
+                <KText x={liveLabelRef.current.x} y={liveLabelRef.current.y} text={liveLabelRef.current.text} fontSize={12} fill="#000" />
+              )}
+              <Transformer ref={trRef} rotateEnabled={true} resizeEnabled={false} />
+            </Layer>
+          </Stage>
+        </div>
+      </div>
     </div>
   );
 }
-
-/** RENDER HELPERS (apply page->stage scaling; update page coords on drag end) */
 
 function renderObject(
   obj: AnyTakeoffObject,
@@ -340,7 +296,7 @@ function renderObject(
   patchObject: (pageIndex:number, id:string, patch: Partial<AnyTakeoffObject>) => void
 ) {
   if (obj.type === 'count') {
-    const sx = obj.x * s, sy = obj.y * s;
+    const sx = (obj as any).x * s, sy = (obj as any).y * s;
     return (
       <Group
         key={obj.id}
@@ -348,11 +304,9 @@ function renderObject(
         name={`obj-${obj.id}`}
         draggable
         onDragEnd={(e) => {
-          // convert drag end STAGE position back to PAGE coords
           const nx = e.target.x() / s;
           const ny = e.target.y() / s;
           patchObject(pageIndex, obj.id, { x: nx, y: ny } as any);
-          // snap visual back to 0 (state will re-render with scaled coords)
           e.target.position({ x: nx*s, y: ny*s });
         }}
       >
@@ -398,11 +352,10 @@ function renderObject(
 
 function renderLive(
   dr: {type:'segment'|'polyline'|'freeform'|null; pts:{x:number;y:number}[]},
-  info: PageRenderInfo,
   s: number
 ) {
   if (!dr.type) return null;
-  const verts = dr.pts.map(p => ({ x: p.x * s, y: p.y * s })); // page -> stage for preview
+  const verts = dr.pts.map(p => ({ x: p.x * s, y: p.y * s }));
 
   if (dr.type === 'segment' && verts.length === 1) {
     return (
