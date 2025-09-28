@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Local Takeoff (Vite)</title>
+    <style>
+      html, body, #root { height: 100%; margin: 0; }
+      body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
+      .toolbar { display:flex; gap:.5rem; padding:.5rem; border-bottom:1px solid #ddd; align-items:center; }
+      .btn { padding:.4rem .6rem; border:1px solid #bbb; border-radius:6px; background:#fff; cursor:pointer; }
+      .btn.active { background:#efefef; }
+      .viewer { height: calc(100% - 46px); display:flex; }
+      .sidebar { width: 260px; border-right:1px solid #ddd; padding:.5rem; overflow:auto; background:#fafafa; }
+      .content { flex:1; position:relative; overflow:auto; background:#f6f7f9; }
+      .pageBox { position: relative; margin: 24px auto; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.1); }
+      .hud { position:fixed; right:12px; bottom:12px; background:#000; color:#fff; padding:.4rem .6rem; border-radius:6px; opacity:.8; font-size:12px; }
+      .badge { font-size:12px; border:1px solid #ddd; padding:.1rem .3rem; border-radius:4px; }
+      .calib { position:absolute; right:6px; top:6px; background:#fff; border:1px solid #ddd; padding:.15rem .35rem; border-radius:4px; font-size:11px;}
+      .drop { border:2px dashed #aaa; padding:10px; text-align:center; border-radius:8px; background:#fff; margin:12px; }
+      .tagPalette button { margin-right:6px; margin-bottom:6px; }
+      .fileRow { display:flex; gap:.5rem; align-items:center; margin:.25rem 0; }
+      .label { font-size:12px; color:#555; }
+      .zoomBox { display:flex; gap:.25rem; align-items:center; }
+      .sectionTitle { font-weight:600; margin:.5rem 0 .25rem; font-size:13px; }
+      ul.help { padding-left:1rem; font-size:12px; line-height:1.35; margin:.25rem 0 .75rem; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
