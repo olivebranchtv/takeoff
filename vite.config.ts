@@ -6,8 +6,5 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) }
-  },
-  optimizeDeps: {
-    include: ['pdfjs-dist/build/pdf.worker.min.js']
   }
 });
