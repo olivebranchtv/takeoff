@@ -3,13 +3,15 @@ import { useStore } from '@/state/store';
 import { loadPdf } from '@/lib/pdf';
 import PDFViewport from '@/components/PDFViewport';
 import TagManager from '@/components/TagManager';
+import BomPanel from '@/components/BomPanel';
 import { exportJSON, importJSON, loadProject, saveProject } from '@/utils/persist';
 import type { ProjectSave } from '@/types';
 
 export default function App() {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [pdf, setPdf] = useState<Awaited<ReturnType<typeof loadPdf>> | null>(null);
   const [tagsOpen, setTagsOpen] = useState(false);
+  const [bomOpen, setBomOpen] = useState(true); // collapsible BOM
 
   const {
     tool, setTool, zoom, setZoom, fileName, setFileName, setPages,
@@ -62,7 +64,6 @@ export default function App() {
     if (data) { useStore.getState().fromProject(data); alert('Loaded local save. Now open the matching PDF file.'); }
     else alert('No local save found.');
   }
-
   function saveLocal() {
     const data: ProjectSave = useStore.getState().toProject();
     saveProject(data); alert('Saved locally.');
@@ -72,12 +73,12 @@ export default function App() {
 
   return (
     <div style={{height:'100%', display:'flex', flexDirection:'column'}} onDragOver={(e)=>e.preventDefault()} onDrop={onDrop}>
-      {/* TOP TOOLBAR */}
-      <div className="toolbar">
+      {/* Sticky TOP TOOLBAR */}
+      <div className="toolbar sticky-top">
         <div className="fileRow">
-          <input ref={inputRef} type="file" accept="application/pdf" style={{display:'none'}}
+          <input ref={fileRef} type="file" accept="application/pdf" style={{display:'none'}}
                  onChange={(e)=>{ const f = e.target.files?.[0]; if (f) openFile(f); }} />
-          <button className="btn" onClick={()=>inputRef.current?.click()}>Open PDF</button>
+          <button className="btn" onClick={()=>fileRef.current?.click()}>Open PDF</button>
           <span className="label">{fileName}</span>
         </div>
 
@@ -116,8 +117,8 @@ export default function App() {
         <button className="btn" onClick={onImport}>Import JSON</button>
       </div>
 
-      {/* QUICK TAG PALETTE */}
-      <div style={{display:'flex', gap:8, alignItems:'center', padding:'6px 10px', borderBottom:'1px solid #eee'}}>
+      {/* Sticky QUICK TAGS under toolbar */}
+      <div className="quickbar sticky-under">
         <div className="label" style={{marginRight:6}}>Quick Tags</div>
         <div style={{display:'flex', gap:8, flexWrap:'wrap', maxHeight:48, overflow:'auto'}}>
           {tags.map(t => (
@@ -128,7 +129,7 @@ export default function App() {
             >
               <span style={{
                 width:20, height:20, borderRadius:4, border:'1px solid #444',
-                background: (t.category.toLowerCase().includes('light') ? '#FFA500' : t.color)
+                background: (t.category?.toLowerCase().includes('light') ? '#FFA500' : t.color)
               }}/>
               <span style={{minWidth:26, textAlign:'center'}}>{t.code}</span>
             </button>
@@ -136,27 +137,15 @@ export default function App() {
         </div>
       </div>
 
-      {/* TABS */}
-      {pageCount > 1 && (
-        <div style={{display:'flex', gap:6, overflowX:'auto', padding:'6px 8px', borderBottom:'1px solid #ddd', background:'#f9f9f9'}}>
-          {Array.from({length: pageCount}, (_, i) => (
-            <button key={i} className={`btn ${i===activePage ? 'active' : ''}`} onClick={()=>setActivePage(i)} title={`Go to ${labelFor(i)}`}>
-              {labelFor(i)}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* VIEWER */}
+      {/* VIEWER with collapsible BOM */}
       <div className="viewer">
-        <div className="sidebar">
-          <div className="label">BOM Summary</div>
-          {/* your existing summary UI stays here */}
+        <div className="sidebar" style={{ width: bomOpen ? 300 : 36 }}>
+          <BomPanel open={bomOpen} onToggle={()=>setBomOpen(v=>!v)} />
         </div>
         <PDFViewport pdf={pdf} />
       </div>
 
-      <div className="hud">Tool: {tool} • Zoom: {Math.round(zoom*100)}% • Page {activePage+1}/{pageCount}</div>
+      <div className="hud">Tool: {tool} • Zoom: {Math.round(zoom*100)}% • Page {pageCount>0? (activePage+1):0}/{pageCount}</div>
 
       <TagManager open={tagsOpen} onClose={()=>setTagsOpen(false)} />
     </div>
