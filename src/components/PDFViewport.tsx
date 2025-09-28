@@ -65,10 +65,13 @@ export default function PDFViewport({ pdf }: Props) {
   const freeformActive = useRef<boolean>(false);
   const liveLabelRef = useRef<{text:string;x:number;y:number}|null>(null);
 
+  // force repaint ticks (for freeform live preview)
+  const [, setPaintTick] = useState(0);
+
   const {
-    pages, upsertPage, addObject, patchObject, tool, zoom, setZoom, currentTag,
-    setCalibration, selectedIds, selectOnly, clearSelection, deleteSelected, undo, redo,
-    activePage, tags
+    pages, upsertPage, addObject, patchObject, tool, zoom,
+    currentTag, setCalibration, selectedIds, selectOnly, clearSelection,
+    deleteSelected, undo, redo, activePage, tags
   } = useStore();
 
   useEffect(() => {
@@ -87,17 +90,11 @@ export default function PDFViewport({ pdf }: Props) {
   const toStage = (i: PageRenderInfo, p:{x:number;y:number}) => ({ x: p.x * pageScale(i), y: p.y * pageScale(i) });
   const toPage  = (i: PageRenderInfo, spt:{x:number;y:number}) => ({ x: spt.x / pageScale(i), y: spt.y / pageScale(i) });
 
-  // color: apply "Lights => orange", otherwise tag.color, fallback gray
+  // Lights => orange; else tag.color; fallback gray
   function colorForCode(code?: string) {
     const t = tags.find(tt => tt.code.toUpperCase() === (code || '').toUpperCase());
     if (!t) return '#444';
     return (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color;
-  }
-
-  function handleWheel(e: React.WheelEvent) {
-    e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.1 : 0.9;
-    setZoom(zoom * factor);
   }
 
   function updateLiveLabel(i: PageRenderInfo) {
@@ -123,30 +120,31 @@ export default function PDFViewport({ pdf }: Props) {
     addObject(activePage, { id: crypto.randomUUID(), type, pageIndex: activePage, vertices: vertsPage });
   }
 
-  // helper: left click?
+  // mouse button helpers
   const isLeft = (e: any) => (e?.evt?.button ?? 0) === 0;
   const isRight = (e: any) => (e?.evt?.button ?? 0) === 2;
 
   function onMouseDown(e: any) {
     if (!info) return;
 
-    // Right-click: delete clicked object (if any)
+    // RIGHT-CLICK: delete clicked object and stop (no placement)
     if (isRight(e)) {
       if (e.target?.attrs?.name?.startsWith('obj-')) {
         const id = e.target.attrs.name.substring(4);
         selectOnly(id);
         deleteSelected(activePage);
       }
-      return; // do not fall through to placement
+      return;
     }
 
-    // Only left-click below
+    // LEFT-CLICK only below
     if (!isLeft(e)) return;
 
     const stage = stageRef.current!;
     const posStage = stage.getPointerPosition()!;
     const posPage = toPage(info, posStage);
 
+    // click an object -> select only
     if (e.target?.attrs?.name?.startsWith('obj-')) {
       const id = e.target.attrs.name.substring(4);
       selectOnly(id);
@@ -172,6 +170,7 @@ export default function PDFViewport({ pdf }: Props) {
     } else if (tool === 'freeform') {
       drawingRef.current = { type: 'freeform', pts: [posPage] };
       freeformActive.current = true;
+      setPaintTick(t => t + 1);
     } else if (tool === 'calibrate') {
       const page = pages.find(p => p.pageIndex === activePage)!;
       const next = (page as any).__calibPts ? [...(page as any).__calibPts, posPage] : [posPage];
@@ -180,10 +179,7 @@ export default function PDFViewport({ pdf }: Props) {
         const px = pathLength(next);
         const input = prompt('Enter real length between points (feet):', '10');
         const feet = input ? parseFloat(input) : NaN;
-        if (!isNaN(feet) && feet > 0) {
-          const ppf = px / feet;
-          setCalibration(activePage, ppf, 'ft');
-        }
+        if (!isNaN(feet) && feet > 0) setCalibration(activePage, px / feet, 'ft');
         (page as any).__calibPts = [];
       }
     }
@@ -192,18 +188,22 @@ export default function PDFViewport({ pdf }: Props) {
 
   function onMouseMove(e?: any) {
     if (!info) return;
+
+    // live freeform preview
     if (tool === 'freeform' && freeformActive.current && (!e || isLeft(e))) {
       const stage = stageRef.current!;
       const posStage = stage.getPointerPosition()!;
       const posPage = toPage(info, posStage);
       drawingRef.current.pts.push(posPage);
+      setPaintTick(t => t + 1); // force repaint while dragging
     }
+
     updateLiveLabel(info);
   }
 
   function onMouseUp(e?: any) {
     if (!info) return;
-    if (e && !isLeft(e)) return; // only finalize on left click
+    if (e && !isLeft(e)) return; // finalize only on left click
     const stage = stageRef.current!;
     const posStage = stage.getPointerPosition();
     if (!posStage) return;
@@ -215,7 +215,7 @@ export default function PDFViewport({ pdf }: Props) {
       drawingRef.current = { type: null, pts: [] };
       commitObject('segment', pts);
     } else if (drawingRef.current.type === 'polyline') {
-      // commit on dblclick
+      // commit on double click
     } else if (drawingRef.current.type === 'freeform') {
       freeformActive.current = false;
       const simplified = simplifyRDP(drawingRef.current.pts, 1.5);
@@ -267,7 +267,11 @@ export default function PDFViewport({ pdf }: Props) {
   }, [activePage, deleteSelected, undo, redo]);
 
   if (!pdf || !info) {
-    return <div className="content" onWheel={handleWheel}><div style={{padding:'2rem'}}><div className="drop">Drop a PDF to begin or use the file picker.</div></div></div>;
+    return (
+      <div className="content">
+        <div style={{padding:'2rem'}}><div className="drop">Drop a PDF to begin or use the file picker.</div></div>
+      </div>
+    );
   }
 
   const pState = pages.find(p => p.pageIndex === activePage);
@@ -276,7 +280,8 @@ export default function PDFViewport({ pdf }: Props) {
   const pageObjects = pState?.objects ?? [];
 
   return (
-    <div className="content" onWheel={handleWheel} onContextMenu={(e)=>e.preventDefault()}>
+    // NOTE: no onWheel here => wheel scrolls naturally (no zoom)
+    <div className="content" onContextMenu={(e)=>e.preventDefault()}>
       <div className="pageBox" style={{ width: w, height: h }}>
         <div style={{position:'absolute', inset:0}}>
           {/* bitmap */}
@@ -298,7 +303,16 @@ export default function PDFViewport({ pdf }: Props) {
             <Layer listening>
               {/* objects */}
               {pageObjects.map(obj =>
-                renderObject(obj, selectedIds.includes(obj.id), s, activePage, patchObject, colorForCode)
+                renderObject(
+                  obj,
+                  selectedIds.includes(obj.id),
+                  s,
+                  activePage,
+                  patchObject,
+                  colorForCode,
+                  selectOnly,
+                  deleteSelected
+                )
               )}
 
               {/* live preview + tooltip */}
@@ -321,8 +335,17 @@ function renderObject(
   s: number,
   pageIndex: number,
   patchObject: (pageIndex:number, id:string, patch: Partial<AnyTakeoffObject>) => void,
-  colorForCode: (code?: string) => string
+  colorForCode: (code?: string) => string,
+  selectOnly: (id:string) => void,
+  deleteSelected: (pageIndex:number) => void
 ) {
+  // Common right-click deletion for all object types
+  const onCtxDelete = (e: any) => {
+    e.evt?.preventDefault?.();
+    selectOnly(obj.id);
+    deleteSelected(pageIndex);
+  };
+
   // ---- COUNT TAG: 20x20 square with centered code ----
   if (obj.type === 'count') {
     const SIZE = 20;
@@ -335,6 +358,7 @@ function renderObject(
         x={sx} y={sy}
         name={`obj-${obj.id}`}
         draggable
+        onContextMenu={onCtxDelete}
         onDragEnd={(e) => {
           const nx = e.target.x();
           const ny = e.target.y();
@@ -367,7 +391,7 @@ function renderObject(
   if (obj.type === 'segment') {
     const verts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s }));
     return (
-      <Group key={obj.id} name={`obj-${obj.id}`}>
+      <Group key={obj.id} name={`obj-${obj.id}`} onContextMenu={onCtxDelete}>
         <Circle x={verts[0].x} y={verts[0].y} radius={4} fill="red"/>
         <Circle x={verts[1].x} y={verts[1].y} radius={4} fill="red"/>
         <Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/>
@@ -379,7 +403,7 @@ function renderObject(
     const verts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s }));
     const pts = verts.flatMap(v=>[v.x,v.y]);
     return (
-      <Group key={obj.id} name={`obj-${obj.id}`}>
+      <Group key={obj.id} name={`obj-${obj.id}`} onContextMenu={onCtxDelete}>
         <Circle x={verts[0].x} y={verts[0].y} radius={4} fill="red"/>
         <Circle x={verts[verts.length-1].x} y={verts[verts.length-1].y} radius={4} fill="red"/>
         <Line points={pts} stroke="blue" strokeWidth={2}/>
@@ -390,7 +414,7 @@ function renderObject(
   if (obj.type === 'freeform') {
     const pts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s })).flatMap(v=>[v.x,v.y]);
     return (
-      <Group key={obj.id} name={`obj-${obj.id}`}>
+      <Group key={obj.id} name={`obj-${obj.id}`} onContextMenu={onCtxDelete}>
         <Line points={pts} stroke="blue" strokeWidth={2}/>
       </Group>
     );
