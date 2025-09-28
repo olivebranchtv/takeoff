@@ -8,20 +8,27 @@ import type { ProjectSave, AnyTakeoffObject } from '@/types';
 import { pathLength } from '@/utils/geometry';
 
 /* -------------------------------------------------------
-   Inline BOM PANEL (detailed + per-code rollups)
+   Inline BOM PANEL (detailed + per-code rollups) WITH DELETE
 ------------------------------------------------------- */
 type BomProps = { open: boolean; onToggle: () => void };
 
 type LineRow = {
   id: string;
-  page: number;
+  pageIndex: number; // for delete/navigation
+  pageLabel: string; // display only
   code: string;
   feet: number;
   px: number;
 };
 
 function BomPanel({ open, onToggle }: BomProps) {
-  const { pages } = useStore();
+  const {
+    pages,
+    pageLabels,
+    setActivePage,
+    selectOnly,
+    deleteSelected,
+  } = useStore();
 
   const {
     segments, polylines, freeforms,
@@ -56,9 +63,10 @@ function BomPanel({ open, onToggle }: BomProps) {
         const verts = (obj as AnyTakeoffObject).vertices ?? [];
         const lenPx = pathLength(verts);
         const lf = ppf && ppf > 0 ? lenPx / ppf : 0;
-        const rec: LineRow = {
+        const row: LineRow = {
           id: obj.id,
-          page: obj.pageIndex + 1,
+          pageIndex: obj.pageIndex,
+          pageLabel: (pageLabels[obj.pageIndex] || `Page ${obj.pageIndex + 1}`),
           code: (obj as any).code || '',
           feet: lf,
           px: lenPx
@@ -66,13 +74,13 @@ function BomPanel({ open, onToggle }: BomProps) {
 
         if (obj.type === 'segment') {
           segLF += lf;
-          segments.push(rec);
+          segments.push(row);
         } else if (obj.type === 'polyline') {
           plLF += lf;
-          polylines.push(rec);
+          polylines.push(row);
         } else if (obj.type === 'freeform') {
           ffLF += lf;
-          freeforms.push(rec);
+          freeforms.push(row);
         }
 
         // roll up linear ft by code (if tagged)
@@ -85,8 +93,8 @@ function BomPanel({ open, onToggle }: BomProps) {
       }
     }
 
-    // sort each list by page then code
-    const byPageCode = (a:LineRow,b:LineRow)=>(a.page-b.page)||a.code.localeCompare(b.code);
+    // sort by page then code
+    const byPageCode = (a:LineRow,b:LineRow)=>(a.pageIndex-b.pageIndex)||a.code.localeCompare(b.code);
     segments.sort(byPageCode);
     polylines.sort(byPageCode);
     freeforms.sort(byPageCode);
@@ -100,7 +108,7 @@ function BomPanel({ open, onToggle }: BomProps) {
       calibratedPages,
       totalPages: pages.length
     };
-  }, [pages]);
+  }, [pages, pageLabels]);
 
   function exportCSV() {
     const rows: string[][] = [];
@@ -118,7 +126,7 @@ function BomPanel({ open, onToggle }: BomProps) {
 
     const pushList = (title: string, list: LineRow[]) => {
       rows.push([title,'Page','Code','Feet','Pixels']);
-      for (const r of list) rows.push(['', String(r.page), r.code, r.feet.toFixed(2), String(Math.round(r.px))]);
+      for (const r of list) rows.push(['', r.pageLabel, r.code, r.feet.toFixed(2), String(Math.round(r.px))]);
       rows.push([]);
     };
     pushList('Segments', segments);
@@ -147,15 +155,37 @@ function BomPanel({ open, onToggle }: BomProps) {
                 <th style={{padding:'6px 4px'}}>Code</th>
                 <th style={{padding:'6px 4px'}}>Feet</th>
                 <th style={{padding:'6px 4px'}}>Pixels</th>
+                <th style={{padding:'6px 4px'}}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {items.map(r => (
                 <tr key={r.id} style={{borderBottom:'1px solid #f4f4f4'}}>
-                  <td style={{padding:'6px 4px'}}>{r.page}</td>
+                  <td style={{padding:'6px 4px'}}>{r.pageLabel}</td>
                   <td style={{padding:'6px 4px', fontWeight:600}}>{r.code}</td>
                   <td style={{padding:'6px 4px'}}>{r.feet ? r.feet.toFixed(2) : '—'}</td>
                   <td style={{padding:'6px 4px'}}>{Math.round(r.px)}</td>
+                  <td style={{padding:'6px 4px', whiteSpace:'nowrap'}}>
+                    <button
+                      className="btn"
+                      title="Go to page"
+                      onClick={()=>setActivePage(r.pageIndex)}
+                      style={{marginRight:6}}
+                    >
+                      Go
+                    </button>
+                    <button
+                      className="btn"
+                      title="Delete measurement"
+                      onClick={()=>{
+                        // select then delete to reuse store logic
+                        selectOnly(r.id);
+                        deleteSelected(r.pageIndex);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -244,7 +274,7 @@ function BomPanel({ open, onToggle }: BomProps) {
 }
 
 /* -------------------------------------------------------
-   App shell (unchanged UI: sticky toolbars, quick tags, etc.)
+   App shell (sticky toolbars, quick tags, viewer)
 ------------------------------------------------------- */
 export default function App() {
   const fileRef = useRef<HTMLInputElement>(null);
