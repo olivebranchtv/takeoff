@@ -127,11 +127,28 @@ export default function PDFViewport({ pdf }: Props) {
   const isLeft  = (e: any) => (e?.evt?.button ?? 0) === 0;
   const isRight = (e: any) => (e?.evt?.button ?? 0) === 2;
 
+  function finishPolylineIfDrawing() {
+    if (drawingRef.current.type === 'polyline' && drawingRef.current.pts.length > 1) {
+      const pts = drawingRef.current.pts.slice();
+      drawingRef.current = { type: null, pts: [] };
+      cursorPageRef.current = null;
+      liveLabelRef.current = null;
+      commitObject('polyline', pts);
+      setPaintTick(t => t + 1);
+      return true;
+    }
+    return false;
+  }
+
   function onMouseDown(e: any) {
     if (!info) return;
 
-    // Right-click: delete object under cursor
+    // Right-click:
     if (isRight(e)) {
+      // If we're actively drawing a polyline, treat right-click as "finish"
+      if (finishPolylineIfDrawing()) return;
+
+      // Otherwise right-click deletes object under cursor
       if (e.target?.attrs?.name?.startsWith('obj-')) {
         const id = e.target.attrs.name.substring(4);
         selectOnly(id);
@@ -219,10 +236,9 @@ export default function PDFViewport({ pdf }: Props) {
       drawingRef.current = { type: null, pts: [] };
       cursorPageRef.current = null;
       liveLabelRef.current = null;
-      // avoid accidental zero-length segments
       if (px > 0.5) commitObject('segment', pts);
     } else if (drawingRef.current.type === 'polyline') {
-      // commit on double-click
+      // keep drawing; commit via dbl-click / Enter / right-click (handled elsewhere)
     } else if (drawingRef.current.type === 'freeform') {
       freeformActive.current = false;
       const simplified = simplifyRDP(drawingRef.current.pts, 1.5);
@@ -233,14 +249,8 @@ export default function PDFViewport({ pdf }: Props) {
   }
 
   function onDblClick() {
-    if (drawingRef.current.type === 'polyline') {
-      const pts = drawingRef.current.pts.slice();
-      drawingRef.current = { type: null, pts: [] };
-      commitObject('polyline', pts);
-    }
-    cursorPageRef.current = null;
-    liveLabelRef.current = null;
-    setPaintTick(t => t + 1);
+    // Finish polyline on double-click
+    finishPolylineIfDrawing();
   }
 
   // transformer binding
@@ -257,7 +267,7 @@ export default function PDFViewport({ pdf }: Props) {
     layer?.batchDraw();
   }, [selectedIds, activePage]);
 
-  // shortcuts
+  // shortcuts (delete, undo/redo, Escape, Enter to finish polyline)
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Delete') {
@@ -270,6 +280,9 @@ export default function PDFViewport({ pdf }: Props) {
         drawingRef.current = { type: null, pts: [] };
         cursorPageRef.current = null;
         liveLabelRef.current = null;
+      } else if (e.key === 'Enter') {
+        // Finish polyline with Enter
+        finishPolylineIfDrawing();
       }
     }
     window.addEventListener('keydown', onKey);
@@ -345,7 +358,7 @@ function halfPoint(pts: {x:number;y:number}[]) {
   if (pts.length === 2) {
     return { x: (pts[0].x + pts[1].x)/2, y: (pts[0].y + pts[1].y)/2 };
   }
-  // polyline: walk to half total length
+  // polyline: find half total length
   let total = 0;
   for (let i=1;i<pts.length;i++) {
     const dx = pts[i].x - pts[i-1].x, dy = pts[i].y - pts[i-1].y;
@@ -383,7 +396,7 @@ function renderObject(
     deleteSelected(pageIndex);
   };
 
-  // 20x20 square tag with centered code
+  // 20x20 square code tag
   if (obj.type === 'count') {
     const SIZE = 20;
     const sx = (obj as any).x * s, sy = (obj as any).y * s;
@@ -403,29 +416,14 @@ function renderObject(
           e.target.position({ x: nx, y: ny });
         }}
       >
-        <Rect
-          width={SIZE} height={SIZE}
-          offsetX={SIZE/2} offsetY={SIZE/2}
-          fill={fill}
-          stroke={selected ? '#0d6efd' : '#222'}
-          strokeWidth={selected ? 2 : 1}
-          cornerRadius={4}
-        />
-        <KText
-          text={String(code)}
-          width={SIZE} height={SIZE}
-          offsetX={SIZE/2} offsetY={SIZE/2}
-          align="center"
-          verticalAlign="middle"
-          fontStyle="bold"
-          fontSize={12}
-          fill="#fff"
-        />
+        <Rect width={20} height={20} offsetX={10} offsetY={10}
+          fill={fill} stroke={selected ? '#0d6efd' : '#222'} strokeWidth={selected ? 2 : 1} cornerRadius={4}/>
+        <KText text={String(code)} width={20} height={20} offsetX={10} offsetY={10}
+          align="center" verticalAlign="middle" fontStyle="bold" fontSize={12} fill="#fff"/>
       </Group>
     );
   }
 
-  // measurement label badge helper
   const SIZE = 20;
   const code = (obj as any).code || '';
   const fill = colorForCode(code);
@@ -438,25 +436,10 @@ function renderObject(
         <Circle x={verts[0].x} y={verts[0].y} radius={4} fill="red"/>
         <Circle x={verts[1].x} y={verts[1].y} radius={4} fill="red"/>
         <Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/>
-        {/* centered code badge */}
         <Group x={mid.x} y={mid.y}>
-          <Rect
-            width={SIZE} height={SIZE}
-            offsetX={SIZE/2} offsetY={SIZE/2}
-            fill={fill}
-            stroke="#222"
-            cornerRadius={4}
-          />
-          <KText
-            text={String(code)}
-            width={SIZE} height={SIZE}
-            offsetX={SIZE/2} offsetY={SIZE/2}
-            align="center"
-            verticalAlign="middle"
-            fontStyle="bold"
-            fontSize={12}
-            fill="#fff"
-          />
+          <Rect width={SIZE} height={SIZE} offsetX={SIZE/2} offsetY={SIZE/2} fill={fill} stroke="#222" cornerRadius={4}/>
+          <KText text={String(code)} width={SIZE} height={SIZE} offsetX={SIZE/2} offsetY={SIZE/2}
+            align="center" verticalAlign="middle" fontStyle="bold" fontSize={12} fill="#fff"/>
         </Group>
       </Group>
     );
@@ -471,25 +454,10 @@ function renderObject(
         <Circle x={verts[0].x} y={verts[0].y} radius={4} fill="red"/>
         <Circle x={verts[verts.length-1].x} y={verts[verts.length-1].y} radius={4} fill="red"/>
         <Line points={pts} stroke="blue" strokeWidth={2}/>
-        {/* centered code badge */}
         <Group x={mid.x} y={mid.y}>
-          <Rect
-            width={SIZE} height={SIZE}
-            offsetX={SIZE/2} offsetY={SIZE/2}
-            fill={fill}
-            stroke="#222"
-            cornerRadius={4}
-          />
-          <KText
-            text={String(code)}
-            width={SIZE} height={SIZE}
-            offsetX={SIZE/2} offsetY={SIZE/2}
-            align="center"
-            verticalAlign="middle"
-            fontStyle="bold"
-            fontSize={12}
-            fill="#fff"
-          />
+          <Rect width={SIZE} height={SIZE} offsetX={SIZE/2} offsetY={SIZE/2} fill={fill} stroke="#222" cornerRadius={4}/>
+          <KText text={String(code)} width={SIZE} height={SIZE} offsetX={SIZE/2} offsetY={SIZE/2}
+            align="center" verticalAlign="middle" fontStyle="bold" fontSize={12} fill="#fff"/>
         </Group>
       </Group>
     );
@@ -502,26 +470,11 @@ function renderObject(
     return (
       <Group key={obj.id} name={`obj-${obj.id}`} onContextMenu={onCtxDelete}>
         <Line points={pts} stroke="blue" strokeWidth={2}/>
-        {/* centered code badge (if a code was assigned) */}
         {code ? (
           <Group x={mid.x} y={mid.y}>
-            <Rect
-              width={SIZE} height={SIZE}
-              offsetX={SIZE/2} offsetY={SIZE/2}
-              fill={fill}
-              stroke="#222"
-              cornerRadius={4}
-            />
-            <KText
-              text={String(code)}
-              width={SIZE} height={SIZE}
-              offsetX={SIZE/2} offsetY={SIZE/2}
-              align="center"
-              verticalAlign="middle"
-              fontStyle="bold"
-              fontSize={12}
-              fill="#fff"
-            />
+            <Rect width={SIZE} height={SIZE} offsetX={SIZE/2} offsetY={SIZE/2} fill={fill} stroke="#222" cornerRadius={4}/>
+            <KText text={String(code)} width={SIZE} height={SIZE} offsetX={SIZE/2} offsetY={SIZE/2}
+              align="center" verticalAlign="middle" fontStyle="bold" fontSize={12} fill="#fff"/>
           </Group>
         ) : null}
       </Group>
@@ -537,7 +490,6 @@ function renderLive(
 ) {
   if (!dr.type) return null;
 
-  // Segment: live A→B line while dragging
   if (dr.type === 'segment' && dr.pts.length === 1 && cursorPage) {
     const a = { x: dr.pts[0].x * s, y: dr.pts[0].y * s };
     const b = { x: cursorPage.x * s, y: cursorPage.y * s };
@@ -549,13 +501,15 @@ function renderLive(
     );
   }
 
-  // Polyline / Freeform live trail
+  // Polyline / Freeform live trail (show current drawn path; optional: add last segment to cursor)
   const verts = dr.pts.map(p => ({ x: p.x * s, y: p.y * s }));
-  if (dr.type === 'polyline' && verts.length >= 1) {
-    return <Group><Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/></Group>;
+  const base = verts.flatMap(v=>[v.x,v.y]);
+  if (dr.type === 'polyline') {
+    const points = cursorPage ? [...base, cursorPage.x * s, cursorPage.y * s] : base;
+    return <Group><Line points={points} stroke="blue" strokeWidth={2}/></Group>;
   }
   if (dr.type === 'freeform' && verts.length >= 1) {
-    return <Group><Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/></Group>;
+    return <Group><Line points={base} stroke="blue" strokeWidth={2}/></Group>;
   }
   return null;
 }
