@@ -68,7 +68,7 @@ export default function PDFViewport({ pdf }: Props) {
   const {
     pages, upsertPage, addObject, patchObject, tool, zoom, setZoom, currentTag,
     setCalibration, selectedIds, selectOnly, clearSelection, deleteSelected, undo, redo,
-    activePage, pageCount, tags
+    activePage, tags
   } = useStore();
 
   useEffect(() => {
@@ -123,8 +123,26 @@ export default function PDFViewport({ pdf }: Props) {
     addObject(activePage, { id: crypto.randomUUID(), type, pageIndex: activePage, vertices: vertsPage });
   }
 
+  // helper: left click?
+  const isLeft = (e: any) => (e?.evt?.button ?? 0) === 0;
+  const isRight = (e: any) => (e?.evt?.button ?? 0) === 2;
+
   function onMouseDown(e: any) {
     if (!info) return;
+
+    // Right-click: delete clicked object (if any)
+    if (isRight(e)) {
+      if (e.target?.attrs?.name?.startsWith('obj-')) {
+        const id = e.target.attrs.name.substring(4);
+        selectOnly(id);
+        deleteSelected(activePage);
+      }
+      return; // do not fall through to placement
+    }
+
+    // Only left-click below
+    if (!isLeft(e)) return;
+
     const stage = stageRef.current!;
     const posStage = stage.getPointerPosition()!;
     const posPage = toPage(info, posStage);
@@ -172,9 +190,9 @@ export default function PDFViewport({ pdf }: Props) {
     updateLiveLabel(info);
   }
 
-  function onMouseMove() {
+  function onMouseMove(e?: any) {
     if (!info) return;
-    if (tool === 'freeform' && freeformActive.current) {
+    if (tool === 'freeform' && freeformActive.current && (!e || isLeft(e))) {
       const stage = stageRef.current!;
       const posStage = stage.getPointerPosition()!;
       const posPage = toPage(info, posStage);
@@ -183,8 +201,9 @@ export default function PDFViewport({ pdf }: Props) {
     updateLiveLabel(info);
   }
 
-  function onMouseUp() {
+  function onMouseUp(e?: any) {
     if (!info) return;
+    if (e && !isLeft(e)) return; // only finalize on left click
     const stage = stageRef.current!;
     const posStage = stage.getPointerPosition();
     if (!posStage) return;
@@ -257,7 +276,7 @@ export default function PDFViewport({ pdf }: Props) {
   const pageObjects = pState?.objects ?? [];
 
   return (
-    <div className="content" onWheel={handleWheel}>
+    <div className="content" onWheel={handleWheel} onContextMenu={(e)=>e.preventDefault()}>
       <div className="pageBox" style={{ width: w, height: h }}>
         <div style={{position:'absolute', inset:0}}>
           {/* bitmap */}
@@ -274,6 +293,7 @@ export default function PDFViewport({ pdf }: Props) {
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
             onDblClick={onDblClick}
+            onContextMenu={(e:any)=>e.evt?.preventDefault()}
           >
             <Layer listening>
               {/* objects */}
@@ -305,7 +325,7 @@ function renderObject(
 ) {
   // ---- COUNT TAG: 20x20 square with centered code ----
   if (obj.type === 'count') {
-    const SIZE = 20;                 // screen pixels (constant size)
+    const SIZE = 20;
     const sx = (obj as any).x * s, sy = (obj as any).y * s;
     const code = (obj as any).code || '';
     const fill = colorForCode(code);
@@ -318,7 +338,6 @@ function renderObject(
         onDragEnd={(e) => {
           const nx = e.target.x();
           const ny = e.target.y();
-          // convert back to page coords
           patchObject(pageIndex, obj.id, { x: nx / s, y: ny / s } as any);
           e.target.position({ x: nx, y: ny });
         }}
@@ -345,7 +364,6 @@ function renderObject(
     );
   }
 
-  // ---- SEGMENT ----
   if (obj.type === 'segment') {
     const verts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s }));
     return (
@@ -357,7 +375,6 @@ function renderObject(
     );
   }
 
-  // ---- POLYLINE ----
   if (obj.type === 'polyline') {
     const verts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s }));
     const pts = verts.flatMap(v=>[v.x,v.y]);
@@ -370,7 +387,6 @@ function renderObject(
     );
   }
 
-  // ---- FREEFORM ----
   if (obj.type === 'freeform') {
     const pts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s })).flatMap(v=>[v.x,v.y]);
     return (
