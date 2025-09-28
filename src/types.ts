@@ -1,46 +1,26 @@
-export type Tool = 'hand' | 'count' | 'segment' | 'polyline' | 'freeform' | 'calibrate';
-
-export type Unit = 'ft' | 'm';
-
-export type Point = { x: number; y: number };
-
-export type Tag = {
-  id: string;
-  code: string;      // short code: A, A1, EM, GFCI...
-  name: string;      // human name
-  category: string;  // e.g., "Lights", "Switch", "Receptacle", ...
-  color: string;     // hex color like "#FF8000"
-};
+// src/types.ts
+export type XY = { x: number; y: number };
 
 export type CountObject = {
   id: string;
   type: 'count';
   pageIndex: number;
-  x: number; y: number;
+  x: number;
+  y: number;
   rotation: number;
-  code: string;      // links to Tag.code
+  code: string; // required for counts
 };
 
-export type SegmentObject = {
+type LineLikeBase = {
   id: string;
-  type: 'segment';
   pageIndex: number;
-  vertices: Point[]; // PAGE coords
+  vertices: XY[];
+  code?: string; // <-- allow tagging line-like measurements to a code
 };
 
-export type PolylineObject = {
-  id: string;
-  type: 'polyline';
-  pageIndex: number;
-  vertices: Point[]; // PAGE coords
-};
-
-export type FreeformObject = {
-  id: string;
-  type: 'freeform';
-  pageIndex: number;
-  vertices: Point[]; // PAGE coords
-};
+export type SegmentObject  = LineLikeBase & { type: 'segment'  };
+export type PolylineObject = LineLikeBase & { type: 'polyline' };
+export type FreeformObject = LineLikeBase & { type: 'freeform' };
 
 export type AnyTakeoffObject =
   | CountObject
@@ -48,17 +28,14 @@ export type AnyTakeoffObject =
   | PolylineObject
   | FreeformObject;
 
-export type PageState = {
-  pageIndex: number;
-  objects: AnyTakeoffObject[];
-  pixelsPerFoot?: number;
-  unit: Unit;
-  // internal temp storage for calibration clicks
-  __calibPts?: Point[];
-};
-
+// Project save/load (keep whatever else you already had, this is minimal)
 export type ProjectSave = {
-  fileName: string;
-  pages: PageState[];
-  tags: Tag[];
+  fileName?: string;
+  pages: Array<{
+    pageIndex: number;
+    pixelsPerFoot?: number;
+    unit?: 'ft';
+    objects: AnyTakeoffObject[];
+  }>;
+  tags: Array<{ id: string; code: string; name: string; color: string; category?: string }>;
 };
