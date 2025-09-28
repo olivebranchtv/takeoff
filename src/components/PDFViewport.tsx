@@ -338,6 +338,33 @@ export default function PDFViewport({ pdf }: Props) {
   );
 }
 
+/* --------- helpers to place a badge at the half-length point --------- */
+function halfPoint(pts: {x:number;y:number}[]) {
+  if (pts.length === 0) return { x: 0, y: 0 };
+  if (pts.length === 1) return { x: pts[0].x, y: pts[0].y };
+  if (pts.length === 2) {
+    return { x: (pts[0].x + pts[1].x)/2, y: (pts[0].y + pts[1].y)/2 };
+  }
+  // polyline: walk to half total length
+  let total = 0;
+  for (let i=1;i<pts.length;i++) {
+    const dx = pts[i].x - pts[i-1].x, dy = pts[i].y - pts[i-1].y;
+    total += Math.hypot(dx, dy);
+  }
+  const target = total / 2;
+  let acc = 0;
+  for (let i=1;i<pts.length;i++) {
+    const a = pts[i-1], b = pts[i];
+    const seg = Math.hypot(b.x-a.x, b.y-a.y);
+    if (acc + seg >= target) {
+      const t = (target - acc) / seg;
+      return { x: a.x + t*(b.x-a.x), y: a.y + t*(b.y-a.y) };
+    }
+    acc += seg;
+  }
+  return pts[Math.floor(pts.length/2)];
+}
+
 /* --------- Renderers --------- */
 
 function renderObject(
@@ -398,13 +425,39 @@ function renderObject(
     );
   }
 
+  // measurement label badge helper
+  const SIZE = 20;
+  const code = (obj as any).code || '';
+  const fill = colorForCode(code);
+
   if (obj.type === 'segment') {
     const verts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s }));
+    const mid = halfPoint(verts);
     return (
       <Group key={obj.id} name={`obj-${obj.id}`} onContextMenu={onCtxDelete}>
         <Circle x={verts[0].x} y={verts[0].y} radius={4} fill="red"/>
         <Circle x={verts[1].x} y={verts[1].y} radius={4} fill="red"/>
         <Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/>
+        {/* centered code badge */}
+        <Group x={mid.x} y={mid.y}>
+          <Rect
+            width={SIZE} height={SIZE}
+            offsetX={SIZE/2} offsetY={SIZE/2}
+            fill={fill}
+            stroke="#222"
+            cornerRadius={4}
+          />
+          <KText
+            text={String(code)}
+            width={SIZE} height={SIZE}
+            offsetX={SIZE/2} offsetY={SIZE/2}
+            align="center"
+            verticalAlign="middle"
+            fontStyle="bold"
+            fontSize={12}
+            fill="#fff"
+          />
+        </Group>
       </Group>
     );
   }
@@ -412,20 +465,65 @@ function renderObject(
   if (obj.type === 'polyline') {
     const verts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s }));
     const pts = verts.flatMap(v=>[v.x,v.y]);
+    const mid = halfPoint(verts);
     return (
       <Group key={obj.id} name={`obj-${obj.id}`} onContextMenu={onCtxDelete}>
         <Circle x={verts[0].x} y={verts[0].y} radius={4} fill="red"/>
         <Circle x={verts[verts.length-1].x} y={verts[verts.length-1].y} radius={4} fill="red"/>
         <Line points={pts} stroke="blue" strokeWidth={2}/>
+        {/* centered code badge */}
+        <Group x={mid.x} y={mid.y}>
+          <Rect
+            width={SIZE} height={SIZE}
+            offsetX={SIZE/2} offsetY={SIZE/2}
+            fill={fill}
+            stroke="#222"
+            cornerRadius={4}
+          />
+          <KText
+            text={String(code)}
+            width={SIZE} height={SIZE}
+            offsetX={SIZE/2} offsetY={SIZE/2}
+            align="center"
+            verticalAlign="middle"
+            fontStyle="bold"
+            fontSize={12}
+            fill="#fff"
+          />
+        </Group>
       </Group>
     );
   }
 
   if (obj.type === 'freeform') {
-    const pts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s })).flatMap(v=>[v.x,v.y]);
+    const verts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s }));
+    const pts = verts.flatMap(v=>[v.x,v.y]);
+    const mid = halfPoint(verts);
     return (
       <Group key={obj.id} name={`obj-${obj.id}`} onContextMenu={onCtxDelete}>
         <Line points={pts} stroke="blue" strokeWidth={2}/>
+        {/* centered code badge (if a code was assigned) */}
+        {code ? (
+          <Group x={mid.x} y={mid.y}>
+            <Rect
+              width={SIZE} height={SIZE}
+              offsetX={SIZE/2} offsetY={SIZE/2}
+              fill={fill}
+              stroke="#222"
+              cornerRadius={4}
+            />
+            <KText
+              text={String(code)}
+              width={SIZE} height={SIZE}
+              offsetX={SIZE/2} offsetY={SIZE/2}
+              align="center"
+              verticalAlign="middle"
+              fontStyle="bold"
+              fontSize={12}
+              fill="#fff"
+            />
+          </Group>
+        ) : null}
       </Group>
     );
   }
@@ -454,7 +552,6 @@ function renderLive(
   // Polyline / Freeform live trail
   const verts = dr.pts.map(p => ({ x: p.x * s, y: p.y * s }));
   if (dr.type === 'polyline' && verts.length >= 1) {
-    // show current drawn path; (optional: add cursor segment as well)
     return <Group><Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/></Group>;
   }
   if (dr.type === 'freeform' && verts.length >= 1) {
