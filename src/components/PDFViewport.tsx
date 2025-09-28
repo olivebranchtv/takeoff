@@ -6,8 +6,6 @@ import Konva from 'konva';
 import { pathLength, simplifyRDP } from '@/utils/geometry';
 import type { AnyTakeoffObject } from '@/types';
 
-/** All geometry saved in PAGE coords at scale=1; render maps with pageScale. */
-
 type Props = { pdf: PDFDoc | null };
 
 type PageRenderInfo = {
@@ -90,7 +88,6 @@ export default function PDFViewport({ pdf }: Props) {
   const toStage = (i: PageRenderInfo, p:{x:number;y:number}) => ({ x: p.x * pageScale(i), y: p.y * pageScale(i) });
   const toPage  = (i: PageRenderInfo, spt:{x:number;y:number}) => ({ x: spt.x / pageScale(i), y: spt.y / pageScale(i) });
 
-  // Lights => orange; else tag.color; fallback gray
   function colorForCode(code?: string) {
     const t = tags.find(tt => tt.code.toUpperCase() === (code || '').toUpperCase());
     if (!t) return '#444';
@@ -116,8 +113,15 @@ export default function PDFViewport({ pdf }: Props) {
     liveLabelRef.current = { text, x: posStage.x + 8, y: posStage.y - 12 };
   }
 
+  // commit helper attaches the active code to measurements
   function commitObject(type:'segment'|'polyline'|'freeform', vertsPage:{x:number;y:number}[]) {
-    addObject(activePage, { id: crypto.randomUUID(), type, pageIndex: activePage, vertices: vertsPage });
+    addObject(activePage, {
+      id: crypto.randomUUID(),
+      type,
+      pageIndex: activePage,
+      vertices: vertsPage,
+      code: currentTag || undefined,   // <-- tag measured lines to a code
+    } as AnyTakeoffObject);
   }
 
   // mouse button helpers
@@ -137,7 +141,7 @@ export default function PDFViewport({ pdf }: Props) {
       return;
     }
 
-    // LEFT-CLICK only below
+    // LEFT-CLICK only
     if (!isLeft(e)) return;
 
     const stage = stageRef.current!;
