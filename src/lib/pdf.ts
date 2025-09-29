@@ -1,23 +1,28 @@
 // src/lib/pdf.ts
 /**
  * Minimal, worker-free PDF.js setup that plays nicely with Vite.
- * No CDN, no worker files, no terser required.
+ * No CDN, no worker files, no external dependencies.
  */
 
 import { getDocument, GlobalWorkerOptions, version } from 'pdfjs-dist/build/pdf.mjs';
 
 export type PDFDoc = any;
 
-// Disable worker to avoid CORS issues in browser environments
+// Completely disable worker to avoid all CORS and network issues
 GlobalWorkerOptions.workerSrc = '';
 
-// Common flags to avoid eval and streaming fetch in locked-down environments.
+// Force all operations to run in main thread without any worker or external fetching
 const COMMON_DOC_OPTS = {
   disableWorker: true,
   isEvalSupported: false,
   useWorkerFetch: false,
-  disableRange: false,
-  disableStream: false,
+  disableRange: true,
+  disableStream: true,
+  disableAutoFetch: true,
+  disableFontFace: false,
+  standardFontDataUrl: undefined,
+  cMapUrl: undefined,
+  cMapPacked: false,
 };
 
 /** Load a PDF from raw bytes. Accepts ArrayBuffer, Uint8Array, or number[]. */
