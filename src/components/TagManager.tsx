@@ -14,6 +14,29 @@ type Draft = Omit<Tag, 'id'>;
 
 const emptyDraft: Draft = { code: '', name: '', category: '', color: '#FFA500' };
 
+/** Category sort priority, then everything else alphabetically */
+const MASTER_CATEGORY_ORDER = [
+  'Lights',
+  'Receptacles',
+  'Switches',
+  'Stub-Ups',
+  'Fire Alarm',
+  'Breakers',
+  'Panels',
+  'Disconnects',
+  'Raceways & Pathways',
+  'Conductors & Feeders',
+  'Data/Communications',
+  'Security',
+  'AV / Sound',
+  'BAS/Controls',
+  'Site Power',
+  'Demolition / Temporary',
+  'Miscellaneous',
+];
+
+const CUSTOM_CAT_VALUE = '__CUSTOM__';
+
 export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const store = useStore() as any;
   const { tags, palette, addTag, updateTag, deleteTag, importTags, exportTags } = store;
@@ -22,6 +45,8 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [editId, setEditId] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
+  const [catSelect, setCatSelect] = useState<string>(''); // dropdown value
+  const [customCategory, setCustomCategory] = useState<string>(''); // for “Custom…”
   const fileRef = useRef<HTMLInputElement>(null);
 
   const editorCardRef = useRef<HTMLDivElement>(null);
@@ -33,30 +58,76 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       setDraft(emptyDraft);
       setEditId(null);
       setError('');
+      setCatSelect('');
+      setCustomCategory('');
     }
   }, [open]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list = [...tags].sort(
-      (a: Tag, b: Tag) =>
-        (a.category || '').localeCompare(b.category || '') || a.code.localeCompare(b.code)
-    );
-    if (!q) return list;
-    return list.filter(
-      (t: Tag) =>
-        t.code.toLowerCase().includes(q) ||
-        (t.name || '').toLowerCase().includes(q) ||
-        (t.category || '').toLowerCase().includes(q)
-    );
-  }, [tags, query]);
+  // Build the category list from: master + existing tags
+  const allCategories = useMemo(() => {
+    const set = new Set<string>();
+    DEFAULT_MASTER_TAGS.forEach(t => t.category && set.add(t.category));
+    (tags as Tag[]).forEach(t => t.category && set.add(t.category));
+    return Array.from(set);
+  }, [tags]);
 
+  // Sorted categories: first in MASTER_CATEGORY_ORDER (if present), then others alphabetically
+  const sortedCategories = useMemo(() => {
+    const ordered = MASTER_CATEGORY_ORDER.filter(c => allCategories.includes(c));
+    const rest = allCategories
+      .filter(c => !MASTER_CATEGORY_ORDER.includes(c))
+      .sort((a, b) => a.localeCompare(b));
+    return [...ordered, ...rest];
+  }, [allCategories]);
+
+  // normalized + filtered list, then grouped by category
+  const filteredGroups = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = [...(tags as Tag[])];
+    const filtered = !q
+      ? list
+      : list.filter(
+          t =>
+            (t.code || '').toLowerCase().includes(q) ||
+            (t.name || '').toLowerCase().includes(q) ||
+            (t.category || '').toLowerCase().includes(q)
+        );
+
+    // Group by category
+    const byCat = new Map<string, Tag[]>();
+    for (const t of filtered) {
+      const cat = t.category || '';
+      const arr = byCat.get(cat) || [];
+      arr.push(t);
+      byCat.set(cat, arr);
+    }
+
+    // Sort each category's tags by code alphabetically
+    for (const [k, arr] of byCat.entries()) {
+      arr.sort((a, b) => (a.code || '').localeCompare(b.code || ''));
+      byCat.set(k, arr);
+    }
+
+    // Order categories per sortedCategories, then any “unknown” cats alphabetically
+    const known = sortedCategories.filter(c => byCat.has(c));
+    const unknown = Array.from(byCat.keys())
+      .filter(c => !sortedCategories.includes(c))
+      .sort((a, b) => a.localeCompare(b));
+    const finalOrder = [...known, ...unknown];
+
+    return finalOrder.map(cat => ({ category: cat, items: byCat.get(cat) || [] }));
+  }, [tags, query, sortedCategories]);
+
+  // If not open, render nothing (after all hooks have run)
   if (!open) return null;
 
+  // ---- actions ----
   function startNew() {
     setEditId(null);
     setDraft(d => ({ ...emptyDraft, color: d.color || '#FFA500' }));
     setError('');
+    setCatSelect('');
+    setCustomCategory('');
     requestAnimationFrame(() => {
       editorCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       codeInputRef.current?.focus();
@@ -67,6 +138,18 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     setEditId(t.id);
     setDraft({ code: t.code, name: t.name, category: t.category, color: t.color });
     setError('');
+    // initialize dropdown according to the existing category
+    const cat = t.category || '';
+    if (cat && sortedCategories.includes(cat)) {
+      setCatSelect(cat);
+      setCustomCategory('');
+    } else if (cat) {
+      setCatSelect(CUSTOM_CAT_VALUE);
+      setCustomCategory(cat);
+    } else {
+      setCatSelect('');
+      setCustomCategory('');
+    }
     requestAnimationFrame(() => {
       editorCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       codeInputRef.current?.focus();
@@ -76,6 +159,8 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   function cancelEdit() {
     setEditId(null);
     setDraft(emptyDraft);
+    setCatSelect('');
+    setCustomCategory('');
     setError('');
   }
 
@@ -84,6 +169,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     if (!/^[a-z0-9\-/# ]+$/i.test(next.code.trim())) {
       return 'Use letters, numbers, space, hyphen, slash, # only.';
     }
+    if (!next.category.trim()) return 'Category is required.';
     const dup = (tags as Tag[]).find(
       t => t.code.toUpperCase() === next.code.trim().toUpperCase()
     );
@@ -91,8 +177,18 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     return '';
   }
 
+  function resolvedCategory(): string {
+    if (catSelect === CUSTOM_CAT_VALUE) return customCategory.trim();
+    return catSelect || draft.category || '';
+  }
+
   function add() {
-    const next: Draft = { ...draft, code: draft.code.trim().toUpperCase() };
+    const category = resolvedCategory();
+    const next: Draft = {
+      ...draft,
+      code: draft.code.trim().toUpperCase(),
+      category,
+    };
     const msg = validate(next);
     if (msg) {
       setError(msg);
@@ -101,12 +197,18 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     addTag(next);
     setDraft(d => ({ ...d, code: '', name: '' }));
     setError('');
+    // keep category selection as-is for rapid entry
     codeInputRef.current?.focus();
   }
 
   function saveEdit() {
     if (!editId) return;
-    const next: Draft = { ...draft, code: draft.code.trim().toUpperCase() };
+    const category = resolvedCategory();
+    const next: Draft = {
+      ...draft,
+      code: draft.code.trim().toUpperCase(),
+      category,
+    };
     const msg = validate(next);
     if (msg && msg.includes('already exists')) {
       const conflict = (tags as Tag[]).find(
@@ -162,9 +264,10 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   }
 
   function loadDefaults() {
+    let added = 0;
     DEFAULT_MASTER_TAGS.forEach(mt => {
-      const exists = tags.find(
-        (t: Tag) => t.code.toUpperCase() === mt.code.toUpperCase()
+      const exists = (tags as Tag[]).find(
+        t => (t.code || '').toUpperCase() === mt.code.toUpperCase()
       );
       if (!exists) {
         addTag({
@@ -173,9 +276,12 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
           category: mt.category,
           color: mt.color,
         });
+        added++;
       }
     });
-    alert('Default master tags loaded.');
+    alert(
+      `Default master tags loaded. Added ${added} new tag(s). Total master: ${DEFAULT_MASTER_TAGS.length}.`
+    );
   }
 
   const headerNote =
@@ -191,21 +297,10 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             <div style={S.subtitle}>{headerNote}</div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" onClick={loadDefaults}>
-              Load Defaults
-            </button>
-            <button className="btn" onClick={() => fileRef.current?.click()}>
-              Import JSON
-            </button>
-            <button
-              className="btn"
-              onClick={() => downloadTagsFile('tags.json', exportTags())}
-            >
-              Export JSON
-            </button>
-            <button className="btn" onClick={onClose}>
-              Close
-            </button>
+            <button className="btn" onClick={loadDefaults}>Load Defaults</button>
+            <button className="btn" onClick={() => fileRef.current?.click()}>Import JSON</button>
+            <button className="btn" onClick={() => downloadTagsFile('tags.json', exportTags())}>Export JSON</button>
+            <button className="btn" onClick={onClose}>Close</button>
           </div>
         </div>
 
@@ -217,9 +312,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             onChange={e => setQuery(e.target.value)}
             style={S.search}
           />
-          <button className="btn" onClick={startNew}>
-            New Tag
-          </button>
+          <button className="btn" onClick={startNew}>New Tag</button>
         </div>
 
         {/* Editor Card */}
@@ -250,56 +343,59 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             </div>
 
             {/* Fields */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '130px 220px 1fr',
-                gap: 12,
-                alignItems: 'center',
-                flex: 1,
-              }}
-            >
+            <div style={{ display: 'grid', gridTemplateColumns: '130px 220px 1fr', gap: 12, alignItems: 'center', flex: 1 }}>
               <div>
                 <div style={S.label}>Code</div>
                 <input
                   ref={codeInputRef}
                   value={draft.code}
-                  onChange={e =>
-                    setDraft(d => ({ ...d, code: e.target.value.toUpperCase() }))
-                  }
+                  onChange={e => setDraft(d => ({ ...d, code: e.target.value.toUpperCase() }))}
                   placeholder="A1"
                   style={S.input}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') (editId ? saveEdit() : add());
-                  }}
+                  onKeyDown={(e)=>{ if (e.key==='Enter') (editId ? saveEdit() : add()); }}
                 />
               </div>
+
               <div>
                 <div style={S.label}>Category</div>
-                <input
-                  value={draft.category}
-                  onChange={e =>
-                    setDraft(d => ({ ...d, category: e.target.value }))
-                  }
-                  placeholder="Lights / Switches / Receptacles ..."
-                  style={S.input}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') (editId ? saveEdit() : add());
-                  }}
-                />
+                <div style={{ display:'flex', gap:8 }}>
+                  <select
+                    value={catSelect || (sortedCategories.includes(draft.category) ? draft.category : (draft.category ? CUSTOM_CAT_VALUE : ''))}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setCatSelect(v);
+                      if (v === CUSTOM_CAT_VALUE) {
+                        setCustomCategory(draft.category && !sortedCategories.includes(draft.category) ? draft.category : '');
+                      } else {
+                        setDraft(d => ({ ...d, category: v }));
+                        setCustomCategory('');
+                      }
+                    }}
+                    style={S.input}
+                  >
+                    <option value="">— Select —</option>
+                    {sortedCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                    <option value={CUSTOM_CAT_VALUE}>Custom…</option>
+                  </select>
+                  { (catSelect === CUSTOM_CAT_VALUE) && (
+                    <input
+                      value={customCategory}
+                      onChange={e => setCustomCategory(e.target.value)}
+                      placeholder="New category"
+                      style={{ ...S.input, flex: 1 }}
+                    />
+                  )}
+                </div>
               </div>
+
               <div>
                 <div style={S.label}>Name</div>
                 <input
                   value={draft.name}
-                  onChange={e =>
-                    setDraft(d => ({ ...d, name: e.target.value }))
-                  }
+                  onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
                   placeholder="Fixture A1 - 2x4 LED"
                   style={S.input}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') (editId ? saveEdit() : add());
-                  }}
+                  onKeyDown={(e)=>{ if (e.key==='Enter') (editId ? saveEdit() : add()); }}
                 />
               </div>
             </div>
@@ -308,24 +404,19 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
               {editId ? (
                 <>
-                  <button className="btn" onClick={saveEdit}>
-                    Save
-                  </button>
-                  <button className="btn" onClick={cancelEdit}>
-                    Cancel
-                  </button>
+                  <button className="btn" onClick={saveEdit}>Save</button>
+                  <button className="btn" onClick={cancelEdit}>Cancel</button>
                 </>
               ) : (
-                <button className="btn" onClick={add}>
-                  Add Tag
-                </button>
+                <button className="btn" onClick={add}>Add Tag</button>
               )}
             </div>
           </div>
+
           {error && <div style={S.error}>{error}</div>}
         </div>
 
-        {/* Table */}
+        {/* Grouped Table */}
         <div style={S.tableWrap}>
           <table style={S.table}>
             <thead>
@@ -338,55 +429,47 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((t: Tag) => (
-                <tr key={t.id}>
-                  <td>
-                    <div
-                      style={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: 4,
-                        background: t.color,
-                        border: '1px solid #999',
-                        margin: '0 auto',
-                      }}
-                    />
-                  </td>
-                  <td style={{ fontWeight: 600 }}>{t.code}</td>
-                  <td>{t.category}</td>
-                  <td>{t.name}</td>
-                  <td>
-                    <div
-                      style={{
-                        display: 'flex',
-                        gap: 6,
-                        justifyContent: 'flex-end',
-                      }}
-                    >
-                      <button
-                        className="btn"
-                        title="Add to current project"
-                        aria-label={`Add ${t.code} to current project`}
-                        onClick={() => addToProject(t)}
-                      >
-                        +
-                      </button>
-                      <button className="btn" onClick={() => startEdit(t)}>
-                        Edit
-                      </button>
-                      <button className="btn" onClick={() => remove(t.id)}>
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+              {filteredGroups.map(group => (
+                <React.Fragment key={group.category || '(Uncategorized)'}>
+                  {/* Category Header Row */}
+                  <tr>
+                    <td colSpan={5} style={{ padding:'10px 6px', background:'#fafafa', borderTop:'1px solid #eee', fontWeight:700 }}>
+                      {group.category || 'Uncategorized'}
+                    </td>
+                  </tr>
+                  {/* Items */}
+                  {group.items.map((t: Tag) => (
+                    <tr key={t.id}>
+                      <td>
+                        <div style={{ width:20, height:20, borderRadius:4, background:t.color, border:'1px solid #999', margin:'0 auto' }} />
+                      </td>
+                      <td style={{ fontWeight:600 }}>{t.code}</td>
+                      <td>{t.category}</td>
+                      <td>{t.name}</td>
+                      <td>
+                        <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
+                          <button
+                            className="btn"
+                            title="Add to current project"
+                            aria-label={`Add ${t.code} to current project`}
+                            onClick={() => addToProject(t)}
+                          >+</button>
+                          <button className="btn" onClick={() => startEdit(t)}>Edit</button>
+                          <button className="btn" onClick={() => remove(t.id)}>Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {group.items.length === 0 && (
+                    <tr>
+                      <td colSpan={5} style={{ color:'#777', padding:'10px 6px' }}>No items in this category.</td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
-              {filtered.length === 0 && (
+              {filteredGroups.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={5}
-                    style={{ textAlign: 'center', color: '#666', padding: '14px 0' }}
-                  >
+                  <td colSpan={5} style={{ textAlign:'center', color:'#666', padding:'14px 0' }}>
                     No tags match your search.
                   </td>
                 </tr>
@@ -396,13 +479,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         </div>
 
         {/* Hidden file input */}
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/json"
-          onChange={onPickFile}
-          style={{ display: 'none' }}
-        />
+        <input ref={fileRef} type="file" accept="application/json" onChange={onPickFile} style={{ display:'none' }} />
       </div>
     </div>
   );
@@ -411,125 +488,69 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 /* ---------- Inline styles ---------- */
 const S: Record<string, React.CSSProperties> = {
   backdrop: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.35)',
-    zIndex: 9999,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position:'fixed', inset:0, background:'rgba(0,0,0,0.35)', zIndex:9999,
+    display:'flex', alignItems:'center', justifyContent:'center'
   },
   modal: {
-    background: '#fff',
-    width: 1000,
-    maxWidth: '92vw',
-    maxHeight: '90vh',
-    overflow: 'hidden',
-    borderRadius: 12,
-    boxShadow: '0 16px 40px rgba(0,0,0,0.25)',
-    display: 'flex',
-    flexDirection: 'column',
+    background:'#fff', width:1000, maxWidth:'92vw', maxHeight:'90vh',
+    overflow:'hidden', borderRadius:12, boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
+    display:'flex', flexDirection:'column'
   },
   titleBar: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    padding: '14px 16px 8px',
-    borderBottom: '1px solid #eee', // ✅ fixed quotes
-    background: '#fafafa',
+    display:'flex', alignItems:'flex-start', justifyContent:'space-between',
+    padding:'14px 16px 8px', borderBottom:'1px solid #eee', background:'#fafafa'
   },
-  title: { fontSize: 20, fontWeight: 700, marginBottom: 4 },
-  subtitle: { fontSize: 12, color: '#666' },
+  title: { fontSize:20, fontWeight:700, marginBottom:4 },
+  subtitle: { fontSize:12, color:'#666' },
   toolbar: {
-    display: 'flex',
-    gap: 8,
-    alignItems: 'center',
-    padding: '10px 16px',
-    borderBottom: '1px solid #f2f2f2',
-    background: '#fff',
+    display:'flex', gap:8, alignItems:'center',
+    padding:'10px 16px', borderBottom:'1px solid #f2f2f2', background:'#fff'
   },
   search: {
-    flex: 1,
-    padding: '8px 10px',
-    border: '1px solid #ccc',
-    borderRadius: 8,
-    fontSize: 14,
+    flex:1, padding:'8px 10px', border:'1px solid #ccc', borderRadius:8, fontSize:14
   },
   card: {
-    padding: '12px 16px',
-    borderBottom: '1px solid #f2f2f2',
-    background: '#fff',
+    padding:'12px 16px', borderBottom:'1px solid #f2f2f2', background:'#fff'
   },
   formRow: {
-    display: 'grid',
-    gridTemplateColumns: '210px 1fr auto',
-    gap: 16,
-    alignItems: 'start',
+    display:'grid',
+    gridTemplateColumns:'210px 1fr auto',
+    gap:16,
+    alignItems:'start'
   },
-  label: { fontSize: 12, fontWeight: 600, color: '#444', marginBottom: 6 },
+  label: { fontSize:12, fontWeight:600, color:'#444', marginBottom:6 },
   input: {
-    width: '100%',
-    padding: '8px 10px',
-    border: '1px solid #ccc',
-    borderRadius: 8,
-    fontSize: 14,
+    width:'100%', padding:'8px 10px', border:'1px solid #ccc', borderRadius:8, fontSize:14
   },
   colorGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(10, 24px)',
-    gap: 6,
+    display:'grid', gridTemplateColumns:'repeat(10, 24px)', gap:6
   },
   swatch: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    cursor: 'pointer',
+    width:20, height:20, borderRadius:4, cursor:'pointer'
   },
-  error: { marginTop: 10, color: '#b00020', fontSize: 13, fontWeight: 600 },
-  tableWrap: { overflow: 'auto', padding: '0 16px 16px' },
-  table: { width: '100%', borderCollapse: 'separate', borderSpacing: 0 },
+  error: {
+    marginTop:10, color:'#b00020', fontSize:13, fontWeight:600
+  },
+  tableWrap: {
+    overflow:'auto', padding:'0 16px 16px'
+  },
+  table: {
+    width:'100%', borderCollapse:'separate', borderSpacing:0
+  },
   thNarrow: {
-    width: 70,
-    textAlign: 'center',
-    padding: '10px 6px',
-    fontSize: 12,
-    color: '#555',
-    borderBottom: '1px solid #eee',
-    position: 'sticky',
-    top: 0,
-    background: '#fff',
+    width:70, textAlign:'center', padding:'10px 6px', fontSize:12, color:'#555',
+    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff'
   },
   thCode: {
-    width: 100,
-    textAlign: 'left',
-    padding: '10px 6px',
-    fontSize: 12,
-    color: '#555',
-    borderBottom: '1px solid #eee',
-    position: 'sticky',
-    top: 0,
-    background: '#fff',
+    width:100, textAlign:'left', padding:'10px 6px', fontSize:12, color:'#555',
+    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff'
   },
   thCat: {
-    width: 200,
-    textAlign: 'left',
-    padding: '10px 6px',
-    fontSize: 12,
-    color: '#555',
-    borderBottom: '1px solid #eee',
-    position: 'sticky',
-    top: 0,
-    background: '#fff',
+    width:200, textAlign:'left', padding:'10px 6px', fontSize:12, color:'#555',
+    borderBottom:'1px solid '#eee', position:'sticky', top:0, background:'#fff'
   },
   thActions: {
-    width: 210,
-    textAlign: 'right',
-    padding: '10px 6px',
-    fontSize: 12,
-    color: '#555',
-    borderBottom: '1px solid #eee',
-    position: 'sticky',
-    top: 0,
-    background: '#fff',
+    width:210, textAlign:'right', padding:'10px 6px', fontSize:12, color:'#555',
+    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff'
   },
 };
