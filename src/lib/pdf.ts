@@ -1,30 +1,30 @@
 // src/lib/pdf.ts
 import { getDocument, GlobalWorkerOptions, version } from "pdfjs-dist";
 
-let workerReady = false;
+let workerInitialized = false;
 
-async function ensureWorker() {
-  if (workerReady) return;
-
-  // Try the different filenames that ship with various pdfjs-dist versions.
-  let url: string | undefined;
-  try { url = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default; } catch {}
-  if (!url) try { url = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default; } catch {}
-  if (!url) try { url = (await import("pdfjs-dist/build/pdf.worker.min.js?url")).default; } catch {}
-  if (!url) try { url = (await import("pdfjs-dist/build/pdf.worker.js?url")).default; } catch {}
-
-  // Last-resort: use the CDN that matches your installed version
-  if (!url) url = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.js`;
-
-  // Tell PDF.js where to load the worker from
-  GlobalWorkerOptions.workerSrc = url as any;
-  workerReady = true;
+function initWorker() {
+  if (workerInitialized) return;
+  try {
+    // Use the installed pdfjs-dist version when available; otherwise fall back.
+    const v = typeof version === "string" && version ? version : "3.11.174";
+    // Classic worker URL (works across bundlers)
+    const cdn = `https://unpkg.com/pdfjs-dist@${v}/build/pdf.worker.min.js`;
+    (GlobalWorkerOptions as any).workerSrc = cdn;
+  } catch {
+    // Last-resort fallback
+    (GlobalWorkerOptions as any).workerSrc =
+      "https://unpkg.com/pdfjs-dist@latest/build/pdf.worker.min.js";
+  }
+  workerInitialized = true;
 }
 
 export type PDFDoc = import("pdfjs-dist").PDFDocumentProxy;
 
-export async function loadPdfFromBytes(bytes: ArrayBuffer | Uint8Array): Promise<PDFDoc> {
-  await ensureWorker();
+export async function loadPdfFromBytes(
+  bytes: ArrayBuffer | Uint8Array
+): Promise<PDFDoc> {
+  initWorker();
   const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
   const task = getDocument({ data });
   return task.promise;
