@@ -2,9 +2,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Some deps are “spicy” for esbuild in certain hosted environments.
-// We ask Vite not to prebundle them with esbuild, and we switch minifier to terser.
-
+// Avoid esbuild’s occasional WASM crash on heavy ESM deps (pdfjs, konva, etc.)
+// and use terser for minification instead.
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
@@ -12,16 +11,14 @@ export default defineConfig({
     exclude: ['konva', 'react-konva', 'pdfjs-dist', 'zustand'],
   },
   build: {
-    // Use terser instead of esbuild to avoid the WASM “Maximum call stack size exceeded”
-    minify: 'terser',
     target: 'esnext',
-    // ensure workers are emitted as ES modules
+    // safer than esbuild for these libs in some environments
+    minify: 'terser',
+    // pdf.js worker needs ES module format in modern builds
     worker: { format: 'es' },
     rollupOptions: {
-      // pdfjs emits big chunks; terser is safer here
+      // keep rollup from over-splitting pdfjs
       output: { manualChunks: undefined },
     },
-    // optional: speed vs safety – leave defaults unless you need smaller output
-    // terserOptions: { compress: { passes: 2 } },
   },
 });
