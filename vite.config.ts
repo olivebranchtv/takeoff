@@ -13,6 +13,7 @@ export default defineConfig({
       // --- Fix: react-konva deep import & any konva import shape -> our shim
       { find: 'konva/lib/Global.js', replacement: path.resolve(__dirname, 'src/shims/konvaShim.ts') },
       { find: 'konva/lib/Global',   replacement: path.resolve(__dirname, 'src/shims/konvaShim.ts') },
+      { find: 'konva/lib/Core.js',  replacement: path.resolve(__dirname, 'src/shims/konvaShim.ts') },
       { find: 'konva',              replacement: path.resolve(__dirname, 'src/shims/konvaShim.ts') },
 
       // --- Fix: some deps expect default from with-selector (it has none)
