@@ -7,35 +7,33 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: [
-      // app alias
+      // App alias
       { find: '@', replacement: path.resolve(__dirname, 'src') },
 
-      // Original module alias to avoid circular dependency
-      {
-        find: '#use-sync-external-store-original',
-        replacement: 'use-sync-external-store/shim/with-selector',
-      },
-
-      // IMPORTANT: catch imports of:
-      //   'use-sync-external-store/shim/with-selector'
-      //   'use-sync-external-store/shim/with-selector.js'
-      //   'use-sync-external-store/shim/with-selector.js?some=vite-query'
+      // ---- Fix 1: some code mistakenly default-imports with-selector; make both work
       {
         find: /use-sync-external-store\/shim\/with-selector(?:\.js)?(?=$|\?)/,
         replacement: path.resolve(
           __dirname,
-          'src/shims/useSyncExternalStoreWithSelectorShim.ts',
+          'src/shims/useSyncExternalStoreWithSelectorShim.ts'
         ),
+      },
+
+      // ---- Fix 2: normalize Konva deep imports to a shim that exposes both default and named `Konva`
+      {
+        find: /konva\/lib\/Global(?:\.js)?(?=$|\?)/,
+        replacement: path.resolve(__dirname, 'src/shims/konvaGlobalShim.ts'),
       },
     ],
   },
   optimizeDeps: {
-    // keep dev pre-bundle away from these
+    // keep dev prebundle away from these sensitive libs
     exclude: ['konva', 'react-konva', 'pdfjs-dist', 'zustand'],
   },
   build: {
-    target: 'esnext',
+    // safer minifier for large/wasm-adjacent bundles
     minify: 'terser',
+    target: 'esnext',
     worker: { format: 'es' },
     rollupOptions: {
       output: { manualChunks: undefined },
