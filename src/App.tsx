@@ -24,34 +24,18 @@ type SKDBundle = {
    helpers for base64 <-> ArrayBuffer
    ========================================================================================= */
 
-/** Normalize base64 of all common variants:
- * - strips data: URLs
- * - converts base64url (-_) to standard (+/)
- * - removes whitespace
- * - fixes missing padding
- */
+/** Normalize base64 of all common variants */
 function normalizeBase64(input: string): string {
   let src = (input || '').trim();
-
-  // If it's a data URL, keep only the payload after the comma
   const comma = src.indexOf(',');
-  if (src.startsWith('data:') && comma !== -1) {
-    src = src.slice(comma + 1);
-  }
-
-  // Remove whitespace/newlines
+  if (src.startsWith('data:') && comma !== -1) src = src.slice(comma + 1);
   src = src.replace(/\s+/g, '');
-
-  // Convert base64url to base64
   src = src.replace(/-/g, '+').replace(/_/g, '/');
-
-  // Fix missing padding
   const mod = src.length % 4;
   if (mod === 2) src += '==';
   else if (mod === 3) src += '=';
   return src;
 }
-
 function b64ToAb(b64: string): ArrayBuffer {
   const src = normalizeBase64(b64);
   const bin = atob(src);
@@ -59,8 +43,7 @@ function b64ToAb(b64: string): ArrayBuffer {
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out.buffer;
 }
-
-/** quick sanity check that bytes look like a PDF ("%PDF") somewhere near the start */
+/** quick sanity check that bytes look like a PDF ("%PDF") near the start */
 function looksLikePdf(bytes: Uint8Array): boolean {
   const searchLen = Math.min(bytes.length, 64);
   for (let i = 0; i <= searchLen - 5; i++) {
@@ -74,12 +57,14 @@ function looksLikePdf(bytes: Uint8Array): boolean {
   }
   return false;
 }
-
 /** Simple labels to avoid fragile pdf.js APIs. */
 async function resolvePageLabels(doc: any): Promise<string[]> {
   const count = (doc?.numPages ?? 0) | 0;
   return Array.from({ length: count }, (_, i) => `Page ${i + 1}`);
 }
+
+/** Preferred category order for pickers (others follow alphabetically) */
+const MASTER_CATEGORY_ORDER = ['Lights', 'Receptacles'];
 
 export default function App() {
   /* ---------- refs ---------- */
@@ -190,7 +175,7 @@ export default function App() {
       try {
         const state = useStore.getState();
 
-        // Restore pages with objects (these include your tag placements & measurements)
+        // Restore pages with objects (your tag placements & measurements)
         if (bundle.core.pages && Array.isArray(bundle.core.pages)) {
           state.setPages(bundle.core.pages.map(page => ({
             pageIndex: page.pageIndex,
@@ -214,15 +199,20 @@ export default function App() {
         console.warn('[Open Project] fromProject warning:', err?.message || err);
       }
 
-      // header project name
-      try {
-        const coreAny: any = bundle.core ?? {};
-        const openedName =
-          typeof coreAny.name === 'string' && coreAny.name.trim() ? coreAny.name :
-          typeof coreAny.projectName === 'string' && coreAny.projectName.trim() ? coreAny.projectName :
-          'Untitled Project';
-        setProjectName(openedName);
-      } catch { /* ignore */ }
+      // Derive a friendly project display name:
+      // 1) stored in core.name/projectName, else
+      // 2) embedded PDF name (no .pdf), else
+      // 3) opened file base name (no .skdproj/.json)
+      const coreAny: any = bundle.core ?? {};
+      const baseFromPdf = (bundle.pdf?.name || '').replace(/\.pdf$/i, '');
+      const baseFromFile = file.name.replace(/\.(skdproj|json)$/i, '');
+      const openedName =
+        (typeof coreAny.name === 'string' && coreAny.name.trim()) ||
+        (typeof coreAny.projectName === 'string' && coreAny.projectName.trim()) ||
+        (baseFromPdf && baseFromPdf.trim()) ||
+        baseFromFile;
+
+      setProjectName(openedName);
 
       // restore project tags (project-level tag list)
       setProjectTags(Array.isArray(bundle.projectTags) ? bundle.projectTags : []);
@@ -230,12 +220,10 @@ export default function App() {
       // restore PDF if present — DO NOT CLEAR PAGES after loading (keep restored objects!)
       if (bundle.pdf && typeof bundle.pdf.bytesBase64 === 'string' && bundle.pdf.bytesBase64.length > 0) {
         try {
-          console.log('[Open Project] Loading embedded PDF...');
           const ab = b64ToAb(bundle.pdf.bytesBase64);
           const u8 = new Uint8Array(ab);
           if (!looksLikePdf(u8)) throw new Error('Embedded bytes are not a PDF (missing %PDF- header)');
 
-          console.log(`[Open Project] PDF bytes validated: ${u8.length} bytes`);
           const doc = await loadPdfFromBytes(u8);
 
           setPdf(doc);
@@ -248,20 +236,18 @@ export default function App() {
           setPageLabels(await resolvePageLabels(doc));
           setActivePage(0);
           useStore.getState().setSelectedIds([]);
-
-          console.log(`[Open Project] PDF loaded successfully: ${doc.numPages} pages`);
         } catch (err: any) {
           console.error('[Open Project] Could not load embedded PDF:', err?.message || err);
           setPdf(null);
           setFileName('');
-          // Don't throw - allow project to load without PDF
         }
       } else {
         setPdf(null);
         setFileName('');
       }
 
-      setLastSaveBase(file.name.replace(/\.skdproj$/i, '').replace(/\.json$/i, ''));
+      // Remember the base name for subsequent "Save"
+      setLastSaveBase(baseFromFile);
     } catch (e: any) {
       console.error('[Open Project] Invalid .skdproj:', e?.message || e, { filePreview: text.slice(0, 200) });
       alert(`Failed to open project: ${e?.message || 'Invalid file format'}`);
@@ -270,9 +256,13 @@ export default function App() {
 
   function doSave() { downloadBundle(); }
   function doSaveAs() {
-    const name = prompt('Save As (.skdproj basename):', lastSaveBase ?? 'project');
+    const suggested = lastSaveBase ?? useStore.getState().getProjectName() ?? 'project';
+    const name = prompt('Save As (.skdproj basename):', suggested);
     if (!name) return;
-    downloadBundle(name);
+    const base = name.replace(/\.(skdproj|json)$/i, '');
+    downloadBundle(base);
+    // reflect in header
+    setProjectName(base);
   }
   function doPrint() { window.print(); }
   function doCloseProject() { doNewProject(); }
@@ -299,7 +289,7 @@ export default function App() {
     const doc = await loadPdfFromBytes(new Uint8Array(buf));
     setPdf(doc);
     setFileName(file.name);
-    // For standalone PDF open, start fresh pages (this is intended)
+    // For standalone PDF open, start fresh pages
     setPages([]);
     setPageCount(doc.numPages);
     setPageLabels(await resolvePageLabels(doc));
@@ -509,7 +499,7 @@ export default function App() {
         <div style={{flex:1}} />
 
         <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
-        {/* Removed Save/Load local and Import/Export JSON from the toolbar */}
+        {/* Removed: Save(Local) / Load(Local) / Export JSON / Import JSON */}
       </div>
 
       {/* PROJECT TAGS BAR */}
