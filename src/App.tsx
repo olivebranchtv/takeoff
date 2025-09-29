@@ -121,7 +121,7 @@ export default function App() {
     activePage, setActivePage,
     tags,
     currentTag, setCurrentTag,
-    setSelectedIds,
+    selectedIds, setSelectedIds,
     setProjectName,
   } = useStore();
 

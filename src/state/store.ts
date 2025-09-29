@@ -243,6 +243,7 @@ export const useStore = create<State>((set, get) => ({
 
   selectOnly: (id) => set({ selectedIds: [id] }),
   clearSelection: () => set({ selectedIds: [] }),
+  setSelectedIds: (ids) => set({ selectedIds: ids }),
 
   pushHistory: (pageIndex) => set((s) => {
     const page = s.pages.find((p) => p.pageIndex === pageIndex);
