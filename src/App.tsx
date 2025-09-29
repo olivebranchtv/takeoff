@@ -6,7 +6,7 @@ import PDFViewport from '@/components/PDFViewport';
 import TagManager from '@/components/TagManager';
 import { useStore } from '@/state/store';
 import { exportJSON, importJSON, loadProject, saveProject } from '@/utils/persist';
-import type { AnyTakeoffObject, ProjectSave } from '@/types';
+import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
 import { pathLength } from '@/utils/geometry';
 
 /* Tag shape used by the DB + project bar */
@@ -22,7 +22,7 @@ type SKDBundle = {
 };
 
 /* =========================================================================================
-   helpers for base64 <-> ArrayBuffer/Uint8Array
+   helpers for base64 <-> ArrayBuffer
    ========================================================================================= */
 function abToB64(buf: ArrayBuffer): string {
   let binary = '';
@@ -30,13 +30,11 @@ function abToB64(buf: ArrayBuffer): string {
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
 }
-/** Return Uint8Array (preferred by pdf.js) */
-function b64ToU8(b64: string): Uint8Array {
-  const pure = b64.includes(',') ? b64.split(',').pop()! : b64.trim();
-  const bin = atob(pure);
+function b64ToAb(b64: string): ArrayBuffer {
+  const bin = atob(b64);
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
+  return out.buffer;
 }
 
 /** Small helper for UI labels */
@@ -83,14 +81,15 @@ export default function App() {
     tags,
     currentTag, setCurrentTag,
     setSelectedIds,
-    setProjectName,
+    setProjectName, // used to force header to the project name from the bundle
   } = useStore();
 
   /* =========================================================================================
-     FILE MENU — New / Open (.skdproj) / Save (.skdproj) / Save As (.skdproj) / Print / Close
+     FILE MENU  — New / Open (.skdproj) / Save (.skdproj) / Save As (.skdproj) / Print / Close
      ========================================================================================= */
 
   const makeBundle = useCallback<() => SKDBundle>(() => {
+    // bundle the store's project data + the Project Tags list + embedded PDF
     const core: ProjectSave = useStore.getState().toProject();
     const bundle: SKDBundle = {
       kind: 'skdproj',
@@ -115,6 +114,7 @@ export default function App() {
 
   function doNewProject() {
     if (!confirm('Start a new project? Unsaved changes will be lost.')) return;
+    // clear viewer + store
     setPdf(null);
     setPdfName('');
     setPdfBytesBase64(null);
@@ -130,7 +130,7 @@ export default function App() {
     setLastSaveBase(null);
   }
 
-  /** open .skdproj and auto-restore embedded PDF */
+  /** open .skdproj and auto-restore embedded PDF (store.fromProject handles legacy coercions) */
   async function doOpenProject(file: File) {
     let text = '';
     try {
@@ -141,11 +141,14 @@ export default function App() {
           ? parsed
           : { kind: 'skdproj', version: 1, core: parsed as ProjectSave, projectTags: [], pdf: undefined };
 
-      // store portion
-      try { useStore.getState().fromProject(bundle.core); }
-      catch (err: any) { console.warn('[Open Project] fromProject warning:', err?.message || err); }
+      // Load the store portion
+      try {
+        useStore.getState().fromProject(bundle.core);
+      } catch (err: any) {
+        console.warn('[Open Project] fromProject warning:', err?.message || err);
+      }
 
-      // project name in header
+      // header project name
       try {
         const coreAny: any = bundle.core ?? {};
         const openedName =
@@ -153,22 +156,23 @@ export default function App() {
           typeof coreAny.projectName === 'string' && coreAny.projectName.trim() ? coreAny.projectName :
           'Untitled Project';
         setProjectName(openedName);
-      } catch {}
+      } catch { /* ignore */ }
 
       // restore project tags
       setProjectTags(Array.isArray(bundle.projectTags) ? bundle.projectTags : []);
 
-      // restore embedded PDF (key fix: pass Uint8Array)
+      // restore PDF if present
       if (bundle.pdf && typeof bundle.pdf.bytesBase64 === 'string' && bundle.pdf.bytesBase64.length > 0) {
         try {
-          const u8 = b64ToU8(bundle.pdf.bytesBase64);
-          const doc = await loadPdfFromBytes(u8);
+          const ab = b64ToAb(bundle.pdf.bytesBase64);
+          const doc = await loadPdfFromBytes(ab);
           setPdf(doc);
           setPdfName(bundle.pdf.name || 'document.pdf');
           setFileName(bundle.pdf.name || 'document.pdf');
           setPdfBytesBase64(bundle.pdf.bytesBase64);
 
-          setPages([]);
+          // viewer metadata
+          setPages([]);                 // allow viewport to build fresh
           setPageCount(doc.numPages);
           let labels: string[] = [];
           try {
@@ -216,15 +220,16 @@ export default function App() {
     setPdfBytesBase64(base64);
     setPdfName(file.name);
 
-    // key fix: pass Uint8Array
-    const doc = await loadPdfFromBytes(new Uint8Array(buf));
+    const doc = await loadPdfFromBytes(buf);
     setPdf(doc);
     setFileName(file.name);
     setPages([]);
     setPageCount(doc.numPages);
 
+    // page labels if available, else Page N
     let labels: string[] = [];
     try {
+      // @ts-ignore optional in pdf.js
       const raw = await (doc as any).getPageLabels?.();
       labels = raw && Array.isArray(raw)
         ? raw.map((l: string, i: number) => l || `Page ${i + 1}`)
@@ -296,6 +301,7 @@ export default function App() {
     .filter(t => !projectTags.some(p => p.code.toUpperCase() === (t.code || '').toUpperCase()))
     .sort((a, b) => (a.code || '').localeCompare(b.code || ''));
 
+  // Header label always prefers store's project name
   const headerProjectLabel = useStore(s => s.getProjectName());
 
   /* =========================================================================================
@@ -360,18 +366,18 @@ export default function App() {
           type="file"
           accept=".skdproj,application/json"
           style={{display:'none'}}
-          onChange={async (e)=>{ const input = e.currentTarget; const f = input.files?.[0]; input.value=''; if (f) await doOpenProject(f); }}
+          onChange={async (e)=>{ const input=e.currentTarget; const f=input.files?.[0]; input.value=''; if (f) await doOpenProject(f); }}
         />
 
         <div style={{flex:1}} />
 
-        {/* quick open PDF */}
+        {/* quick open PDF right from the menu bar */}
         <input
           ref={pdfFileRef}
           type="file"
           accept="application/pdf"
           style={{display:'none'}}
-          onChange={async (e)=>{ const input = e.currentTarget; const f = input.files?.[0]; input.value=''; if (f) await openPdf(f); }}
+          onChange={async (e)=>{ const input=e.currentTarget; const f=input.files?.[0]; input.value=''; if (f) await openPdf(f); }}
         />
         <button className="btn" onClick={()=>pdfFileRef.current?.click()}>Open PDF</button>
         <span style={{marginLeft:8, maxWidth:320, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}} title={pdfName || fileName}>
@@ -381,6 +387,7 @@ export default function App() {
 
       {/* TOOLBAR (tools + zoom) */}
       <div className="toolbar" style={{display:'flex', alignItems:'center', gap:8, padding:'8px 12px', borderBottom:'1px solid #e6e6e6', position:'sticky', top:48, background:'#fff', zIndex:40}}>
+        {/* Page nav */}
         {pageCount > 0 && (
           <div style={{display:'flex', alignItems:'center', gap:6}}>
             <button className="btn" onClick={()=>setActivePage(Math.max(0, activePage-1))} disabled={activePage<=0}>◀</button>
@@ -479,14 +486,37 @@ export default function App() {
         transition:'grid-template-columns .18s ease',
         minHeight:0, flex:1, position:'relative'
       }}>
-        {!leftOpen && (
-          <button className="btn" onClick={()=>setLeftOpen(true)} style={{position:'absolute', top:8, left:8, zIndex:5}} title="Show sidebar">☰ BOM</button>
+        {/* Toggle button – always visible */}
+        {leftOpen ? (
+          <button
+            className="btn"
+            onClick={()=>setLeftOpen(false)}
+            style={{position:'absolute', top:8, left:8, zIndex:5}}
+            title="Hide sidebar"
+          >‹ Hide</button>
+        ) : (
+          <button
+            className="btn"
+            onClick={()=>setLeftOpen(true)}
+            style={{position:'absolute', top:8, left:8, zIndex:5}}
+            title="Show sidebar"
+          >☰ BOM</button>
         )}
 
-        <aside className="sidebar" style={{borderRight:'1px solid #eee', overflow:'auto', opacity: leftOpen ? 1 : 0, pointerEvents: leftOpen ? 'auto' : 'none'}}>
+        {/* SIDEBAR */}
+        <aside
+          className="sidebar"
+          style={{
+            borderRight:'1px solid #eee',
+            overflow:'auto',
+            opacity: leftOpen ? 1 : 0,
+            pointerEvents: leftOpen ? 'auto' : 'none'
+          }}
+        >
           <SidebarBOM bom={bom} />
         </aside>
 
+        {/* VIEWPORT */}
         <div style={{position:'relative', overflow:'auto'}}>
           {!pdf && (
             <div style={{padding:'2rem'}}>
@@ -499,7 +529,19 @@ export default function App() {
         </div>
       </div>
 
-      <TagManager open={tagsOpen} onClose={()=>setTagsOpen(false)} />
+      {/* TAG MANAGER — pass onAddToProject so Project Tags bar updates */}
+      <TagManager
+        open={tagsOpen}
+        onClose={()=>setTagsOpen(false)}
+        onAddToProject={(t: Tag) => {
+          // Add once to the local Project Tags bar used by App
+          setProjectTags(list => (list.some(x => x.id === t.id) ? list
+            : [...list, { id: t.id, code: t.code, name: t.name, color: t.color, category: t.category }]));
+          setCurrentTag(t.code);
+          setTool('count');
+          setTagsOpen(false);
+        }}
+      />
     </div>
   );
 }
