@@ -1,22 +1,35 @@
 // src/lib/pdf.ts
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
-// IMPORTANT: use the ESM worker and let Vite turn it into a URL we can point to.
-import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+/**
+ * Minimal, worker-free PDF.js setup that plays nicely with Vite.
+ * No CDN, no worker files, no terser required.
+ */
 
-GlobalWorkerOptions.workerSrc = workerSrc;
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/build/pdf.mjs';
 
-export type PDFDoc = import('pdfjs-dist').PDFDocumentProxy;
+export type PDFDoc = any;
 
-/** Load a PDF from bytes (ArrayBuffer or Uint8Array) */
-export async function loadPdfFromBytes(bytes: ArrayBuffer | Uint8Array): Promise<PDFDoc> {
-  const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-  const task = getDocument({
-    data,
-    // keep things simple & compatible across environments
-    useWorkerFetch: false,
-    isEvalSupported: true,
-    disableStream: true,
-    disableAutoFetch: false,
-  });
+// Force "fake worker" (main thread). This avoids worker bundling/minification issues.
+GlobalWorkerOptions.workerSrc = '';
+
+// Common flags to avoid eval and streaming fetch in locked-down environments.
+const COMMON_DOC_OPTS = {
+  disableWorker: true,        // <-- important
+  isEvalSupported: false,
+  useWorkerFetch: false,
+  disableRange: true,
+  disableStream: true,
+};
+
+/** Load a PDF from raw bytes. Accepts ArrayBuffer, Uint8Array, or number[]. */
+export async function loadPdfFromBytes(
+  bytes: ArrayBuffer | Uint8Array | number[]
+): Promise<PDFDoc> {
+  // pdf.js is happiest with a Uint8Array
+  const u8 =
+    bytes instanceof Uint8Array ? bytes :
+    bytes instanceof ArrayBuffer ? new Uint8Array(bytes) :
+    new Uint8Array(bytes as number[]);
+
+  const task = getDocument({ data: u8, ...COMMON_DOC_OPTS });
   return task.promise;
 }
