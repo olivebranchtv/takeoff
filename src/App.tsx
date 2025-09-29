@@ -21,6 +21,13 @@ type SKDBundle = {
   pdf?: { name: string; bytesBase64: string };
 };
 
+/** Small helper for UI labels */
+function baseNameNoExt(path: string) {
+  const just = (path || '').split('/').pop() || path || '';
+  const dot = just.lastIndexOf('.');
+  return dot > 0 ? just.slice(0, dot) : just || 'Untitled';
+}
+
 export default function App() {
   /* ---------- refs ---------- */
   const pdfFileRef = useRef<HTMLInputElement>(null);
@@ -58,6 +65,8 @@ export default function App() {
     tags,                 // Tag Database (not the Project Tags)
     currentTag, setCurrentTag,
     setSelectedIds,
+    // NEW for header project name
+    projectName, setProjectName,
   } = useStore();
 
   /* =========================================================================================
@@ -118,10 +127,11 @@ export default function App() {
     setSelectedIds([]);
     setCurrentTag('');
     setProjectTags([]);
+    setProjectName('Untitled Project');
     setLastSaveBase(null);
   }
 
-  /** NEW: open .skdproj and auto-restore embedded PDF */
+  /** open .skdproj and auto-restore embedded PDF (store.fromProject handles legacy coercions) */
   async function doOpenProject(file: File) {
     const text = await file.text();
     try {
@@ -130,11 +140,11 @@ export default function App() {
         ? parsed
         : { kind: 'skdproj', version: 1, core: parsed, projectTags: [], pdf: undefined };
 
-      // load the store portion
+      // load the store portion (robust to legacy via store.fromProject)
       useStore.getState().fromProject(bundle.core);
 
       // restore project tags
-      setProjectTags(bundle.projectTags || []);
+      setProjectTags(Array.isArray(bundle.projectTags) ? bundle.projectTags : []);
 
       // restore PDF if present
       if (bundle.pdf?.bytesBase64) {
@@ -167,7 +177,7 @@ export default function App() {
 
       setLastSaveBase(file.name.replace(/\.skdproj$/i, '').replace(/\.json$/i, ''));
     } catch (e: any) {
-      alert('Invalid .skdproj: ' + e.message);
+      alert('Invalid .skdproj: ' + (e?.message || 'Unknown error'));
     }
   }
 
@@ -270,6 +280,11 @@ export default function App() {
     .filter(t => !projectTags.some(p => p.code.toUpperCase() === (t.code || '').toUpperCase()))
     .sort((a, b) => (a.code || '').localeCompare(b.code || ''));
 
+  // Derived label for header project name (fallback to file base name)
+  const headerProjectLabel = (projectName && projectName.trim())
+    ? projectName
+    : baseNameNoExt(pdfName || fileName || 'Untitled');
+
   /* =========================================================================================
      RENDER
      ========================================================================================= */
@@ -299,7 +314,35 @@ export default function App() {
             </div>
           )}
         </div>
-        <div style={{fontSize:16, fontWeight:700}}>SKD Services</div>
+
+        {/* Company + Project Name (click to rename) */}
+        <div style={{display:'flex', alignItems:'center', gap:8}}>
+          <div style={{fontSize:16, fontWeight:700}}>SKD Services</div>
+          <div style={{opacity:.7}}>·</div>
+          <button
+            title="Click to rename project"
+            onClick={()=>{
+              const next = prompt('Project name:', headerProjectLabel);
+              if (next != null) setProjectName(next.trim() || 'Untitled Project');
+            }}
+            className="btn"
+            style={{
+              background:'transparent',
+              border:'1px dashed rgba(255,255,255,.35)',
+              color:'#fff',
+              padding:'2px 8px',
+              borderRadius:6,
+              cursor:'pointer',
+              fontWeight:600,
+              maxWidth:340,
+              whiteSpace:'nowrap',
+              overflow:'hidden',
+              textOverflow:'ellipsis'
+            }}
+          >
+            {headerProjectLabel}
+          </button>
+        </div>
 
         {/* hidden project file input (.skdproj) */}
         <input
