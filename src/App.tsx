@@ -407,4 +407,61 @@ export default function App() {
                   <tr key={r.code} style={{borderBottom:'1px solid #f3f3f3'}}>
                     <td style={{padding:'6px 4px', fontWeight:600}}>{r.code}</td>
                     <td style={{padding:'6px 4px'}}>{r.tags}</td>
-                    <td style={{padding:'6px 4px'}}>{r.meas}
+                    <td style={{padding:'6px 4px'}}>{r.meas}</td>
+                    <td style={{padding:'6px 4px'}}>{r.lf.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* VIEWPORT */}
+        <div style={{position:'relative', overflow:'auto'}}>
+          <PDFViewport pdf={pdf} />
+        </div>
+      </div>
+
+      {/* Footer HUD */}
+      <div className="hud" style={{borderTop:'1px solid #eee', padding:'6px 10px', fontSize:12, color:'#555'}}>
+        Tool: {tool} • Zoom: {Math.round(zoom*100)}% • Page {pageCount ? (activePage+1) : 0}/{pageCount}
+      </div>
+
+      {/* Tag DB modal */}
+      <TagManager open={tagsOpen} onClose={()=>setTagsOpen(false)} />
+
+      {/* small inline style helpers */}
+      <InlineStyles />
+    </div>
+  );
+}
+
+/* ------- little menu item helper ------- */
+function MenuItem({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{padding:'10px 12px', cursor:'pointer'}}
+      onMouseEnter={(e)=>{(e.currentTarget as HTMLDivElement).style.background='#f5f7fb';}}
+      onMouseLeave={(e)=>{(e.currentTarget as HTMLDivElement).style.background='transparent';}}
+    >
+      {label}
+    </div>
+  );
+}
+
+/* ------- minimal button/badge styles if you don't already have CSS ------- */
+function InlineStyles() {
+  if (typeof document === 'undefined') return null;
+  if (document.getElementById('app-inline-styles')) return null;
+  const style = document.createElement('style');
+  style.id = 'app-inline-styles';
+  style.innerHTML = `
+    .btn{border:1px solid #c9d2e0;background:#fff;padding:.35rem .55rem;border-radius:6px;cursor:pointer;font:inherit}
+    .btn:hover{background:#f7f9fc}
+    .btn.active{border-color:#0d6efd;color:#0d6efd;background:#eef5ff}
+    .badge{padding:0 .35rem;color:#555}
+  `;
+  document.head.appendChild(style);
+  return null;
+}
