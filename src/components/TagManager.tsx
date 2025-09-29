@@ -1,3 +1,4 @@
+// src/components/TagManager.tsx
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useStore } from '@/state/store';
 import type { Tag } from '@/types';
@@ -39,51 +40,73 @@ const CUSTOM_CAT_VALUE = '__CUSTOM__';
 
 export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const store = useStore() as any;
-  const { tags, palette, addTag, updateTag, deleteTag, importTags, exportTags } = store;
+  const {
+    tags,
+    palette,
+    addTag,
+    updateTag,
+    deleteTag,
+    importTags,
+    exportTags,
+    // optional (older store may not expose some of these)
+    hasProjectTag,
+    addProjectTagById,
+    addProjectTag,
+    addTagToProject,
+  } = store;
 
+  // ---------- modal drag ------------
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const dragState = useRef<{ ox: number; oy: number; sx: number; sy: number; dragging: boolean }>({ ox: 0, oy: 0, sx: 0, sy: 0, dragging: false });
+
+  useEffect(() => {
+    if (!open) return;
+    const move = (e: PointerEvent) => {
+      if (!dragState.current.dragging) return;
+      const dx = e.clientX - dragState.current.sx;
+      const dy = e.clientY - dragState.current.sy;
+      setPos({ x: dragState.current.ox + dx, y: dragState.current.oy + dy });
+    };
+    const up = () => (dragState.current.dragging = false);
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    return () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+  }, [open]);
+
+  const onDragStart = (e: React.PointerEvent) => {
+    const rect = modalRef.current?.getBoundingClientRect();
+    dragState.current = {
+      ox: pos.x,
+      oy: pos.y,
+      sx: e.clientX,
+      sy: e.clientY,
+      dragging: true,
+    };
+    // prevent text selection while dragging
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+  };
+
+  // ---------- UI state ------------
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [editId, setEditId] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
-  const [catSelect, setCatSelect] = useState<string>('');          // dropdown value
+  const [catSelect, setCatSelect] = useState<string>(''); // dropdown value
   const [customCategory, setCustomCategory] = useState<string>(''); // for “Custom…”
   const fileRef = useRef<HTMLInputElement>(null);
 
   const editorCardRef = useRef<HTMLDivElement>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
 
-  // ====== NEW: draggable state ======
-  const [drag, setDrag] = useState<{active:boolean; dx:number; dy:number}>({ active:false, dx:0, dy:0 });
-  const onTitleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setDrag(d => ({ ...d, active: true }));
-  };
-  useEffect(() => {
-    if (!drag.active) return;
-    const onMove = (e: MouseEvent) => {
-      setDrag(d => ({ ...d, dx: d.dx + (e.movementX || 0), dy: d.dy + (e.movementY || 0) }));
-    };
-    const onUp = () => setDrag(d => ({ ...d, active:false }));
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-  }, [drag.active]);
+  // jump-to-category support
+  const headerRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
+  const [jumpCat, setJumpCat] = useState<string>('');
 
-  // ====== NEW: refs so we can scroll to a category header ======
-  const tableWrapRef = useRef<HTMLDivElement>(null);
-  const categoryRowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
-
-  const scrollToCategory = (cat: string) => {
-    const wrap = tableWrapRef.current;
-    const row = categoryRowRefs.current[cat || ''];
-    if (!wrap || !row) return;
-    const y = row.offsetTop - 8;
-    wrap.scrollTo({ top: y, behavior: 'smooth' });
-  };
-
+  // reset when closed
   useEffect(() => {
     if (!open) {
       setQuery('');
@@ -92,26 +115,23 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       setError('');
       setCatSelect('');
       setCustomCategory('');
-      setDrag({active:false, dx:0, dy:0}); // reset position on open
+      setPos({ x: 0, y: 0 }); // reset modal position on close
     }
   }, [open]);
 
-  // -------- AUTO-LOAD DEFAULTS ON OPEN (silent, idempotent) --------
+  // Ensure defaults are loaded quietly on first open
+  const loadedDefaultsOnce = useRef(false);
   useEffect(() => {
     if (!open) return;
-    try {
-      const have = new Set((tags as Tag[]).map(t => (t.code || '').toUpperCase()));
-      for (const mt of DEFAULT_MASTER_TAGS) {
-        const codeU = (mt.code || '').toUpperCase();
-        if (codeU && !have.has(codeU)) {
-          addTag({ code: mt.code, name: mt.name, category: mt.category, color: mt.color });
-          have.add(codeU);
-        }
+    if (loadedDefaultsOnce.current) return;
+    // Add any missing default codes (no alert)
+    const existingCodes = new Set<string>((tags as Tag[]).map(t => (t.code || '').toUpperCase()));
+    DEFAULT_MASTER_TAGS.forEach(mt => {
+      if (!existingCodes.has(mt.code.toUpperCase())) {
+        addTag({ code: mt.code, name: mt.name, category: mt.category, color: mt.color });
       }
-    } catch (e) {
-      console.warn('[TagManager] Auto-load defaults failed:', e);
-    }
-    // deliberately NOT depending on `tags` to avoid loops
+    });
+    loadedDefaultsOnce.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -169,6 +189,9 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
     return finalOrder.map(cat => ({ category: cat, items: byCat.get(cat) || [] }));
   }, [tags, query, sortedCategories]);
+
+  // If not open, render nothing (after all hooks have run)
+  if (!open) return null;
 
   // ---- actions ----
   function startNew() {
@@ -246,6 +269,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     addTag(next);
     setDraft(d => ({ ...d, code: '', name: '' }));
     setError('');
+    // keep category selection as-is for rapid entry
     codeInputRef.current?.focus();
   }
 
@@ -299,83 +323,66 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   }
 
   function addToProject(tag: Tag) {
+    // prefer host-supplied callback
     if (onAddToProject) {
       onAddToProject(tag);
       return;
     }
-    const tried =
-      store?.addProjectTag?.(tag) ??
-      store?.addProjectTagById?.(tag.id) ??
-      store?.addTagToProject?.(tag);
-    if (tried !== undefined) return;
-    alert('Add-to-Project is not wired yet.');
+    // if already present, do nothing
+    try {
+      if (store?.hasProjectTag && store.hasProjectTag(tag.id)) return;
+
+      if (typeof addProjectTagById === 'function') {
+        addProjectTagById(tag.id);
+      } else if (typeof addProjectTag === 'function') {
+        addProjectTag(tag);
+      } else if (typeof addTagToProject === 'function') {
+        addTagToProject(tag);
+      } else {
+        // very old store fallback: push id into projectTagIds if available
+        const ids: string[] = Array.isArray(store?.projectTagIds) ? store.projectTagIds : [];
+        if (!ids.includes(tag.id) && typeof store?.setState === 'function') {
+          store.setState({ projectTagIds: [...ids, tag.id] });
+        }
+      }
+    } catch (e) {
+      console.warn('Add-to-Project error:', e);
+    }
+    // no alert; UI will show disabled "+"
   }
 
-  function loadDefaults() {
+  function loadDefaults(showAlert = true) {
     let added = 0;
+    const existingCodes = new Set((tags as Tag[]).map(t => (t.code || '').toUpperCase()));
     DEFAULT_MASTER_TAGS.forEach(mt => {
-      const exists = (tags as Tag[]).find(
-        t => (t.code || '').toUpperCase() === mt.code.toUpperCase()
-      );
-      if (!exists) {
-        addTag({
-          code: mt.code,
-          name: mt.name,
-          category: mt.category,
-          color: mt.color,
-        });
+      if (!existingCodes.has(mt.code.toUpperCase())) {
+        addTag({ code: mt.code, name: mt.name, category: mt.category, color: mt.color });
         added++;
       }
     });
-    alert(
-      `Default master tags loaded. Added ${added} new tag(s). Total master: ${DEFAULT_MASTER_TAGS.length}.`
-    );
+    if (showAlert) {
+      alert(`Default master tags loaded. Added ${added} new tag(s). Total master: ${DEFAULT_MASTER_TAGS.length}.`);
+    }
   }
 
   const headerNote =
     'Lights category always renders orange on the plan, regardless of saved color.';
 
-  // ====== when category selection changes, jump to that category in the table ======
-  useEffect(() => {
-    if (!open) return;
-    const cat =
-      catSelect === CUSTOM_CAT_VALUE
-        ? customCategory.trim()
-        : (catSelect || draft.category || '').trim();
-
-    if (!cat) return;
-    if (query) setQuery(''); // ensure category is visible
-    const id = window.setTimeout(() => scrollToCategory(cat), 0);
-    return () => window.clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [catSelect, customCategory]);
-
-  if (!open) return null;
-
   return (
     <div style={S.backdrop} onMouseDown={onClose}>
       <div
-        style={{
-          ...S.modal,
-          position: 'fixed',
-          left: '50%',
-          top: '8vh',
-          transform: `translate(-50%, 0) translate(${drag.dx}px, ${drag.dy}px)`,
-          cursor: drag.active ? 'grabbing' : 'default',
-        }}
+        ref={modalRef}
+        style={{ ...S.modal, transform: `translate(${pos.x}px, ${pos.y}px)` }}
         onMouseDown={e => e.stopPropagation()}
       >
         {/* Title Bar (drag handle) */}
-        <div
-          style={{ ...S.titleBar, cursor: 'grab' }}
-          onMouseDown={onTitleMouseDown}
-        >
+        <div style={S.titleBar} onPointerDown={onDragStart}>
           <div>
             <div style={S.title}>Tag Database</div>
             <div style={S.subtitle}>{headerNote}</div>
           </div>
-          <div style={{ display: 'flex', gap: 8, cursor: 'auto' }}>
-            <button className="btn" onClick={loadDefaults}>Load Defaults</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn" onClick={() => loadDefaults(true)}>Load Defaults</button>
             <button className="btn" onClick={() => fileRef.current?.click()}>Import JSON</button>
             <button className="btn" onClick={() => downloadTagsFile('tags.json', exportTags())}>Export JSON</button>
             <button className="btn" onClick={onClose}>Close</button>
@@ -390,6 +397,24 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             onChange={e => setQuery(e.target.value)}
             style={S.search}
           />
+          {/* Jump to category */}
+          <select
+            value={jumpCat}
+            onChange={e => {
+              const cat = e.target.value;
+              setJumpCat(cat);
+              const row = headerRefs.current[cat || ''];
+              row?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            style={{ ...S.input, maxWidth: 240 }}
+            title="Jump to category"
+          >
+            <option value="">Jump to category…</option>
+            {sortedCategories.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+
           <button className="btn" onClick={startNew}>New Tag</button>
         </div>
 
@@ -447,6 +472,10 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                       } else {
                         setDraft(d => ({ ...d, category: v }));
                         setCustomCategory('');
+                        // Jump to that category section so user sees where it will land
+                        const row = headerRefs.current[v || ''];
+                        row?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        setJumpCat(v);
                       }
                     }}
                     style={S.input}
@@ -455,7 +484,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     {sortedCategories.map(c => <option key={c} value={c}>{c}</option>)}
                     <option value={CUSTOM_CAT_VALUE}>Custom…</option>
                   </select>
-                  { (catSelect === CUSTOM_CAT_VALUE) && (
+                  {(catSelect === CUSTOM_CAT_VALUE) && (
                     <input
                       value={customCategory}
                       onChange={e => setCustomCategory(e.target.value)}
@@ -495,7 +524,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         </div>
 
         {/* Grouped Table */}
-        <div style={S.tableWrap} ref={tableWrapRef}>
+        <div style={S.tableWrap}>
           <table style={S.table}>
             <thead>
               <tr>
@@ -511,35 +540,39 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                 <React.Fragment key={group.category || '(Uncategorized)'}>
                   {/* Category Header Row */}
                   <tr
-                    ref={(el) => { categoryRowRefs.current[group.category || ''] = el; }}
+                    ref={el => { headerRefs.current[group.category || ''] = el; }}
                   >
                     <td colSpan={5} style={{ padding:'10px 6px', background:'#fafafa', borderTop:'1px solid #eee', fontWeight:700 }}>
                       {group.category || 'Uncategorized'}
                     </td>
                   </tr>
                   {/* Items */}
-                  {group.items.map((t: Tag) => (
-                    <tr key={t.id}>
-                      <td>
-                        <div style={{ width:20, height:20, borderRadius:4, background:t.color, border:'1px solid #999', margin:'0 auto' }} />
-                      </td>
-                      <td style={{ fontWeight:600 }}>{t.code}</td>
-                      <td>{t.category}</td>
-                      <td>{t.name}</td>
-                      <td>
-                        <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
-                          <button
-                            className="btn"
-                            title="Add to current project"
-                            aria-label={`Add ${t.code} to current project`}
-                            onClick={() => addToProject(t)}
-                          >+</button>
-                          <button className="btn" onClick={() => startEdit(t)}>Edit</button>
-                          <button className="btn" onClick={() => remove(t.id)}>Delete</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {group.items.map((t: Tag) => {
+                    const already = typeof hasProjectTag === 'function' ? !!hasProjectTag(t.id) : false;
+                    return (
+                      <tr key={t.id}>
+                        <td>
+                          <div style={{ width:20, height:20, borderRadius:4, background:t.color, border:'1px solid #999', margin:'0 auto' }} />
+                        </td>
+                        <td style={{ fontWeight:600 }}>{t.code}</td>
+                        <td>{t.category}</td>
+                        <td>{t.name}</td>
+                        <td>
+                          <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
+                            <button
+                              className="btn"
+                              title={already ? 'Already in project' : 'Add to current project'}
+                              aria-label={`Add ${t.code} to current project`}
+                              onClick={() => addToProject(t)}
+                              disabled={already}
+                            >+</button>
+                            <button className="btn" onClick={() => startEdit(t)}>Edit</button>
+                            <button className="btn" onClick={() => remove(t.id)}>Delete</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                   {group.items.length === 0 && (
                     <tr>
                       <td colSpan={5} style={{ color:'#777', padding:'10px 6px' }}>No items in this category.</td>
@@ -568,16 +601,21 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 /* ---------- Inline styles ---------- */
 const S: Record<string, React.CSSProperties> = {
   backdrop: {
-    position:'fixed', inset:0, background:'rgba(0,0,0,0.35)', zIndex:9999
+    position:'fixed', inset:0, background:'rgba(0,0,0,0.35)', zIndex:9999,
+    display:'flex', alignItems:'center', justifyContent:'center'
   },
   modal: {
     background:'#fff', width:1000, maxWidth:'92vw', maxHeight:'90vh',
     overflow:'hidden', borderRadius:12, boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
-    display:'flex', flexDirection:'column'
+    display:'flex', flexDirection:'column',
+    // allow dragging via transform
+    willChange: 'transform',
   },
   titleBar: {
     display:'flex', alignItems:'flex-start', justifyContent:'space-between',
-    padding:'14px 16px 8px', borderBottom:'1px solid #eee', background:'#fafafa'
+    padding:'14px 16px 8px', borderBottom:'1px solid #eee', background:'#fafafa',
+    cursor:'move',  // drag hint
+    userSelect:'none'
   },
   title: { fontSize:20, fontWeight:700, marginBottom:4 },
   subtitle: { fontSize:12, color:'#666' },
