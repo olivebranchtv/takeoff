@@ -10,7 +10,7 @@ export default defineConfig({
       // App alias
       { find: '@', replacement: path.resolve(__dirname, 'src') },
 
-      // ---- Fix 1: some code mistakenly default-imports with-selector; make both work
+      // Fix: some code default-imports with-selector; route to our shim that provides default + named
       {
         find: /use-sync-external-store\/shim\/with-selector(?:\.js)?(?=$|\?)/,
         replacement: path.resolve(
@@ -19,21 +19,19 @@ export default defineConfig({
         ),
       },
 
-      // ---- Fix 2: normalize Konva deep imports to a shim that exposes both default and named `Konva`
-      {
-        find: 'konva/lib/Global.js',
-        replacement: path.resolve(__dirname, 'src/shims/konvaGlobalShim.ts'),
-      },
+      // Fix: react-konva deep import 'konva/lib/Global(.js)'
+      { find: 'konva/lib/Global.js', replacement: path.resolve(__dirname, 'src/shims/konvaGlobalShim.ts') },
+      { find: 'konva/lib/Global',   replacement: path.resolve(__dirname, 'src/shims/konvaGlobalShim.ts') },
     ],
   },
   optimizeDeps: {
-    // keep dev prebundle away from these sensitive libs
+    // keep dev prebundle away from these to avoid esbuild/WASM quirks
     exclude: ['konva', 'react-konva', 'pdfjs-dist', 'zustand'],
   },
   build: {
-    // safer minifier for large/wasm-adjacent bundles
-    minify: 'terser',
     target: 'esnext',
+    // terser is safer here than esbuild for these deps
+    minify: 'terser',
     worker: { format: 'es' },
     rollupOptions: {
       output: { manualChunks: undefined },
