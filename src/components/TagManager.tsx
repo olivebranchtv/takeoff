@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useStore } from '@/state/store';
 import type { Tag } from '@/types';
 import { downloadTagsFile } from '@/utils/persist';
+import { DEFAULT_MASTER_TAGS } from '@/constants/masterTags';
 
 type Props = {
   open: boolean;
@@ -13,6 +14,15 @@ type Props = {
 type Draft = Omit<Tag, 'id'>;
 
 const emptyDraft: Draft = { code: '', name: '', category: '', color: '#FFA500' };
+
+// --- helpers ---
+function sanitizeCode(raw: string): string {
+  // Uppercase, collapse spaces to '-', allow A-Z 0-9 - / #
+  return raw
+    .toUpperCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^A-Z0-9\-/#]/g, '');
+}
 
 export default function TagManager({ open, onClose, onAddToProject }: Props) {
   // ---- hooks (must be called every render, regardless of `open`) ----
@@ -87,14 +97,19 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   function validate(next: Draft): string {
     if (!next.code.trim()) return 'Code is required.';
-    if (!/^[a-z0-9\-]+$/i.test(next.code.trim())) return 'Use letters/numbers/hyphen only for Code.';
+    // allow A-Z 0-9 - / #
+    if (!/^[A-Z0-9\-/#]+$/.test(next.code.trim().toUpperCase()))
+      return 'Code may only use letters, numbers, "-", "/", or "#".';
     const dup = (tags as Tag[]).find(t => t.code.toUpperCase() === next.code.trim().toUpperCase());
     if (!editId && dup) return `Code “${next.code.toUpperCase()}” already exists.`;
     return '';
   }
 
   function add() {
-    const next: Draft = { ...draft, code: draft.code.trim().toUpperCase() };
+    const next: Draft = {
+      ...draft,
+      code: sanitizeCode(draft.code),
+    };
     const msg = validate(next);
     if (msg) { setError(msg); return; }
     addTag(next);
@@ -105,7 +120,10 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   function saveEdit() {
     if (!editId) return;
-    const next: Draft = { ...draft, code: draft.code.trim().toUpperCase() };
+    const next: Draft = {
+      ...draft,
+      code: sanitizeCode(draft.code),
+    };
     const msg = validate(next);
     if (msg && msg.includes('already exists')) {
       const conflict = (tags as Tag[]).find(t => t.code.toUpperCase() === next.code.toUpperCase());
@@ -152,6 +170,30 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     alert('Add-to-Project is not wired yet. Provide onAddToProject(tag) from the parent, or implement one of: addProjectTag(tag), addProjectTagById(id), addTagToProject(tag) on the store.');
   }
 
+  function loadDefaults() {
+    const byCode = new Set<string>((tags as Tag[]).map(t => t.code.toUpperCase()));
+    let added = 0;
+
+    DEFAULT_MASTER_TAGS.forEach(mt => {
+      const code = sanitizeCode(mt.code);
+      if (!code || byCode.has(code)) return;
+      const draft: Draft = {
+        code,
+        name: mt.name,
+        category: mt.category,
+        color: mt.color,
+      };
+      const msg = validate(draft);
+      if (!msg) {
+        addTag(draft);
+        byCode.add(code);
+        added++;
+      }
+    });
+
+    alert(added > 0 ? `Loaded ${added} default tags.` : 'All default tags already exist.');
+  }
+
   const headerNote =
     'Lights category always renders orange on the plan, regardless of saved color.';
 
@@ -165,6 +207,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             <div style={S.subtitle}>{headerNote}</div>
           </div>
           <div style={{display:'flex', gap:8}}>
+            <button className="btn" onClick={loadDefaults}>Load Defaults</button>
             <button className="btn" onClick={() => fileRef.current?.click()}>Import JSON</button>
             <button className="btn" onClick={() => downloadTagsFile('tags.json', exportTags())}>Export JSON</button>
             <button className="btn" onClick={onClose}>Close</button>
