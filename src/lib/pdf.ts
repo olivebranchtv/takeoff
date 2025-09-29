@@ -8,7 +8,7 @@ import { getDocument, GlobalWorkerOptions, version } from 'pdfjs-dist/build/pdf.
 
 export type PDFDoc = any;
 
-// Completely disable worker and all external resource loading
+// Completely disable worker - this is the key fix
 GlobalWorkerOptions.workerSrc = '';
 
 // Force all operations to run in main thread without any external fetching
@@ -19,13 +19,13 @@ const COMMON_DOC_OPTS = {
   disableRange: true,
   disableStream: true,
   disableAutoFetch: true,
-  disableFontFace: true,  // Disable font loading completely
-  standardFontDataUrl: '',  // Empty string instead of undefined
-  cMapUrl: '',  // Empty string instead of undefined
+  disableFontFace: true,
+  standardFontDataUrl: '',
+  cMapUrl: '',
   cMapPacked: false,
-  verbosity: 0,  // Disable verbose logging
-  maxImageSize: -1,  // Disable image size limits
-  disableCreateObjectURL: true,  // Prevent blob URL creation
+  verbosity: 0,
+  maxImageSize: -1,
+  disableCreateObjectURL: true,
 };
 
 /** Load a PDF from raw bytes. Accepts ArrayBuffer, Uint8Array, or number[]. */
