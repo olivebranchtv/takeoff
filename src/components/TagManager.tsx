@@ -1,3 +1,4 @@
+// src/components/TagManager.tsx
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useStore } from '@/state/store';
 import type { Tag } from '@/types';
@@ -53,7 +54,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       return;
     }
 
-    // --- NEW: auto-load defaults once if DB is empty ---
+    // --- auto-load defaults once if DB is empty ---
     if ((tags as Tag[]).length === 0 && Array.isArray(DEFAULT_MASTER_TAGS)) {
       const existing = new Set<string>((tags as Tag[]).map(t => (t.code || '').toUpperCase()));
       const toAdd = DEFAULT_MASTER_TAGS.filter(t => !existing.has((t.code || '').toUpperCase()));
@@ -111,7 +112,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     return finalOrder.map(cat => ({ category: cat, items: byCat.get(cat) || [] }));
   }, [tags, query, sortedCategories]);
 
-  // --- NEW: map of category header <tr> for jump scrolling ---
+  // --- map of category header <tr> for jump scrolling ---
   const groupRefs = useRef(new Map<string, HTMLTableRowElement>());
   useEffect(() => { groupRefs.current = new Map(); }, [filteredGroups]);
 
@@ -223,13 +224,31 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     reader.readAsText(f);
   }
 
+  // UPDATED: ensure that adding to a project also persists to master DB (upsert by code/id)
   function addToProject(tag: Tag) {
+    // 1) Upsert into master DB
+    const exists =
+      (tags as Tag[]).some(
+        t => t.id === tag.id || (t.code || '').toUpperCase() === (tag.code || '').toUpperCase()
+      );
+
+    if (!exists) {
+      addTag({
+        code: (tag.code || '').toUpperCase(),
+        name: tag.name || '',
+        category: tag.category || '',
+        color: tag.color || '#FFA500'
+      });
+    }
+
+    // 2) Then add to current project
     if (onAddToProject) { onAddToProject(tag); return; }
     const tried =
-      store?.addProjectTag?.(tag) ??
-      store?.addProjectTagById?.(tag.id) ??
-      store?.addTagToProject?.(tag);
+      (store as any)?.addProjectTag?.(tag) ??
+      (store as any)?.addProjectTagById?.(tag.id) ??
+      (store as any)?.addTagToProject?.(tag);
     if (tried !== undefined) return;
+
     alert('Add-to-Project is not wired yet.');
   }
 
@@ -249,7 +268,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   // --- Drag handlers (title bar only) ---
   function onDragStart(e: React.MouseEvent) {
-    const el = e.currentTarget as HTMLDivElement;
     dragRef.current = { active:true, sx:e.clientX, sy:e.clientY, ox:pos.x, oy:pos.y };
     window.addEventListener('mousemove', onDragMove);
     window.addEventListener('mouseup', onDragEnd);
@@ -302,7 +320,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             onChange={e => setQuery(e.target.value)}
             style={S.search}
           />
-          {/* NEW: jump to category */}
+          {/* Jump to category */}
           <select
             style={S.jump}
             defaultValue=""
@@ -311,7 +329,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
               if (!cat) return;
               const row = groupRefs.current.get(cat);
               row?.scrollIntoView({ behavior:'smooth', block:'start' });
-              // reset to placeholder so user sees “Jump to category…”
               e.currentTarget.value = '';
             }}
           >
