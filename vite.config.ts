@@ -10,27 +10,31 @@ export default defineConfig({
       // App alias
       { find: '@', replacement: path.resolve(__dirname, 'src') },
 
-      // Fix: some code default-imports with-selector; route to our shim that provides default + named
-      {
-        find: /use-sync-external-store\/shim\/with-selector(?:\.js)?(?=$|\?)/,
-        replacement: path.resolve(
-          __dirname,
-          'src/shims/useSyncExternalStoreWithSelectorShim.ts'
-        ),
-      },
-
-      // Fix: react-konva deep import 'konva/lib/Global(.js)'
+      // ------------------------------------------------------------------
+      // FIX 1: react-konva sometimes deep-imports 'konva/lib/Global(.js)'
+      // Route that to a shim exposing default + named Konva.
+      // ------------------------------------------------------------------
       { find: 'konva/lib/Global.js', replacement: path.resolve(__dirname, 'src/shims/konvaGlobalShim.ts') },
       { find: 'konva/lib/Global',   replacement: path.resolve(__dirname, 'src/shims/konvaGlobalShim.ts') },
+
+      // ------------------------------------------------------------------
+      // FIX 2: some deps expect a *default* from with-selector (but it has none).
+      // We alias ONLY the *bare* ids (no query/extension), to our shim.
+      // Our shim will import the REAL module using '?real' so alias won’t match.
+      // This avoids the “Detected cycle while resolving name …” error.
+      // ------------------------------------------------------------------
+      { find: 'use-sync-external-store/shim/with-selector',
+        replacement: path.resolve(__dirname, 'src/shims/useSyncExternalStoreWithSelectorShim.ts') },
+      { find: 'use-sync-external-store/shim/with-selector.js',
+        replacement: path.resolve(__dirname, 'src/shims/useSyncExternalStoreWithSelectorShim.ts') },
     ],
   },
   optimizeDeps: {
-    // keep dev prebundle away from these to avoid esbuild/WASM quirks
+    // keep dev pre-bundle away from these heavy libs
     exclude: ['konva', 'react-konva', 'pdfjs-dist', 'zustand'],
   },
   build: {
     target: 'esnext',
-    // terser is safer here than esbuild for these deps
     minify: 'terser',
     worker: { format: 'es' },
     rollupOptions: {
