@@ -80,21 +80,39 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     const wrap = tableWrapRef.current;
     const row = categoryRowRefs.current[cat || ''];
     if (!wrap || !row) return;
-    // align category header near the top of the scroll container
     const y = row.offsetTop - 8;
     wrap.scrollTo({ top: y, behavior: 'smooth' });
   };
 
   useEffect(() => {
+    if (!open) {
+      setQuery('');
+      setDraft(emptyDraft);
+      setEditId(null);
+      setError('');
+      setCatSelect('');
+      setCustomCategory('');
+      setDrag({active:false, dx:0, dy:0}); // reset position on open
+    }
+  }, [open]);
+
+  // -------- AUTO-LOAD DEFAULTS ON OPEN (silent, idempotent) --------
+  useEffect(() => {
     if (!open) return;
-    setQuery('');
-    setDraft(emptyDraft);
-    setEditId(null);
-    setError('');
-    setCatSelect('');
-    setCustomCategory('');
-    // reset position each time it opens
-    setDrag({active:false, dx:0, dy:0});
+    try {
+      const have = new Set((tags as Tag[]).map(t => (t.code || '').toUpperCase()));
+      for (const mt of DEFAULT_MASTER_TAGS) {
+        const codeU = (mt.code || '').toUpperCase();
+        if (codeU && !have.has(codeU)) {
+          addTag({ code: mt.code, name: mt.name, category: mt.category, color: mt.color });
+          have.add(codeU);
+        }
+      }
+    } catch (e) {
+      console.warn('[TagManager] Auto-load defaults failed:', e);
+    }
+    // deliberately NOT depending on `tags` to avoid loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // Build the category list from: master + existing tags
@@ -327,7 +345,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
     if (!cat) return;
     if (query) setQuery(''); // ensure category is visible
-    // Allow DOM to render before scrolling.
     const id = window.setTimeout(() => scrollToCategory(cat), 0);
     return () => window.clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -338,7 +355,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   return (
     <div style={S.backdrop} onMouseDown={onClose}>
       <div
-        // draggable modal: fixed, centered baseline + drag offsets
         style={{
           ...S.modal,
           position: 'fixed',
