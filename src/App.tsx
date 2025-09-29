@@ -37,13 +37,6 @@ function b64ToAb(b64: string): ArrayBuffer {
   return out.buffer;
 }
 
-/** Small helper for UI labels */
-function baseNameNoExt(path: string) {
-  const just = (path || '').split('/').pop() || path || '';
-  const dot = just.lastIndexOf('.');
-  return dot > 0 ? just.slice(0, dot) : just || 'Untitled';
-}
-
 /** Preferred category order for pickers (others follow alphabetically) */
 const MASTER_CATEGORY_ORDER = ['Lights', 'Receptacles'];
 
@@ -84,15 +77,14 @@ export default function App() {
     tags,
     currentTag, setCurrentTag,
     setSelectedIds,
-    setProjectName, // used to force header to the project name from the bundle
+    setProjectName,
   } = useStore();
 
   /* =========================================================================================
-     FILE MENU  — New / Open (.skdproj) / Save (.skdproj) / Save As (.skdproj) / Print / Close
+     FILE MENU
      ========================================================================================= */
 
   const makeBundle = useCallback<() => SKDBundle>(() => {
-    // bundle the store's project data + the Project Tags list + embedded PDF
     const core: ProjectSave = useStore.getState().toProject();
     const bundle: SKDBundle = {
       kind: 'skdproj',
@@ -133,7 +125,7 @@ export default function App() {
     setLastSaveBase(null);
   }
 
-  /** open .skdproj and auto-restore embedded PDF (store.fromProject handles legacy coercions) */
+  /** open .skdproj and auto-restore embedded PDF */
   async function doOpenProject(file: File) {
     let text = '';
     try {
