@@ -203,9 +203,12 @@ export default function App() {
       // restore PDF if present
       if (bundle.pdf && typeof bundle.pdf.bytesBase64 === 'string' && bundle.pdf.bytesBase64.length > 0) {
         try {
+          console.log('[Open Project] Loading embedded PDF...');
           const ab = b64ToAb(bundle.pdf.bytesBase64);
           const u8 = new Uint8Array(ab);
           if (!looksLikePdf(u8)) throw new Error('Embedded bytes are not a PDF (missing %PDF- header)');
+          
+          console.log(`[Open Project] PDF bytes validated: ${u8.length} bytes`);
           const doc = await loadPdfFromBytes(u8);
 
           setPdf(doc);
@@ -218,10 +221,13 @@ export default function App() {
           setPageLabels(await resolvePageLabels(doc));
           setActivePage(0);
           setSelectedIds([]);
+          
+          console.log(`[Open Project] PDF loaded successfully: ${doc.numPages} pages`);
         } catch (err: any) {
-          console.warn('[Open Project] Could not load embedded PDF:', err?.message || err);
+          console.error('[Open Project] Could not load embedded PDF:', err?.message || err);
           setPdf(null);
           setFileName('');
+          // Don't throw - allow project to load without PDF
         }
       } else {
         setPdf(null);
@@ -230,7 +236,8 @@ export default function App() {
 
       setLastSaveBase(file.name.replace(/\.skdproj$/i, '').replace(/\.json$/i, ''));
     } catch (e: any) {
-      console.warn('[Open Project] Invalid .skdproj:', e?.message || e, { filePreview: text.slice(0, 200) });
+      console.error('[Open Project] Invalid .skdproj:', e?.message || e, { filePreview: text.slice(0, 200) });
+      alert(`Failed to open project: ${e?.message || 'Invalid file format'}`);
     }
   }
 

@@ -7,6 +7,26 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) }
+  },
+  // Optimize dependencies and prevent external requests
+  optimizeDeps: {
+    include: ['pdfjs-dist/build/pdf.mjs'],
+    exclude: ['pdfjs-dist/build/pdf.worker.min.js']
+  },
+  // Prevent preload warnings
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'pdf-lib': ['pdfjs-dist']
+        }
+      }
+    }
+  },
+  // Development server configuration
+  server: {
+    hmr: {
+      overlay: false // Reduce HMR error overlay noise
+    }
   }
-  // No optimizeDeps.include needed for pdf.js worker
 });
