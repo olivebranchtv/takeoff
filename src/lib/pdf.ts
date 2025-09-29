@@ -8,14 +8,14 @@ import { getDocument, GlobalWorkerOptions, version } from 'pdfjs-dist/build/pdf.
 
 export type PDFDoc = any;
 
-// Set up worker properly for PDF.js
-GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.js`;
+// Disable worker to avoid CORS issues in browser environments
+GlobalWorkerOptions.workerSrc = '';
 
 // Common flags to avoid eval and streaming fetch in locked-down environments.
 const COMMON_DOC_OPTS = {
-  disableWorker: false,
+  disableWorker: true,
   isEvalSupported: false,
-  useWorkerFetch: true,
+  useWorkerFetch: false,
   disableRange: false,
   disableStream: false,
 };
