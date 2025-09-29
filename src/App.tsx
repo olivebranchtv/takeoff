@@ -212,7 +212,7 @@ export default function App() {
   }, [setFileName, setPages, setPageCount, setPageLabels, setActivePage, setSelectedIds]);
 
   /* =========================================================================================
-     SIMPLE SUMMARY (BOM) — unchanged logic
+     SIMPLE SUMMARY (BOM)
      ========================================================================================= */
   const bom = useMemo(() => {
     let totalTags = 0;
@@ -368,7 +368,7 @@ export default function App() {
         <button className="btn" onClick={()=>{ const s=prompt('Paste JSON:'); if(!s)return; try{ useStore.getState().fromProject(importJSON(s)); setPdf(null); alert('Imported. Open the matching PDF.'); }catch(e:any){ alert('Invalid JSON: '+e.message);} }}>Import JSON</button>
       </div>
 
-      {/* PROJECT TAGS BAR (unchanged from your last working state) */}
+      {/* PROJECT TAGS BAR */}
       <div className="quickbar" style={{display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderBottom:'1px solid #eee', position:'sticky', top:96, background:'#fff', zIndex:30}}>
         <div className="label" style={{minWidth:110, fontWeight:700}}>Project Tags</div>
 
@@ -414,7 +414,7 @@ export default function App() {
                   setPickerSel(''); setPickerOpen(false);
                 }}>Add</button>
               </div>
-              <div style={{marginTop:6, fontSize:12, color:'#666'}}>Tip: open “Tags” to edit DB entries or import a master set.</div>
+              <div style={{marginTop:6, fontSize:12, color:'#666'}}>Tip: open “Tags” to load the master DB first.</div>
             </div>
           )}
         </div>
@@ -437,7 +437,7 @@ export default function App() {
           >☰ BOM</button>
         )}
 
-        {/* SIDEBAR (hidden when collapsed) */}
+        {/* SIDEBAR */}
         <aside
           className="sidebar"
           style={{
@@ -447,68 +447,7 @@ export default function App() {
             pointerEvents: leftOpen ? 'auto' : 'none'
           }}
         >
-          <div style={{display:'flex', alignItems:'center', gap:8, padding:'8px 10px', position:'sticky', top:0, background:'#fff', zIndex:2, borderBottom:'1px solid #f2f2f2'}}>
-            <button className="btn" onClick={()=>setLeftOpen(false)} title="Hide sidebar">⟨</button>
-            <div className="label" style={{fontWeight:700}}>BOM Summary</div>
-            <div style={{flex:1}} />
-            <button className="btn" onClick={()=>{
-              const rows = [
-                ['Total Tags', String(bom.totalTags)],
-                ['Segment LF', bom.segLF.toFixed(2)],
-                ['Polyline LF', bom.plLF.toFixed(2)],
-                ['Freeform LF', bom.ffLF.toFixed(2)],
-                ['Total LF', (bom.totalLF).toFixed(2)],
-                [],
-                ['Code','Tag Markers','Measurements','Linear Ft'],
-                ...bom.rows.map(r => [r.code, String(r.tags), String(r.meas), r.lf.toFixed(2)])
-              ];
-              const csv = rows.map(r=>r.join(',')).join('\n');
-              const blob = new Blob([csv], {type:'text/csv'});
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a'); a.href=url; a.download='bom_summary.csv'; a.click(); URL.revokeObjectURL(url);
-            }}>Export CSV</button>
-          </div>
-
-          <div style={{padding:'10px'}}>
-            <div style={{padding:'0 0 12px 0', color:'#666', fontSize:13}}>
-              {bom.calibratedCount}/{bom.totalPages} page(s) calibrated.
-            </div>
-
-            <div style={{padding:'0 0 12px 0'}}>
-              <div style={{marginBottom:8, fontWeight:600}}>Totals</div>
-              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', rowGap:6}}>
-                <div>Total Tags:</div><div>{bom.totalTags}</div>
-                <div>Segment LF:</div><div>{bom.segLF.toFixed(2)}</div>
-                <div>Polyline LF:</div><div>{bom.plLF.toFixed(2)}</div>
-                <div>Freeform LF:</div><div>{bom.ffLF.toFixed(2)}</div>
-                <div style={{fontWeight:700}}>Total LF:</div><div style={{fontWeight:700}}>{bom.totalLF.toFixed(2)}</div>
-              </div>
-            </div>
-
-            <div style={{padding:'0 0 20px 0'}}>
-              <div style={{marginBottom:8, fontWeight:600}}>Counts by Code</div>
-              <table style={{width:'100%', borderCollapse:'collapse', fontSize:14}}>
-                <thead>
-                  <tr style={{borderBottom:'1px solid #eee'}}>
-                    <th style={{textAlign:'left', padding:'6px 4px'}}>Code</th>
-                    <th style={{textAlign:'left', padding:'6px 4px'}}>Tags</th>
-                    <th style={{textAlign:'left', padding:'6px 4px'}}>Meas</th>
-                    <th style={{textAlign:'left', padding:'6px 4px'}}>LF</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bom.rows.map(r=>(
-                    <tr key={r.code} style={{borderBottom:'1px solid #f3f3f3'}}>
-                      <td style={{padding:'6px 4px', fontWeight:600}}>{r.code}</td>
-                      <td style={{padding:'6px 4px'}}>{r.tags}</td>
-                      <td style={{padding:'6px 4px'}}>{r.meas}</td>
-                      <td style={{padding:'6px 4px'}}>{r.lf.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <SidebarBOM bom={bom} />
         </aside>
 
         {/* VIEWPORT */}
@@ -524,8 +463,65 @@ export default function App() {
         </div>
       </div>
 
-      {/* TAG MANAGER MODAL */}
-      {tagsOpen && <TagManager onClose={()=>setTagsOpen(false)} />}
+      {/* TAG MANAGER MODAL — IMPORTANT: pass `open` prop */}
+      <TagManager open={tagsOpen} onClose={()=>setTagsOpen(false)} />
+    </div>
+  );
+}
+
+function SidebarBOM({ bom }:{
+  bom: {
+    totalTags: number; segLF: number; plLF: number; ffLF: number; totalLF: number;
+    rows: { code:string; tags:number; meas:number; lf:number }[];
+    calibratedCount: number; totalPages: number;
+  }
+}) {
+  return (
+    <div>
+      <div style={{display:'flex', alignItems:'center', gap:8, padding:'8px 10px', position:'sticky', top:0, background:'#fff', zIndex:2, borderBottom:'1px solid #f2f2f2'}}>
+        <div className="label" style={{fontWeight:700}}>BOM Summary</div>
+      </div>
+
+      <div style={{padding:'10px'}}>
+        <div style={{padding:'0 0 12px 0', color:'#666', fontSize:13}}>
+          {bom.calibratedCount}/{bom.totalPages} page(s) calibrated.
+        </div>
+
+        <div style={{padding:'0 0 12px 0'}}>
+          <div style={{marginBottom:8, fontWeight:600}}>Totals</div>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', rowGap:6}}>
+            <div>Total Tags:</div><div>{bom.totalTags}</div>
+            <div>Segment LF:</div><div>{bom.segLF.toFixed(2)}</div>
+            <div>Polyline LF:</div><div>{bom.plLF.toFixed(2)}</div>
+            <div>Freeform LF:</div><div>{bom.ffLF.toFixed(2)}</div>
+            <div style={{fontWeight:700}}>Total LF:</div><div style={{fontWeight:700}}>{bom.totalLF.toFixed(2)}</div>
+          </div>
+        </div>
+
+        <div style={{padding:'0 0 20px 0'}}>
+          <div style={{marginBottom:8, fontWeight:600}}>Counts by Code</div>
+          <table style={{width:'100%', borderCollapse:'collapse', fontSize:14}}>
+            <thead>
+              <tr style={{borderBottom:'1px solid #eee'}}>
+                <th style={{textAlign:'left', padding:'6px 4px'}}>Code</th>
+                <th style={{textAlign:'left', padding:'6px 4px'}}>Tags</th>
+                <th style={{textAlign:'left', padding:'6px 4px'}}>Meas</th>
+                <th style={{textAlign:'left', padding:'6px 4px'}}>LF</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bom.rows.map(r=>(
+                <tr key={r.code} style={{borderBottom:'1px solid #f3f3f3'}}>
+                  <td style={{padding:'6px 4px', fontWeight:600}}>{r.code}</td>
+                  <td style={{padding:'6px 4px'}}>{r.tags}</td>
+                  <td style={{padding:'6px 4px'}}>{r.meas}</td>
+                  <td style={{padding:'6px 4px'}}>{r.lf.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
