@@ -22,31 +22,38 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
 
   useEffect(() => {
     let cancelled = false;
-    if (!pdf) { setInfo(null); return; }
+    if (!pdf || pageIndex < 0) { setInfo(null); return; }
     const DPR = Math.max(1, window.devicePixelRatio || 1);
 
     (async () => {
-      const page = await pdf.getPage(pageIndex + 1);
-      const baseVp = page.getViewport({ scale: 1 });
-      const vp = page.getViewport({ scale: zoom });
+      try {
+        const page = await pdf.getPage(pageIndex + 1);
+        const baseVp = page.getViewport({ scale: 1 });
+        const vp = page.getViewport({ scale: zoom });
 
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d')!;
-      canvas.width = Math.floor(vp.width * DPR);
-      canvas.height = Math.floor(vp.height * DPR);
-      canvas.style.width = `${vp.width}px`;
-      canvas.style.height = `${vp.height}px`;
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Could not get canvas context');
+        
+        canvas.width = Math.floor(vp.width * DPR);
+        canvas.height = Math.floor(vp.height * DPR);
+        canvas.style.width = `${vp.width}px`;
+        canvas.style.height = `${vp.height}px`;
 
-      await page.render({ canvasContext: ctx, viewport: page.getViewport({ scale: zoom * DPR }) }).promise;
-      if (cancelled) return;
-      setInfo({
-        pageIndex,
-        baseWidth: baseVp.width,
-        baseHeight: baseVp.height,
-        width: vp.width,
-        height: vp.height,
-        canvas
-      });
+        await page.render({ canvasContext: ctx, viewport: page.getViewport({ scale: zoom * DPR }) }).promise;
+        if (cancelled) return;
+        setInfo({
+          pageIndex,
+          baseWidth: baseVp.width,
+          baseHeight: baseVp.height,
+          width: vp.width,
+          height: vp.height,
+          canvas
+        });
+      } catch (error) {
+        console.error('Error rendering PDF page:', error);
+        if (!cancelled) setInfo(null);
+      }
     })();
 
     return () => { cancelled = true; };
@@ -294,8 +301,11 @@ export default function PDFViewport({ pdf }: Props) {
       <div className="pageBox" style={{ width: w, height: h }}>
         <div style={{position:'absolute', inset:0}}>
           {/* bitmap */}
-          <div style={{position:'absolute', inset:0}} ref={(el)=>{
-            if (el && info.canvas.parentElement !== el) { el.innerHTML = ''; el.appendChild(info.canvas); }
+          <div style={{position:'absolute', inset:0}} ref={(el) => {
+            if (el && info.canvas && info.canvas.parentElement !== el) { 
+              el.innerHTML = ''; 
+              el.appendChild(info.canvas); 
+            }
           }}/>
           <div className="calib">
             {pState?.pixelsPerFoot ? `Calibrated: ${pState.pixelsPerFoot.toFixed(2)} px/ft` : 'Not calibrated'}
