@@ -22,7 +22,7 @@ type SKDBundle = {
 };
 
 /* =========================================================================================
-   helpers for base64 <-> ArrayBuffer
+   helpers for base64 <-> buffers
    ========================================================================================= */
 function abToB64(buf: ArrayBuffer): string {
   let binary = '';
@@ -30,14 +30,15 @@ function abToB64(buf: ArrayBuffer): string {
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
 }
-function b64ToAb(b64: string): ArrayBuffer {
+/** IMPORTANT: return Uint8Array (PDF.js prefers this) */
+function b64ToU8(b64: string): Uint8Array {
   const bin = atob(b64);
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out.buffer;
+  return out;
 }
 
-/** Small helper for UI labels */
+/** Small helper for UI labels (kept in case you need it later) */
 function baseNameNoExt(path: string) {
   const just = (path || '').split('/').pop() || path || '';
   const dot = just.lastIndexOf('.');
@@ -81,7 +82,7 @@ export default function App() {
     tags,
     currentTag, setCurrentTag,
     setSelectedIds,
-    setProjectName, // used to force header to the project name from the bundle
+    setProjectName, // assumes store has projectName + setters/getters per earlier update
   } = useStore();
 
   /* =========================================================================================
@@ -164,8 +165,8 @@ export default function App() {
       // Restore PDF if present
       if (bundle.pdf && typeof bundle.pdf.bytesBase64 === 'string' && bundle.pdf.bytesBase64.length > 0) {
         try {
-          const ab = b64ToAb(bundle.pdf.bytesBase64); // ← revert to original decoder
-          const doc = await loadPdfFromBytes(ab);
+          const u8 = b64ToU8(bundle.pdf.bytesBase64);      // ← use Uint8Array
+          const doc = await loadPdfFromBytes(u8);
           setPdf(doc);
           setPdfName(bundle.pdf.name || 'document.pdf');
           setFileName(bundle.pdf.name || 'document.pdf');
@@ -200,9 +201,7 @@ export default function App() {
 
       setLastSaveBase(file.name.replace(/\.skdproj$/i, '').replace(/\.json$/i, ''));
     } catch (e: any) {
-      // Previously this used alert(); switch to non-blocking log
       console.warn('[Open Project] Invalid .skdproj:', e?.message || e, { filePreview: text.slice(0, 200) });
-      // Leave UI as-is so user can attempt another open; do not block.
     }
   }
 
@@ -224,7 +223,7 @@ export default function App() {
     setPdfBytesBase64(base64);
     setPdfName(file.name);
 
-    const doc = await loadPdfFromBytes(buf);
+    const doc = await loadPdfFromBytes(new Uint8Array(buf)); // ← pass Uint8Array here too
     setPdf(doc);
     setFileName(file.name);
     setPages([]);
@@ -328,10 +327,7 @@ export default function App() {
               onMouseLeave={()=>setFileMenuOpen(false)}
             >
               <MenuItem label="New" onClick={()=>{setFileMenuOpen(false); doNewProject();}} />
-              <MenuItem label="Open…" onClick={()=>{
-                setFileMenuOpen(false);
-                projFileRef.current?.click();
-              }} />
+              <MenuItem label="Open…" onClick={()=>{ setFileMenuOpen(false); projFileRef.current?.click(); }} />
               <MenuItem label="Save" onClick={()=>{setFileMenuOpen(false); doSave();}} />
               <MenuItem label="Save As…" onClick={()=>{setFileMenuOpen(false); doSaveAs();}} />
               <MenuItem label="Print" onClick={()=>{setFileMenuOpen(false); doPrint();}} />
@@ -377,9 +373,9 @@ export default function App() {
           accept=".skdproj,application/json"
           style={{display:'none'}}
           onChange={async (e)=>{
-            const input = e.currentTarget;               // capture before await
+            const input = e.currentTarget;   // capture before await
             const f = input.files?.[0];
-            input.value = '';                            // reset immediately (avoid pooled event issue)
+            input.value = '';                // reset immediately (avoid pooled event issue)
             if (f) await doOpenProject(f);
           }}
         />
@@ -393,9 +389,9 @@ export default function App() {
           accept="application/pdf"
           style={{display:'none'}}
           onChange={async (e)=>{
-            const input = e.currentTarget;               // capture before await
+            const input = e.currentTarget;
             const f = input.files?.[0];
-            input.value = '';                            // reset immediately
+            input.value = '';
             if (f) await openPdf(f);
           }}
         />
