@@ -39,9 +39,11 @@ type State = {
   selectedIds: string[];
   history: Record<number, HistoryStacks>;
 
-  // TAG DATABASE
+  // TAG DATABASE (master / project)
   tags: Tag[];
   palette: string[];
+  /** selected tags for THIS project (by tag id) */
+  projectTagIds: string[];
 
   // setters & actions
   setFileName: (n: string) => void;
@@ -70,7 +72,7 @@ type State = {
   undo: (pageIndex:number) => void;
   redo: (pageIndex:number) => void;
 
-  // tags
+  // tag DB ops
   addTag: (t: Omit<Tag,'id'>) => void;
   updateTag: (id: string, patch: Partial<Tag>) => void;
   deleteTag: (id: string) => void;
@@ -78,6 +80,14 @@ type State = {
   exportTags: () => Tag[];
   colorForCode: (code: string) => string;
   tagByCode: (code: string) => Tag | undefined;
+
+  // project tag ops (used by the "+" button)
+  addProjectTag: (tag: Tag) => void;
+  addProjectTagById: (id: string) => void;
+  addTagToProject: (tag: Tag) => void;           // alias
+  removeProjectTag: (id: string) => void;
+  hasProjectTag: (id: string) => boolean;
+  getProjectTags: () => Tag[];
 
   toProject: () => ProjectSave;
   fromProject: (data: ProjectSave) => void;
@@ -99,6 +109,7 @@ export const useStore = create<State>((set, get) => ({
 
   tags: DEFAULT_TAGS,
   palette: PALETTE,
+  projectTagIds: [],
 
   setFileName: (n) => set({ fileName: n }),
   setPages: (p) => set({ pages: p, selectedIds: [], history: {} }),
@@ -211,17 +222,44 @@ export const useStore = create<State>((set, get) => ({
   // tag DB ops
   addTag: (t) => set(s => ({ tags: [...s.tags, { ...t, id: crypto.randomUUID() }] })),
   updateTag: (id, patch) => set(s => ({ tags: s.tags.map(t => t.id === id ? ({ ...t, ...patch }) : t) })),
-  deleteTag: (id) => set(s => ({ tags: s.tags.filter(t => t.id !== id) })),
-  importTags: (list) => set({ tags: list }),
+  deleteTag: (id) => set(s => ({
+    tags: s.tags.filter(t => t.id !== id),
+    projectTagIds: s.projectTagIds.filter(pid => pid !== id) // also remove from project selection
+  })),
+  importTags: (list) => set(s => ({
+    tags: list,
+    // keep only selections that still exist after import
+    projectTagIds: s.projectTagIds.filter(id => list.some(t => t.id === id))
+  })),
   exportTags: () => get().tags,
   colorForCode: (code) => {
     const tag = get().tags.find(t => t.code.toUpperCase() === code.toUpperCase());
     if (!tag) return '#222';
     // Business rule: anything in Lights category is orange
-    if (tag.category.toLowerCase().includes('light')) return '#FFA500';
+    if ((tag.category || '').toLowerCase().includes('light')) return '#FFA500';
     return tag.color || '#222';
   },
   tagByCode: (code) => get().tags.find(t => t.code.toUpperCase() === code.toUpperCase()),
+
+  // project tag ops (used by "+" in TagManager)
+  addProjectTag: (tag) => set(s => {
+    const exists = s.projectTagIds.includes(tag.id);
+    return exists ? {} : { projectTagIds: [...s.projectTagIds, tag.id] };
+  }),
+  addProjectTagById: (id) => set(s => {
+    const exists = s.projectTagIds.includes(id);
+    return exists ? {} : { projectTagIds: [...s.projectTagIds, id] };
+  }),
+  addTagToProject: (tag) => set(s => {
+    const exists = s.projectTagIds.includes(tag.id);
+    return exists ? {} : { projectTagIds: [...s.projectTagIds, tag.id] };
+  }),
+  removeProjectTag: (id) => set(s => ({ projectTagIds: s.projectTagIds.filter(pid => pid !== id) })),
+  hasProjectTag: (id) => get().projectTagIds.includes(id),
+  getProjectTags: () => {
+    const { tags, projectTagIds } = get();
+    return tags.filter(t => projectTagIds.includes(t.id));
+  },
 
   toProject: () => {
     const { fileName, pages, tags } = get();
@@ -233,6 +271,7 @@ export const useStore = create<State>((set, get) => ({
     pages: data.pages,
     tags: data.tags && data.tags.length ? data.tags : DEFAULT_TAGS,
     selectedIds: [],
-    history: {}
+    history: {},
+    projectTagIds: [] // start empty when loading a project
   })
 }));
