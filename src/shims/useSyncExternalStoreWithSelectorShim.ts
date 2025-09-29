@@ -1,10 +1,5 @@
-// src/shims/konvaGlobalShim.ts
-import KonvaDefault from 'konva';
+// src/shims/useSyncExternalStoreWithSelectorShim.ts
+import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector';
 
-// Let both import styles work:
-//
-//   import Konva from 'konva/lib/Global'        // will get default from this shim
-//   import { Konva } from 'konva/lib/Global'    // will get named export from this shim
-//
-export const Konva = KonvaDefault;
-export default KonvaDefault;
+export { useSyncExternalStoreWithSelector };     // named
+export default useSyncExternalStoreWithSelector; // default (for callers expecting default)
