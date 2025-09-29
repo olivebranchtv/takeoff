@@ -31,10 +31,31 @@ function abToB64(buf: ArrayBuffer): string {
   return btoa(binary);
 }
 function b64ToAb(b64: string): ArrayBuffer {
-  const bin = atob(b64);
+  // tolerant base64 decode (adds padding if missing)
+  let src = b64.replace(/[\r\n\s]/g, '');
+  const pad = src.length % 4;
+  if (pad === 2) src += '==';
+  else if (pad === 3) src += '=';
+  const bin = atob(src);
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out.buffer;
+}
+
+// Single helper so both code paths use identical, safe label logic
+async function resolvePageLabels(doc: any): Promise<string[]> {
+  try {
+    if (doc && typeof doc.getPageLabels === 'function') {
+      const raw = await doc.getPageLabels();
+      if (Array.isArray(raw)) {
+        return raw.map((l: string, i: number) => l || `Page ${i + 1}`);
+      }
+    }
+  } catch {
+    // fall through to default below
+  }
+  const count = (doc?.numPages ?? 0) | 0;
+  return Array.from({ length: count }, (_, i) => `Page ${i + 1}`);
 }
 
 export default function App() {
@@ -158,31 +179,16 @@ export default function App() {
         try {
           const ab = b64ToAb(bundle.pdf.bytesBase64);
           const doc = await loadPdfFromBytes(ab);
+
           setPdf(doc);
           setPdfName(bundle.pdf.name || 'document.pdf');
           setFileName(bundle.pdf.name || 'document.pdf');
           setPdfBytesBase64(bundle.pdf.bytesBase64);
 
           // viewer metadata
-          setPages([]);
+          setPages([]);                 // allow viewport to build fresh
           setPageCount(doc.numPages);
-
-          // ✅ Robust page labels (works even if getPageLabels doesn't exist)
-          let labels: string[] = [];
-          try {
-            if (typeof (doc as any).getPageLabels === 'function') {
-              const raw = await (doc as any).getPageLabels();
-              labels = raw && Array.isArray(raw)
-                ? raw.map((l: string, i: number) => l || `Page ${i + 1}`)
-                : Array.from({ length: doc.numPages }, (_, i) => `Page ${i + 1}`);
-            } else {
-              labels = Array.from({ length: doc.numPages }, (_, i) => `Page ${i + 1}`);
-            }
-          } catch {
-            labels = Array.from({ length: doc.numPages }, (_, i) => `Page ${i + 1}`);
-          }
-          setPageLabels(labels);
-
+          setPageLabels(await resolvePageLabels(doc));
           setActivePage(0);
           setSelectedIds([]);
         } catch (err: any) {
@@ -224,23 +230,7 @@ export default function App() {
     setFileName(file.name);
     setPages([]);
     setPageCount(doc.numPages);
-
-    // ✅ Robust page labels (works even if getPageLabels doesn't exist)
-    let labels: string[] = [];
-    try {
-      if (typeof (doc as any).getPageLabels === 'function') {
-        const raw = await (doc as any).getPageLabels();
-        labels = raw && Array.isArray(raw)
-          ? raw.map((l: string, i: number) => l || `Page ${i + 1}`)
-          : Array.from({ length: doc.numPages }, (_, i) => `Page ${i + 1}`);
-      } else {
-        labels = Array.from({ length: doc.numPages }, (_, i) => `Page ${i + 1}`);
-      }
-    } catch {
-      labels = Array.from({ length: doc.numPages }, (_, i) => `Page ${i + 1}`);
-    }
-    setPageLabels(labels);
-
+    setPageLabels(await resolvePageLabels(doc));
     setActivePage(0);
     setSelectedIds([]);
   }, [setFileName, setPages, setPageCount, setPageLabels, setActivePage, setSelectedIds]);
@@ -265,6 +255,7 @@ export default function App() {
           continue;
         }
         const verts = (obj as AnyTakeoffObject).vertices ?? [];
+        the
         const lenPx = pathLength(verts);
         const lf = ppf > 0 ? lenPx / ppf : 0;
 
