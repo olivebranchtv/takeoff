@@ -68,6 +68,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // Also cleanup listeners if component unmounts
   useEffect(() => () => onDragEnd(), []);
 
   const allCategories = useMemo(() => {
@@ -157,15 +158,19 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     setError('');
   }
 
-  // Exact duplicate only (EM allowed even if EM-RH exists)
+  // Exact duplicate only: blocks only when code + category match (case-insensitive)
   function validate(next: Draft): string {
+    const norm = (s: string) => (s || '').trim().toUpperCase();
     if (!next.code.trim()) return 'Code is required.';
     if (!/^[a-z0-9\-/# ]+$/i.test(next.code.trim())) return 'Use letters, numbers, space, hyphen, slash, # only.';
     if (!next.category.trim()) return 'Category is required.';
-    const exactDup = (tags as Tag[]).find(
-      t => (t.code || '').trim().toUpperCase() === next.code.trim().toUpperCase()
+
+    const exactDup = (tags as Tag[]).some(
+      t => norm(t.code) === norm(next.code) && norm(t.category) === norm(next.category)
     );
-    if (!editId && exactDup) return `Code “${next.code.toUpperCase()}” already exists.`;
+    if (!editId && exactDup) {
+      return `Code “${norm(next.code)}” already exists in category “${next.category}”.`;
+    }
     return '';
   }
 
@@ -190,9 +195,13 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     if (!editId) return;
     const category = resolvedCategory();
     const next: Draft = { ...draft, code: draft.code.trim().toUpperCase(), category };
+
+    const norm = (s: string) => (s || '').trim().toUpperCase();
     const msg = validate(next);
     if (msg && msg.includes('already exists')) {
-      const conflict = (tags as Tag[]).find(t => (t.code || '').toUpperCase() === next.code.toUpperCase());
+      const conflict = (tags as Tag[]).find(
+        t => norm(t.code) === norm(next.code) && norm(t.category) === norm(next.category)
+      );
       if (!conflict || conflict.id !== editId) { setError(msg); return; }
     } else if (msg) { setError(msg); return; }
 
