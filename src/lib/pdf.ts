@@ -4,21 +4,20 @@
  * No CDN, no worker files, no terser required.
  */
 
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/build/pdf.mjs';
+import { getDocument, GlobalWorkerOptions, version } from 'pdfjs-dist/build/pdf.mjs';
 
 export type PDFDoc = any;
 
-// Disable worker entirely to avoid bundling/minification issues in Vite
-// Use a data URL to avoid network requests
-GlobalWorkerOptions.workerSrc = 'data:application/javascript,';
+// Set up worker properly for PDF.js
+GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.js`;
 
 // Common flags to avoid eval and streaming fetch in locked-down environments.
 const COMMON_DOC_OPTS = {
-  disableWorker: true,        // <-- important
+  disableWorker: false,
   isEvalSupported: false,
-  useWorkerFetch: false,
-  disableRange: true,
-  disableStream: true,
+  useWorkerFetch: true,
+  disableRange: false,
+  disableStream: false,
 };
 
 /** Load a PDF from raw bytes. Accepts ArrayBuffer, Uint8Array, or number[]. */
