@@ -3,22 +3,33 @@ import { useStore } from '@/state/store';
 import type { Tag } from '@/types';
 import { downloadTagsFile } from '@/utils/persist';
 
-type Props = { open: boolean; onClose: () => void };
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  /** Optional: parent can wire project-tag add behavior here */
+  onAddToProject?: (tag: Tag) => void;
+};
+
 type Draft = Omit<Tag, 'id'>;
 
 const emptyDraft: Draft = { code: '', name: '', category: '', color: '#FFA500' };
 
-export default function TagManager({ open, onClose }: Props) {
+export default function TagManager({ open, onClose, onAddToProject }: Props) {
   // ---- hooks (must be called every render, regardless of `open`) ----
+  const store = useStore() as any;
   const {
     tags, palette, addTag, updateTag, deleteTag, importTags, exportTags
-  } = useStore();
+  } = store;
 
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [editId, setEditId] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // editor focus/scroll refs for better Edit UX
+  const editorCardRef = useRef<HTMLDivElement>(null);
+  const codeInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) {
@@ -31,11 +42,11 @@ export default function TagManager({ open, onClose }: Props) {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = [...tags].sort((a, b) =>
+    const list = [...tags].sort((a: Tag, b: Tag) =>
       (a.category || '').localeCompare(b.category || '') || a.code.localeCompare(b.code)
     );
     if (!q) return list;
-    return list.filter(t =>
+    return list.filter((t: Tag) =>
       t.code.toLowerCase().includes(q) ||
       (t.name || '').toLowerCase().includes(q) ||
       (t.category || '').toLowerCase().includes(q)
@@ -50,12 +61,24 @@ export default function TagManager({ open, onClose }: Props) {
     setEditId(null);
     setDraft(d => ({ ...emptyDraft, color: d.color || '#FFA500' }));
     setError('');
+    // bring editor into view and focus code
+    requestAnimationFrame(() => {
+      editorCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      codeInputRef.current?.focus();
+    });
   }
+
   function startEdit(t: Tag) {
     setEditId(t.id);
     setDraft({ code: t.code, name: t.name, category: t.category, color: t.color });
     setError('');
+    // bring editor into view and focus code so edit is obvious
+    requestAnimationFrame(() => {
+      editorCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      codeInputRef.current?.focus();
+    });
   }
+
   function cancelEdit() {
     setEditId(null);
     setDraft(emptyDraft);
@@ -65,7 +88,7 @@ export default function TagManager({ open, onClose }: Props) {
   function validate(next: Draft): string {
     if (!next.code.trim()) return 'Code is required.';
     if (!/^[a-z0-9\-]+$/i.test(next.code.trim())) return 'Use letters/numbers/hyphen only for Code.';
-    const dup = tags.find(t => t.code.toUpperCase() === next.code.trim().toUpperCase());
+    const dup = (tags as Tag[]).find(t => t.code.toUpperCase() === next.code.trim().toUpperCase());
     if (!editId && dup) return `Code “${next.code.toUpperCase()}” already exists.`;
     return '';
   }
@@ -77,6 +100,7 @@ export default function TagManager({ open, onClose }: Props) {
     addTag(next);
     setDraft(d => ({ ...d, code: '', name: '' }));
     setError('');
+    codeInputRef.current?.focus();
   }
 
   function saveEdit() {
@@ -84,7 +108,7 @@ export default function TagManager({ open, onClose }: Props) {
     const next: Draft = { ...draft, code: draft.code.trim().toUpperCase() };
     const msg = validate(next);
     if (msg && msg.includes('already exists')) {
-      const conflict = tags.find(t => t.code.toUpperCase() === next.code.toUpperCase());
+      const conflict = (tags as Tag[]).find(t => t.code.toUpperCase() === next.code.toUpperCase());
       if (!conflict || conflict.id !== editId) { setError(msg); return; }
     } else if (msg) { setError(msg); return; }
 
@@ -93,7 +117,7 @@ export default function TagManager({ open, onClose }: Props) {
   }
 
   function remove(id: string) {
-    const tag = tags.find(t => t.id === id);
+    const tag = (tags as Tag[]).find(t => t.id === id);
     if (!tag) return;
     if (confirm(`Delete tag ${tag.code}?`)) deleteTag(id);
   }
@@ -107,9 +131,25 @@ export default function TagManager({ open, onClose }: Props) {
         if (!Array.isArray(parsed)) throw new Error('Expected an array of tags');
         importTags(parsed as Tag[]);
         alert('Tags imported.');
-      } catch (err:any) { alert('Invalid tags file: ' + err.message); }
+      } catch (err: any) { alert('Invalid tags file: ' + err.message); }
     };
     reader.readAsText(f);
+  }
+
+  function addToProject(tag: Tag) {
+    // 1) Prefer explicit prop from parent
+    if (onAddToProject) { onAddToProject(tag); return; }
+
+    // 2) Try common store helpers if your store already provides them
+    const tried =
+      store?.addProjectTag?.(tag) ??
+      store?.addProjectTagById?.(tag.id) ??
+      store?.addTagToProject?.(tag);
+
+    if (tried !== undefined) return;
+
+    // 3) Gentle notice if nothing is wired yet
+    alert('Add-to-Project is not wired yet. Provide onAddToProject(tag) from the parent, or implement one of: addProjectTag(tag), addProjectTagById(id), addTagToProject(tag) on the store.');
   }
 
   const headerNote =
@@ -143,13 +183,13 @@ export default function TagManager({ open, onClose }: Props) {
         </div>
 
         {/* Editor Card */}
-        <div style={S.card}>
+        <div style={S.card} ref={editorCardRef}>
           <div style={S.formRow}>
             {/* Color grid */}
             <div style={{minWidth: 210}}>
               <div style={S.label}>Color</div>
               <div style={S.colorGrid}>
-                {palette.map(c => {
+                {palette.map((c: string) => {
                   const selected = draft.color === c;
                   return (
                     <button
@@ -174,6 +214,7 @@ export default function TagManager({ open, onClose }: Props) {
               <div>
                 <div style={S.label}>Code</div>
                 <input
+                  ref={codeInputRef}
                   value={draft.code}
                   onChange={e => setDraft(d => ({ ...d, code: e.target.value.toUpperCase() }))}
                   placeholder="A1"
@@ -232,7 +273,7 @@ export default function TagManager({ open, onClose }: Props) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(t => (
+              {filtered.map((t: Tag) => (
                 <tr key={t.id}>
                   <td>
                     <div style={{
@@ -245,6 +286,15 @@ export default function TagManager({ open, onClose }: Props) {
                   <td>{t.name}</td>
                   <td>
                     <div style={{display:'flex', gap:6, justifyContent:'flex-end'}}>
+                      {/* Add to Project "+" */}
+                      <button
+                        className="btn"
+                        title="Add to current project"
+                        aria-label={`Add ${t.code} to current project`}
+                        onClick={() => addToProject(t)}
+                      >
+                        +
+                      </button>
                       <button className="btn" onClick={() => startEdit(t)}>Edit</button>
                       <button className="btn" onClick={() => remove(t.id)}>Delete</button>
                     </div>
@@ -334,7 +384,7 @@ const S: Record<string, React.CSSProperties> = {
     borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff'
   },
   thActions: {
-    width:170, textAlign:'right', padding:'10px 6px', fontSize:12, color:'#555',
+    width:210, textAlign:'right', padding:'10px 6px', fontSize:12, color:'#555',
     borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff'
   },
 };
