@@ -327,11 +327,19 @@ export const useStore = create<State>((set, get) => ({
   },
 
   fromProject: (data) => {
-    // Accept both your current ProjectSave and legacy shapes
     const d: any = data || {};
+    
+    // Restore tags
     const tags = asArray<Tag>(d.tags).length ? asArray<Tag>(d.tags) : DEFAULT_TAGS;
+    
+    // Restore pages with their objects
     const rawPages = asArray<any>(d.pages);
-    const pages: PageState[] = rawPages.map((p, idx) => normalizePage(p, idx)).sort((a,b)=>a.pageIndex-b.pageIndex);
+    const pages: PageState[] = rawPages.map((p, idx) => {
+      const normalized = normalizePage(p, idx);
+      // Ensure objects are preserved
+      normalized.objects = asArray<AnyTakeoffObject>(p.objects);
+      return normalized;
+    }).sort((a,b)=>a.pageIndex-b.pageIndex);
 
     set({
       fileName: typeof d.fileName === 'string' ? d.fileName : (typeof d.source === 'string' ? d.source : 'untitled.pdf'),

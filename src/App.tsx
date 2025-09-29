@@ -130,7 +130,17 @@ export default function App() {
      ========================================================================================= */
 
   const makeBundle = useCallback<() => SKDBundle>(() => {
-    const core: ProjectSave = useStore.getState().toProject();
+    const state = useStore.getState();
+    const core: ProjectSave = {
+      fileName: state.fileName,
+      pages: state.pages.map(page => ({
+        pageIndex: page.pageIndex,
+        pixelsPerFoot: page.pixelsPerFoot,
+        unit: page.unit || 'ft',
+        objects: page.objects || []
+      })),
+      tags: state.tags
+    };
     const bundle: SKDBundle = {
       kind: 'skdproj',
       version: 1,
@@ -182,7 +192,28 @@ export default function App() {
 
       // Load the store portion
       try {
-        useStore.getState().fromProject(bundle.core);
+        const state = useStore.getState();
+        
+        // Restore pages with objects
+        if (bundle.core.pages && Array.isArray(bundle.core.pages)) {
+          state.setPages(bundle.core.pages.map(page => ({
+            pageIndex: page.pageIndex,
+            pixelsPerFoot: page.pixelsPerFoot,
+            unit: page.unit || 'ft',
+            calibrated: !!page.pixelsPerFoot,
+            objects: page.objects || []
+          })));
+        }
+        
+        // Restore tags
+        if (bundle.core.tags && Array.isArray(bundle.core.tags)) {
+          state.importTags(bundle.core.tags);
+        }
+        
+        // Set filename
+        if (bundle.core.fileName) {
+          state.setFileName(bundle.core.fileName);
+        }
       } catch (err: any) {
         console.warn('[Open Project] fromProject warning:', err?.message || err);
       }
