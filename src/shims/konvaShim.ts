@@ -1,17 +1,13 @@
 // src/shims/konvaShim.ts
-// Normalize any 'konva' import (and 'konva/lib/Global(.js)') to expose a stable default + named `Konva`,
-// and pass-through all other named exports.
-//
-// IMPORTANT: import the REAL module via explicit path + ?real to bypass our vite alias.
-import * as Real from 'konva/lib/index.js?real';
+// Normalize all 'konva' imports (and 'konva/lib/Global(.js)') so consumers can
+// import default OR named `Konva`, and still get all other Konva exports.
 
-// Choose the best "Konva" object form available.
-const KonvaAny: any =
-  (Real as any).default ?? (Real as any).Konva ?? (Real as any);
+import * as Real from 'konva-real';
 
-// Re-export: both default and named `Konva`, plus all other named exports.
+// Pick the best Konva namespace the package exposes.
+const KonvaAny: any = (Real as any).default ?? (Real as any).Konva ?? Real;
+
+// Re-export: default Konva, named Konva, and re-export the rest.
 export const Konva = KonvaAny;
 export default KonvaAny;
-
-// Also forward all other symbols (Stage, Layer, Shape, Util, etc.)
-export * from 'konva/lib/index.js?real';
+export * from 'konva-real';
