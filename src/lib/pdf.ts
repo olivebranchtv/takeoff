@@ -8,8 +8,8 @@ import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/build/pdf.mjs';
 
 export type PDFDoc = any;
 
-// Force "fake worker" (main thread). This avoids worker bundling/minification issues.
-GlobalWorkerOptions.workerSrc = '';
+// Disable worker entirely to avoid bundling/minification issues in Vite
+GlobalWorkerOptions.workerSrc = false;
 
 // Common flags to avoid eval and streaming fetch in locked-down environments.
 const COMMON_DOC_OPTS = {
