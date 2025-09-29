@@ -15,17 +15,8 @@ type Draft = Omit<Tag, 'id'>;
 
 const emptyDraft: Draft = { code: '', name: '', category: '', color: '#FFA500' };
 
-// --- helpers ---
-function sanitizeCode(raw: string): string {
-  // Uppercase, collapse spaces to '-', allow A-Z 0-9 - / #
-  return raw
-    .toUpperCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^A-Z0-9\-/#]/g, '');
-}
-
 export default function TagManager({ open, onClose, onAddToProject }: Props) {
-  // ---- hooks (must be called every render, regardless of `open`) ----
+  // ---- hooks ----
   const store = useStore() as any;
   const {
     tags, palette, addTag, updateTag, deleteTag, importTags, exportTags
@@ -37,7 +28,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const [error, setError] = useState<string>('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // editor focus/scroll refs for better Edit UX
   const editorCardRef = useRef<HTMLDivElement>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
 
@@ -63,7 +53,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     );
   }, [tags, query]);
 
-  // If not open, render nothing (after all hooks have run)
   if (!open) return null;
 
   // ---- actions ----
@@ -71,7 +60,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     setEditId(null);
     setDraft(d => ({ ...emptyDraft, color: d.color || '#FFA500' }));
     setError('');
-    // bring editor into view and focus code
     requestAnimationFrame(() => {
       editorCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       codeInputRef.current?.focus();
@@ -82,7 +70,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     setEditId(t.id);
     setDraft({ code: t.code, name: t.name, category: t.category, color: t.color });
     setError('');
-    // bring editor into view and focus code so edit is obvious
     requestAnimationFrame(() => {
       editorCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       codeInputRef.current?.focus();
@@ -97,19 +84,16 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   function validate(next: Draft): string {
     if (!next.code.trim()) return 'Code is required.';
-    // allow A-Z 0-9 - / #
-    if (!/^[A-Z0-9\-/#]+$/.test(next.code.trim().toUpperCase()))
-      return 'Code may only use letters, numbers, "-", "/", or "#".';
+    if (!/^[a-z0-9\-/#]+$/i.test(next.code.trim())) {
+      return 'Use letters, numbers, hyphen, slash, # only.';
+    }
     const dup = (tags as Tag[]).find(t => t.code.toUpperCase() === next.code.trim().toUpperCase());
     if (!editId && dup) return `Code “${next.code.toUpperCase()}” already exists.`;
     return '';
   }
 
   function add() {
-    const next: Draft = {
-      ...draft,
-      code: sanitizeCode(draft.code),
-    };
+    const next: Draft = { ...draft, code: draft.code.trim().toUpperCase() };
     const msg = validate(next);
     if (msg) { setError(msg); return; }
     addTag(next);
@@ -120,10 +104,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   function saveEdit() {
     if (!editId) return;
-    const next: Draft = {
-      ...draft,
-      code: sanitizeCode(draft.code),
-    };
+    const next: Draft = { ...draft, code: draft.code.trim().toUpperCase() };
     const msg = validate(next);
     if (msg && msg.includes('already exists')) {
       const conflict = (tags as Tag[]).find(t => t.code.toUpperCase() === next.code.toUpperCase());
@@ -155,43 +136,23 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   }
 
   function addToProject(tag: Tag) {
-    // 1) Prefer explicit prop from parent
     if (onAddToProject) { onAddToProject(tag); return; }
-
-    // 2) Try common store helpers if your store already provides them
     const tried =
       store?.addProjectTag?.(tag) ??
       store?.addProjectTagById?.(tag.id) ??
       store?.addTagToProject?.(tag);
-
     if (tried !== undefined) return;
-
-    // 3) Gentle notice if nothing is wired yet
-    alert('Add-to-Project is not wired yet. Provide onAddToProject(tag) from the parent, or implement one of: addProjectTag(tag), addProjectTagById(id), addTagToProject(tag) on the store.');
+    alert('Add-to-Project is not wired yet.');
   }
 
   function loadDefaults() {
-    const byCode = new Set<string>((tags as Tag[]).map(t => t.code.toUpperCase()));
-    let added = 0;
-
     DEFAULT_MASTER_TAGS.forEach(mt => {
-      const code = sanitizeCode(mt.code);
-      if (!code || byCode.has(code)) return;
-      const draft: Draft = {
-        code,
-        name: mt.name,
-        category: mt.category,
-        color: mt.color,
-      };
-      const msg = validate(draft);
-      if (!msg) {
-        addTag(draft);
-        byCode.add(code);
-        added++;
+      const exists = tags.find((t: Tag) => t.code.toUpperCase() === mt.code.toUpperCase());
+      if (!exists) {
+        addTag({ code: mt.code, name: mt.name, category: mt.category, color: mt.color });
       }
     });
-
-    alert(added > 0 ? `Loaded ${added} default tags.` : 'All default tags already exist.');
+    alert('Default master tags loaded.');
   }
 
   const headerNote =
@@ -214,7 +175,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
           </div>
         </div>
 
-        {/* Toolbar (search + new) */}
+        {/* Toolbar */}
         <div style={S.toolbar}>
           <input
             placeholder="Search by code, name, or category…"
@@ -299,7 +260,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
               )}
             </div>
           </div>
-
           {error && <div style={S.error}>{error}</div>}
         </div>
 
@@ -329,7 +289,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                   <td>{t.name}</td>
                   <td>
                     <div style={{display:'flex', gap:6, justifyContent:'flex-end'}}>
-                      {/* Add to Project "+" */}
                       <button
                         className="btn"
                         title="Add to current project"
@@ -355,7 +314,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
           </table>
         </div>
 
-        {/* Hidden file input for imports */}
+        {/* Hidden file input */}
         <input ref={fileRef} type="file" accept="application/json" onChange={onPickFile} style={{display:'none'}} />
       </div>
     </div>
