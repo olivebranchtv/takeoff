@@ -22,9 +22,51 @@ const PALETTE = [
 
 type HistoryStacks = { undo: HistoryEntry[]; redo: HistoryEntry[] };
 
+/** -------- Helpers (safe coercions) -------- */
+function asArray<T>(v: unknown): T[] {
+  return Array.isArray(v) ? (v as T[]) : [];
+}
+function safeObjects(objs: unknown): AnyTakeoffObject[] {
+  const arr = asArray<AnyTakeoffObject>(objs);
+  return arr.map(o => ({ ...o }));
+}
+function normalizePage(p: any, fallbackIndex = 0): PageState {
+  const pageIndex =
+    typeof p?.pageIndex === 'number'
+      ? p.pageIndex
+      : typeof p?.index === 'number'
+        ? p.index
+        : fallbackIndex;
+
+  const pixelsPerFoot =
+    typeof p?.pixelsPerFoot === 'number'
+      ? p.pixelsPerFoot
+      : (p?.pixelsPerFoot == null ? undefined : Number(p.pixelsPerFoot) || undefined);
+
+  const unit: 'ft' | 'm' =
+    p?.unit === 'm' ? 'm' : 'ft';
+
+  return {
+    pageIndex,
+    canvasWidth: typeof p?.canvasWidth === 'number' ? p.canvasWidth : p?.canvasWidth ? Number(p.canvasWidth) : undefined,
+    canvasHeight: typeof p?.canvasHeight === 'number' ? p.canvasHeight : p?.canvasHeight ? Number(p.canvasHeight) : undefined,
+    pixelsPerFoot,
+    unit,
+    calibrated: !!p?.calibrated,
+    objects: safeObjects(p?.objects),
+  } as PageState;
+}
+function baseNameNoExt(path: string) {
+  const just = (path || '').split('/').pop() || path || '';
+  const dot = just.lastIndexOf('.');
+  return dot > 0 ? just.slice(0, dot) : just || 'Untitled';
+}
+
+/** -------- Store -------- */
 type State = {
   // project / pages
-  fileName: string;
+  fileName: string;           // e.g., source PDF/file displayed in UI
+  projectName: string;        // user-visible project name (for header)
   pages: PageState[];
   tool: Tool;
   zoom: number;
@@ -47,6 +89,7 @@ type State = {
 
   // setters & actions
   setFileName: (n: string) => void;
+  setProjectName: (n: string) => void;
   setPages: (p: PageState[]) => void;
   setTool: (t: Tool) => void;
   setZoom: (z: number) => void;
@@ -89,12 +132,17 @@ type State = {
   hasProjectTag: (id: string) => boolean;
   getProjectTags: () => Tag[];
 
+  // derived getters
+  getProjectName: () => string;
+
+  // project (serialize/deserialize)
   toProject: () => ProjectSave;
-  fromProject: (data: ProjectSave) => void;
+  fromProject: (data: ProjectSave | any) => void; // allow legacy shapes
 };
 
 export const useStore = create<State>((set, get) => ({
   fileName: 'untitled.pdf',
+  projectName: 'Untitled Project',
   pages: [],
   tool: 'hand',
   zoom: 1,
@@ -111,7 +159,8 @@ export const useStore = create<State>((set, get) => ({
   palette: PALETTE,
   projectTagIds: [],
 
-  setFileName: (n) => set({ fileName: n }),
+  setFileName: (n) => set({ fileName: n, projectName: get().projectName || baseNameNoExt(n) }),
+  setProjectName: (n) => set({ projectName: n || 'Untitled Project' }),
   setPages: (p) => set({ pages: p, selectedIds: [], history: {} }),
   setTool: (t) => set({ tool: t }),
   setZoom: (z) => set({ zoom: Math.max(0.1, Math.min(6, z)) }),
@@ -137,7 +186,7 @@ export const useStore = create<State>((set, get) => ({
     const { pushHistory } = get(); pushHistory(pageIndex);
     set((s) => {
       const pages = s.pages.map((p) =>
-        p.pageIndex === pageIndex ? ({ ...p, objects: [...p.objects, obj] }) : p
+        p.pageIndex === pageIndex ? ({ ...p, objects: [...asArray(p.objects), obj] }) : p
       );
       return { pages };
     });
@@ -147,7 +196,7 @@ export const useStore = create<State>((set, get) => ({
     const { pushHistory } = get(); pushHistory(pageIndex);
     set((s) => {
       const pages = s.pages.map((p) =>
-        p.pageIndex === pageIndex ? ({ ...p, objects: objs }) : p
+        p.pageIndex === pageIndex ? ({ ...p, objects: safeObjects(objs) }) : p
       );
       return { pages };
     });
@@ -158,7 +207,8 @@ export const useStore = create<State>((set, get) => ({
     set((s) => {
       const pages = s.pages.map((p) => {
         if (p.pageIndex !== pageIndex) return p;
-        return { ...p, objects: p.objects.map((o) => (o.id === id ? ({ ...o, ...patch }) : o)) };
+        const objects = asArray<AnyTakeoffObject>(p.objects).map((o) => (o.id === id ? ({ ...o, ...patch }) : o));
+        return { ...p, objects };
       });
       return { pages };
     });
@@ -169,7 +219,8 @@ export const useStore = create<State>((set, get) => ({
     set((s) => {
       const pages = s.pages.map((p) => {
         if (p.pageIndex !== pageIndex) return p;
-        return { ...p, objects: p.objects.filter(o => o.id !== id) };
+        const objects = asArray<AnyTakeoffObject>(p.objects).filter(o => o.id !== id);
+        return { ...p, objects };
       });
       return { pages, selectedIds: s.selectedIds.filter(sid => sid !== id) };
     });
@@ -179,7 +230,7 @@ export const useStore = create<State>((set, get) => ({
     const { pushHistory } = get(); pushHistory(pageIndex);
     set((s) => {
       const pages = s.pages.map((p) =>
-        p.pageIndex !== pageIndex ? p : ({ ...p, objects: p.objects.filter((o) => !s.selectedIds.includes(o.id)) })
+        p.pageIndex !== pageIndex ? p : ({ ...p, objects: asArray<AnyTakeoffObject>(p.objects).filter((o) => !s.selectedIds.includes(o.id)) })
       );
       return { pages, selectedIds: [] };
     });
@@ -196,7 +247,7 @@ export const useStore = create<State>((set, get) => ({
   pushHistory: (pageIndex) => set((s) => {
     const page = s.pages.find((p) => p.pageIndex === pageIndex);
     if (!page) return {};
-    const entry: HistoryEntry = { pageIndex, objects: JSON.parse(JSON.stringify(page.objects)) };
+    const entry: HistoryEntry = { pageIndex, objects: JSON.parse(JSON.stringify(asArray(page.objects))) };
     const stack = s.history[pageIndex] || { undo: [], redo: [] };
     return { history: { ...s.history, [pageIndex]: { undo: [...stack.undo, entry], redo: [] } } };
   }),
@@ -205,7 +256,7 @@ export const useStore = create<State>((set, get) => ({
     const stack = s.history[pageIndex]; if (!stack || stack.undo.length === 0) return {};
     const entry = stack.undo.at(-1)!; const newUndo = stack.undo.slice(0, -1);
     const page = s.pages.find((p) => p.pageIndex === pageIndex); if (!page) return {};
-    const current: HistoryEntry = { pageIndex, objects: page.objects };
+    const current: HistoryEntry = { pageIndex, objects: asArray(page.objects) };
     const pages = s.pages.map((p) => (p.pageIndex === pageIndex ? ({ ...p, objects: entry.objects }) : p));
     return { pages, history: { ...s.history, [pageIndex]: { undo: newUndo, redo: [...stack.redo, current] } } };
   }),
@@ -214,7 +265,7 @@ export const useStore = create<State>((set, get) => ({
     const stack = s.history[pageIndex]; if (!stack || stack.redo.length === 0) return {};
     const entry = stack.redo.at(-1)!; const newRedo = stack.redo.slice(0, -1);
     const page = s.pages.find((p) => p.pageIndex === pageIndex); if (!page) return {};
-    const current: HistoryEntry = { pageIndex, objects: page.objects };
+    const current: HistoryEntry = { pageIndex, objects: asArray(page.objects) };
     const pages = s.pages.map((p) => (p.pageIndex === pageIndex ? ({ ...p, objects: entry.objects }) : p));
     return { pages, history: { ...s.history, [pageIndex]: { undo: [...stack.undo, current], redo: newRedo } } };
   }),
@@ -227,9 +278,9 @@ export const useStore = create<State>((set, get) => ({
     projectTagIds: s.projectTagIds.filter(pid => pid !== id) // also remove from project selection
   })),
   importTags: (list) => set(s => ({
-    tags: list,
+    tags: asArray<Tag>(list),
     // keep only selections that still exist after import
-    projectTagIds: s.projectTagIds.filter(id => list.some(t => t.id === id))
+    projectTagIds: s.projectTagIds.filter(id => asArray<Tag>(list).some(t => t.id === id))
   })),
   exportTags: () => get().tags,
   colorForCode: (code) => {
@@ -261,17 +312,34 @@ export const useStore = create<State>((set, get) => ({
     return tags.filter(t => projectTagIds.includes(t.id));
   },
 
-  toProject: () => {
-    const { fileName, pages, tags } = get();
-    return { fileName, pages, tags };
+  getProjectName: () => {
+    const { projectName, fileName } = get();
+    return projectName?.trim() ? projectName : baseNameNoExt(fileName);
   },
 
-  fromProject: (data) => set({
-    fileName: data.fileName,
-    pages: data.pages,
-    tags: data.tags && data.tags.length ? data.tags : DEFAULT_TAGS,
-    selectedIds: [],
-    history: {},
-    projectTagIds: [] // start empty when loading a project
-  })
+  toProject: () => {
+    const { fileName, pages, tags, projectName } = get();
+    // Keep your original shape but include name if your ProjectSave supports it
+    const payload: any = { fileName, pages, tags };
+    if (projectName) payload.name = projectName;
+    return payload as ProjectSave;
+  },
+
+  fromProject: (data) => {
+    // Accept both your current ProjectSave and legacy shapes
+    const d: any = data || {};
+    const tags = asArray<Tag>(d.tags).length ? asArray<Tag>(d.tags) : DEFAULT_TAGS;
+    const rawPages = asArray<any>(d.pages);
+    const pages: PageState[] = rawPages.map((p, idx) => normalizePage(p, idx)).sort((a,b)=>a.pageIndex-b.pageIndex);
+
+    set({
+      fileName: typeof d.fileName === 'string' ? d.fileName : (typeof d.source === 'string' ? d.source : 'untitled.pdf'),
+      projectName: typeof d.name === 'string' ? d.name : (typeof d.projectName === 'string' ? d.projectName : baseNameNoExt(d.fileName || 'Untitled')),
+      pages,
+      tags,
+      selectedIds: [],
+      history: {},
+      projectTagIds: [] // start empty when loading a project
+    });
+  }
 }));
