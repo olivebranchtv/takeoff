@@ -24,25 +24,66 @@ type SKDBundle = {
 /* =========================================================================================
    helpers for base64 <-> ArrayBuffer
    ========================================================================================= */
-function abToB64(buf: ArrayBuffer): string {
-  let binary = '';
-  const bytes = new Uint8Array(buf);
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary);
+
+/** Normalize base64 of all common variants:
+ * - strips data: URLs
+ * - converts base64url (-_) to standard (+/)
+ * - removes whitespace
+ * - fixes missing padding
+ */
+function normalizeBase64(input: string): string {
+  let src = (input || '').trim();
+
+  // If it's a data URL, keep only the payload after the comma
+  const comma = src.indexOf(',');
+  if (src.startsWith('data:') && comma !== -1) {
+    src = src.slice(comma + 1);
+  }
+
+  // Remove whitespace/newlines
+  src = src.replace(/\s+/g, '');
+
+  // Convert base64url to base64
+  src = src.replace(/-/g, '+').replace(/_/g, '/');
+
+  // Fix missing padding
+  const mod = src.length % 4;
+  if (mod === 2) src += '==';
+  else if (mod === 3) src += '=';
+  else if (mod !== 0 && mod !== 2 && mod !== 3) {
+    // extremely odd, but don't crash — pdf.js will fail later if truly invalid
+  }
+
+  return src;
 }
+
 function b64ToAb(b64: string): ArrayBuffer {
-  // tolerant base64 decode (adds padding if missing)
-  let src = (b64 || '').replace(/[\r\n\s]/g, '');
-  const pad = src.length % 4;
-  if (pad === 2) src += '==';
-  else if (pad === 3) src += '=';
+  const src = normalizeBase64(b64);
   const bin = atob(src);
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out.buffer;
 }
 
-/** Always return simple "Page N" labels; never call into pdf.js (avoids 'me is not a function'). */
+/** quick sanity check that bytes look like a PDF ("%PDF") somewhere near the start */
+function looksLikePdf(bytes: Uint8Array): boolean {
+  // Some PDFs can have a BOM or small junk; search first 64 bytes
+  const searchLen = Math.min(bytes.length, 64);
+  for (let i = 0; i <= searchLen - 5; i++) {
+    if (
+      bytes[i] === 0x25 && // %
+      bytes[i + 1] === 0x50 && // P
+      bytes[i + 2] === 0x44 && // D
+      bytes[i + 3] === 0x46 && // F
+      bytes[i + 4] === 0x2d // -
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Always return simple "Page N" labels; never call into pdf.js (avoids fragile APIs). */
 async function resolvePageLabels(doc: any): Promise<string[]> {
   const count = (doc?.numPages ?? 0) | 0;
   return Array.from({ length: count }, (_, i) => `Page ${i + 1}`);
@@ -167,8 +208,16 @@ export default function App() {
       // restore PDF if present
       if (bundle.pdf && typeof bundle.pdf.bytesBase64 === 'string' && bundle.pdf.bytesBase64.length > 0) {
         try {
+          // Robust decode of embedded base64
           const ab = b64ToAb(bundle.pdf.bytesBase64);
-          const doc = await loadPdfFromBytes(ab);
+          const u8 = new Uint8Array(ab);
+
+          // If it doesn't look like a PDF, surface a clear message (and abort)
+          if (!looksLikePdf(u8)) {
+            throw new Error('Embedded PDF bytes were not recognized as a PDF (missing %PDF- header)');
+          }
+
+          const doc = await loadPdfFromBytes(u8);
 
           setPdf(doc);
           setPdfName(bundle.pdf.name || 'document.pdf');
@@ -182,6 +231,7 @@ export default function App() {
           setActivePage(0);
           setSelectedIds([]);
         } catch (err: any) {
+          // Show the raw error message but keep the console helpful
           console.warn('[Open Project] Could not load embedded PDF:', err?.message || err);
           setPdf(null);
           setFileName('');
@@ -211,7 +261,14 @@ export default function App() {
      ========================================================================================= */
   const openPdf = useCallback(async (file: File) => {
     const buf = await file.arrayBuffer();
-    const base64 = abToB64(buf);
+    const base64 = (() => {
+      // serialize bytes to base64 for embedding later
+      let binary = '';
+      const view = new Uint8Array(buf);
+      for (let i = 0; i < view.length; i++) binary += String.fromCharCode(view[i]);
+      return btoa(binary);
+    })();
+
     setPdfBytesBase64(base64);
     setPdfName(file.name);
 
