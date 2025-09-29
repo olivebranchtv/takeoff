@@ -11,22 +11,19 @@ async function setupWorker(): Promise<void> {
   if (workerSetup) return workerSetup;
 
   workerSetup = (async () => {
-    // 1) Best path: use Vite's asset URL for the worker (pdf.js will fetch it)
+    // 1) Prefer asset URL mode (pdf.js will fetch it)
     const urlCandidates = [
-      // modern esm
       'pdfjs-dist/build/pdf.worker.mjs?url',
       'pdfjs-dist/build/pdf.worker.min.mjs?url',
-      // non-esm builds that some dist versions still ship
       'pdfjs-dist/build/pdf.worker.js?url',
       'pdfjs-dist/build/pdf.worker.min.js?url',
-      // older/legacy paths
       'pdfjs-dist/legacy/build/pdf.worker.js?url',
-      'pdfjs-dist/legacy/build/pdf.worker.min.js?url',
+      'pdfjs-dist/legacy/build/pdf.worker.min.js?url'
     ] as const;
 
     for (const spec of urlCandidates) {
       try {
-        // @vite-ignore avoids Vite trying to statically pre-resolve all of them at once.
+        // @vite-ignore prevents pre-resolving every candidate
         const mod = await import(/* @vite-ignore */ spec as any);
         const url: string | undefined = (mod as any)?.default;
         if (url) {
@@ -38,21 +35,21 @@ async function setupWorker(): Promise<void> {
       }
     }
 
-    // 2) Fallback: create a Worker instance directly (works when the file exists locally)
+    // 2) Fallback: create real Worker from local file path
     const fileCandidates = [
       'pdfjs-dist/build/pdf.worker.mjs',
       'pdfjs-dist/build/pdf.worker.min.mjs',
       'pdfjs-dist/build/pdf.worker.js',
       'pdfjs-dist/build/pdf.worker.min.js',
       'pdfjs-dist/legacy/build/pdf.worker.js',
-      'pdfjs-dist/legacy/build/pdf.worker.min.js',
+      'pdfjs-dist/legacy/build/pdf.worker.min.js'
     ];
+
     for (const p of fileCandidates) {
       try {
         const u = new URL(p, import.meta.url);
         const type = p.endsWith('.mjs') ? 'module' : 'classic';
         const w = new Worker(u, { type: type as WorkerType });
-        // pdf.js supports giving it a Worker instance directly:
         (GlobalWorkerOptions as any).workerPort = w;
         return;
       } catch {
@@ -60,7 +57,7 @@ async function setupWorker(): Promise<void> {
       }
     }
 
-    // 3) Last resort: fake worker (slower, but functional)
+    // 3) Last resort: fake worker
     console.warn('[pdfjs] No worker file found, using fake worker.');
     GlobalWorkerOptions.workerSrc = '';
   })();
@@ -77,6 +74,5 @@ export async function loadPdfFromBytes(
   await setupWorker();
   const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes as any);
   const task = getDocument({ data });
-  const doc = await task.promise;
-  return doc;
+  return task.promise;
 }
