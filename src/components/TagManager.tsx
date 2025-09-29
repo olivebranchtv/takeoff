@@ -59,6 +59,8 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       setError('');
       setCatSelect('');
       setCustomCategory('');
+      // extra safety: ensure we never leave drag listeners attached between opens
+      onDragEnd();
       return;
     }
     try {
@@ -68,6 +70,11 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // Also cleanup listeners on unmount (prevents “won’t open later” issue)
+  useEffect(() => () => {
+    onDragEnd();
+  }, []);
 
   // Build category list from master + existing
   const allCategories = useMemo(() => {
@@ -162,12 +169,15 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     setError('');
   }
 
+  // VALIDATION — exact duplicate only (EM allowed even if EM-RH exists)
   function validate(next: Draft): string {
     if (!next.code.trim()) return 'Code is required.';
     if (!/^[a-z0-9\-/# ]+$/i.test(next.code.trim())) return 'Use letters, numbers, space, hyphen, slash, # only.';
     if (!next.category.trim()) return 'Category is required.';
-    const dup = (tags as Tag[]).find(t => t.code.toUpperCase() === next.code.trim().toUpperCase());
-    if (!editId && dup) return `Code “${next.code.toUpperCase()}” already exists.`;
+    const exactDup = (tags as Tag[]).find(
+      t => (t.code || '').trim().toUpperCase() === next.code.trim().toUpperCase()
+    );
+    if (!editId && exactDup) return `Code “${next.code.toUpperCase()}” already exists.`;
     return '';
   }
 
@@ -194,7 +204,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     const next: Draft = { ...draft, code: draft.code.trim().toUpperCase(), category };
     const msg = validate(next);
     if (msg && msg.includes('already exists')) {
-      const conflict = (tags as Tag[]).find(t => t.code.toUpperCase() === next.code.toUpperCase());
+      const conflict = (tags as Tag[]).find(t => (t.code || '').toUpperCase() === next.code.toUpperCase());
       if (!conflict || conflict.id !== editId) { setError(msg); return; }
     } else if (msg) { setError(msg); return; }
 
@@ -287,10 +297,10 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         style={{ ...S.modal, left: pos.x, top: pos.y }}
         onMouseDown={e => e.stopPropagation()}
       >
-        {/* Title Bar */}
-        <div style={S.titleBar}>
+        {/* Title Bar (drag by the whole bar or the small handle) */}
+        <div style={S.titleBar} onMouseDown={onDragStart}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <div style={{ ...S.dragHandle }} onMouseDown={onDragStart} title="Drag" aria-label="Drag" />
+            <div style={{ ...S.dragHandle }} title="Drag" aria-label="Drag" />
             <div>
               <div style={S.title}>Tag Database</div>
               <div style={S.subtitle}>{headerNote}</div>
@@ -330,178 +340,181 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
           <button className="btn" onClick={startNew}>New Tag</button>
         </div>
 
-        {/* Editor Card */}
-        <div style={S.card} ref={editorCardRef}>
-          <div style={S.formRow}>
-            {/* Color grid */}
-            <div style={{ minWidth: 232 }}>
-              <div style={S.label}>Color</div>
-              <div style={S.colorGrid}>
-                {palette.map((c: string) => {
-                  const selected = draft.color === c;
-                  return (
-                    <button
-                      key={c}
-                      title={c}
-                      onClick={() => setDraft(d => ({ ...d, color: c }))}
-                      style={{
-                        ...S.swatch,
-                        background: c,
-                        border: selected ? '3px solid #333' : '1px solid #bbb',
-                        boxShadow: selected ? '0 0 0 1px #fff inset' : 'none',
-                      }}
-                      aria-label={`Pick ${c}`}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Fields */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(120px, 160px) minmax(220px, 320px) 1fr',
-                gap: 12,
-                alignItems: 'center',
-                flex: 1,
-              }}
-            >
-              <div>
-                <div style={S.label}>Code</div>
-                <input
-                  ref={codeInputRef}
-                  value={draft.code}
-                  onChange={e => setDraft(d => ({ ...d, code: e.target.value.toUpperCase() }))}
-                  placeholder="A1"
-                  style={S.input}
-                  onKeyDown={(e)=>{ if (e.key==='Enter') (editId ? saveEdit() : add()); }}
-                />
-              </div>
-
-              <div>
-                <div style={S.label}>Category</div>
-                <div style={{ display:'flex', gap:8, minWidth:0 }}>
-                  <select
-                    value={catSelect || (sortedCategories.includes(draft.category) ? draft.category : (draft.category ? CUSTOM_CAT_VALUE : ''))}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setCatSelect(v);
-                      if (v === CUSTOM_CAT_VALUE) {
-                        setCustomCategory(draft.category && !sortedCategories.includes(draft.category) ? draft.category : '');
-                      } else {
-                        setDraft(d => ({ ...d, category: v }));
-                        setCustomCategory('');
-                        if (v) scrollToCategory(v);
-                      }
-                    }}
-                    style={S.input}
-                  >
-                    <option value="">— Select —</option>
-                    {sortedCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                    <option value={CUSTOM_CAT_VALUE}>Custom…</option>
-                  </select>
-                  { (catSelect === CUSTOM_CAT_VALUE) && (
-                    <input
-                      value={customCategory}
-                      onChange={e => setCustomCategory(e.target.value)}
-                      placeholder="New category"
-                      style={{ ...S.input, flex: 1 }}
-                    />
-                  )}
+        {/* Scrollable content area (editor + table) */}
+        <div style={S.content}>
+          {/* Editor Card */}
+          <div style={S.card} ref={editorCardRef}>
+            <div style={S.formRow}>
+              {/* Color grid */}
+              <div style={{ minWidth: 232 }}>
+                <div style={S.label}>Color</div>
+                <div style={S.colorGrid}>
+                  {palette.map((c: string) => {
+                    const selected = draft.color === c;
+                    return (
+                      <button
+                        key={c}
+                        title={c}
+                        onClick={() => setDraft(d => ({ ...d, color: c }))}
+                        style={{
+                          ...S.swatch,
+                          background: c,
+                          border: selected ? '3px solid #333' : '1px solid #bbb',
+                          boxShadow: selected ? '0 0 0 1px #fff inset' : 'none',
+                        }}
+                        aria-label={`Pick ${c}`}
+                      />
+                    );
+                  })}
                 </div>
               </div>
 
-              <div>
-                <div style={S.label}>Name</div>
-                <input
-                  value={draft.name}
-                  onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
-                  placeholder="Fixture A1 - 2x4 LED"
-                  style={S.input}
-                  onKeyDown={(e)=>{ if (e.key==='Enter') (editId ? saveEdit() : add()); }}
-                />
+              {/* Fields */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(120px, 160px) minmax(220px, 320px) 1fr',
+                  gap: 12,
+                  alignItems: 'center',
+                  flex: 1,
+                }}
+              >
+                <div>
+                  <div style={S.label}>Code</div>
+                  <input
+                    ref={codeInputRef}
+                    value={draft.code}
+                    onChange={e => setDraft(d => ({ ...d, code: e.target.value.toUpperCase() }))}
+                    placeholder="A1"
+                    style={S.input}
+                    onKeyDown={(e)=>{ if (e.key==='Enter') (editId ? saveEdit() : add()); }}
+                  />
+                </div>
+
+                <div>
+                  <div style={S.label}>Category</div>
+                  <div style={{ display:'flex', gap:8, minWidth:0 }}>
+                    <select
+                      value={catSelect || (sortedCategories.includes(draft.category) ? draft.category : (draft.category ? CUSTOM_CAT_VALUE : ''))}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setCatSelect(v);
+                        if (v === CUSTOM_CAT_VALUE) {
+                          setCustomCategory(draft.category && !sortedCategories.includes(draft.category) ? draft.category : '');
+                        } else {
+                          setDraft(d => ({ ...d, category: v }));
+                          setCustomCategory('');
+                          if (v) scrollToCategory(v);
+                        }
+                      }}
+                      style={S.input}
+                    >
+                      <option value="">— Select —</option>
+                      {sortedCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                      <option value={CUSTOM_CAT_VALUE}>Custom…</option>
+                    </select>
+                    { (catSelect === CUSTOM_CAT_VALUE) && (
+                      <input
+                        value={customCategory}
+                        onChange={e => setCustomCategory(e.target.value)}
+                        placeholder="New category"
+                        style={{ ...S.input, flex: 1 }}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={S.label}>Name</div>
+                  <input
+                    value={draft.name}
+                    onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
+                    placeholder="Fixture A1 - 2x4 LED"
+                    style={S.input}
+                    onKeyDown={(e)=>{ if (e.key==='Enter') (editId ? saveEdit() : add()); }}
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+                {editId ? (
+                  <>
+                    <button className="btn" onClick={saveEdit}>Save</button>
+                    <button className="btn" onClick={cancelEdit}>Cancel</button>
+                  </>
+                ) : (
+                  <button className="btn" onClick={add}>Add Tag</button>
+                )}
               </div>
             </div>
 
-            {/* Actions */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
-              {editId ? (
-                <>
-                  <button className="btn" onClick={saveEdit}>Save</button>
-                  <button className="btn" onClick={cancelEdit}>Cancel</button>
-                </>
-              ) : (
-                <button className="btn" onClick={add}>Add Tag</button>
-              )}
-            </div>
+            {error && <div style={S.error}>{error}</div>}
           </div>
 
-          {error && <div style={S.error}>{error}</div>}
-        </div>
-
-        {/* Grouped Table */}
-        <div style={S.tableWrap}>
-          <table style={S.table}>
-            <thead>
-              <tr>
-                <th style={S.thNarrow}>Color</th>
-                <th style={S.thCode}>Code</th>
-                <th style={S.thCat}>Category</th>
-                <th>Name</th>
-                <th style={S.thActions}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredGroups.map(group => (
-                <React.Fragment key={group.category || 'Uncategorized'}>
-                  {/* Category Header Row */}
-                  <tr
-                    ref={el => { if (el) groupRefs.current.set(group.category || 'Uncategorized', el); }}
-                  >
-                    <td colSpan={5} style={{ padding:'10px 6px', background:'#fafafa', borderTop:'1px solid #eee', fontWeight:700 }}>
-                      {group.category || 'Uncategorized'}
+          {/* Grouped Table */}
+          <div style={S.tableWrap}>
+            <table style={S.table}>
+              <thead>
+                <tr>
+                  <th style={S.thNarrow}>Color</th>
+                  <th style={S.thCode}>Code</th>
+                  <th style={S.thCat}>Category</th>
+                  <th>Name</th>
+                  <th style={S.thActions}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredGroups.map(group => (
+                  <React.Fragment key={group.category || 'Uncategorized'}>
+                    {/* Category Header Row */}
+                    <tr
+                      ref={el => { if (el) groupRefs.current.set(group.category || 'Uncategorized', el); }}
+                    >
+                      <td colSpan={5} style={{ padding:'10px 6px', background:'#fafafa', borderTop:'1px solid #eee', fontWeight:700 }}>
+                        {group.category || 'Uncategorized'}
+                      </td>
+                    </tr>
+                    {/* Items */}
+                    {group.items.map((t: Tag) => (
+                      <tr key={t.id}>
+                        <td>
+                          <div style={{ width:20, height:20, borderRadius:4, background:t.color, border:'1px solid #999', margin:'0 auto' }} />
+                        </td>
+                        <td style={{ fontWeight:600 }}>{t.code}</td>
+                        <td>{t.category}</td>
+                        <td>{t.name}</td>
+                        <td>
+                          <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
+                            <button
+                              className="btn"
+                              title="Add to current project"
+                              aria-label={`Add ${t.code} to current project`}
+                              onClick={() => addToProject(t)}
+                            >+</button>
+                            <button className="btn" onClick={() => startEdit(t)}>Edit</button>
+                            <button className="btn" onClick={() => remove(t.id)}>Delete</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {group.items.length === 0 && (
+                      <tr>
+                        <td colSpan={5} style={{ color:'#777', padding:'10px 6px' }}>No items in this category.</td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+                {filteredGroups.length === 0 && (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign:'center', color:'#666', padding:'14px 0' }}>
+                      No tags match your search.
                     </td>
                   </tr>
-                  {/* Items */}
-                  {group.items.map((t: Tag) => (
-                    <tr key={t.id}>
-                      <td>
-                        <div style={{ width:20, height:20, borderRadius:4, background:t.color, border:'1px solid #999', margin:'0 auto' }} />
-                      </td>
-                      <td style={{ fontWeight:600 }}>{t.code}</td>
-                      <td>{t.category}</td>
-                      <td>{t.name}</td>
-                      <td>
-                        <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
-                          <button
-                            className="btn"
-                            title="Add to current project"
-                            aria-label={`Add ${t.code} to current project`}
-                            onClick={() => addToProject(t)}
-                          >+</button>
-                          <button className="btn" onClick={() => startEdit(t)}>Edit</button>
-                          <button className="btn" onClick={() => remove(t.id)}>Delete</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {group.items.length === 0 && (
-                    <tr>
-                      <td colSpan={5} style={{ color:'#777', padding:'10px 6px' }}>No items in this category.</td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              ))}
-              {filteredGroups.length === 0 && (
-                <tr>
-                  <td colSpan={5} style={{ textAlign:'center', color:'#666', padding:'14px 0' }}>
-                    No tags match your search.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Hidden file input */}
@@ -526,11 +539,11 @@ const S: Record<string, React.CSSProperties> = {
   titleBar: {
     display:'flex', alignItems:'center', justifyContent:'space-between',
     padding:'14px 16px 8px', borderBottom:'1px solid #eee', background:'#fafafa',
-    cursor:'default'
+    cursor:'move' // drag anywhere on the title bar
   },
   dragHandle: {
     width:16, height:16, borderRadius:3, background:'#ddd', border:'1px solid #c9c9c9',
-    boxShadow:'inset 0 0 0 2px #f4f4f4', cursor:'move'
+    boxShadow:'inset 0 0 0 2px #f4f4f4'
   },
   title: { fontSize:20, fontWeight:700, marginBottom:4 },
   subtitle: { fontSize:12, color:'#666' },
@@ -543,6 +556,10 @@ const S: Record<string, React.CSSProperties> = {
     lineHeight: '20px', boxSizing: 'border-box'
   },
   jump:   { width:240, padding:'10px 12px', border:'1px solid #ccc', borderRadius:8, fontSize:14, boxSizing:'border-box' },
+
+  // NEW: scrollable content wrapper so editor+table never get cut off
+  content: { flex:1, overflowY:'auto', padding:'0 0 8px' },
+
   card:   { padding:'12px 16px', borderBottom:'1px solid #f2f2f2', background:'#fff' },
   formRow: { display:'grid', gridTemplateColumns:'232px 1fr auto', gap:16, alignItems:'start' },
   label:  { fontSize:12, fontWeight:600, color:'#444', marginBottom:6 },
