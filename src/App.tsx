@@ -5,7 +5,6 @@ import { loadPdfFromBytes } from '@/lib/pdf';
 import PDFViewport from '@/components/PDFViewport';
 import TagManager from '@/components/TagManager';
 import { useStore } from '@/state/store';
-import { exportJSON, importJSON } from '@/utils/persist'; // removed loadProject/saveProject
 import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
 import { pathLength } from '@/utils/geometry';
 
@@ -81,9 +80,6 @@ async function resolvePageLabels(doc: any): Promise<string[]> {
   const count = (doc?.numPages ?? 0) | 0;
   return Array.from({ length: count }, (_, i) => `Page ${i + 1}`);
 }
-
-/** Preferred category order for pickers (others follow alphabetically) */
-const MASTER_CATEGORY_ORDER = ['Lights', 'Receptacles'];
 
 export default function App() {
   /* ---------- refs ---------- */
@@ -193,7 +189,7 @@ export default function App() {
       // Load the store portion (restore pages/objects/tags BEFORE loading PDF)
       try {
         const state = useStore.getState();
-        
+
         // Restore pages with objects (these include your tag placements & measurements)
         if (bundle.core.pages && Array.isArray(bundle.core.pages)) {
           state.setPages(bundle.core.pages.map(page => ({
@@ -204,12 +200,12 @@ export default function App() {
             objects: page.objects || []
           })));
         }
-        
+
         // Restore tags
         if (bundle.core.tags && Array.isArray(bundle.core.tags)) {
           state.importTags(bundle.core.tags);
         }
-        
+
         // Set filename
         if (bundle.core.fileName) {
           state.setFileName(bundle.core.fileName);
@@ -238,7 +234,7 @@ export default function App() {
           const ab = b64ToAb(bundle.pdf.bytesBase64);
           const u8 = new Uint8Array(ab);
           if (!looksLikePdf(u8)) throw new Error('Embedded bytes are not a PDF (missing %PDF- header)');
-          
+
           console.log(`[Open Project] PDF bytes validated: ${u8.length} bytes`);
           const doc = await loadPdfFromBytes(u8);
 
@@ -252,7 +248,7 @@ export default function App() {
           setPageLabels(await resolvePageLabels(doc));
           setActivePage(0);
           useStore.getState().setSelectedIds([]);
-          
+
           console.log(`[Open Project] PDF loaded successfully: ${doc.numPages} pages`);
         } catch (err: any) {
           console.error('[Open Project] Could not load embedded PDF:', err?.message || err);
@@ -513,9 +509,7 @@ export default function App() {
         <div style={{flex:1}} />
 
         <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
-        {/* Removed Save (Local) and Load (Local) from toolbar */}
-        <button className="btn" onClick={()=>{ navigator.clipboard.writeText(exportJSON(useStore.getState().toProject())); alert('Copied JSON.'); }}>Export JSON</button>
-        <button className="btn" onClick={()=>{ const s=prompt('Paste JSON:'); if(!s)return; try{ useStore.getState().fromProject(importJSON(s)); setPdf(null); alert('Imported. Open the matching PDF.'); }catch(e:any){ alert('Invalid JSON: '+e.message);} }}>Import JSON</button>
+        {/* Removed Save/Load local and Import/Export JSON from the toolbar */}
       </div>
 
       {/* PROJECT TAGS BAR */}
