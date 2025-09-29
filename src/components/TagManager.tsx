@@ -45,22 +45,56 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [editId, setEditId] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
-  const [catSelect, setCatSelect] = useState<string>(''); // dropdown value
+  const [catSelect, setCatSelect] = useState<string>('');          // dropdown value
   const [customCategory, setCustomCategory] = useState<string>(''); // for “Custom…”
   const fileRef = useRef<HTMLInputElement>(null);
 
   const editorCardRef = useRef<HTMLDivElement>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
 
+  // ====== NEW: draggable state ======
+  const [drag, setDrag] = useState<{active:boolean; dx:number; dy:number}>({ active:false, dx:0, dy:0 });
+  const onTitleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setDrag(d => ({ ...d, active: true }));
+  };
   useEffect(() => {
-    if (!open) {
-      setQuery('');
-      setDraft(emptyDraft);
-      setEditId(null);
-      setError('');
-      setCatSelect('');
-      setCustomCategory('');
-    }
+    if (!drag.active) return;
+    const onMove = (e: MouseEvent) => {
+      setDrag(d => ({ ...d, dx: d.dx + (e.movementX || 0), dy: d.dy + (e.movementY || 0) }));
+    };
+    const onUp = () => setDrag(d => ({ ...d, active:false }));
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [drag.active]);
+
+  // ====== NEW: refs so we can scroll to a category header ======
+  const tableWrapRef = useRef<HTMLDivElement>(null);
+  const categoryRowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
+
+  const scrollToCategory = (cat: string) => {
+    const wrap = tableWrapRef.current;
+    const row = categoryRowRefs.current[cat || ''];
+    if (!wrap || !row) return;
+    // align category header near the top of the scroll container
+    const y = row.offsetTop - 8;
+    wrap.scrollTo({ top: y, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    setQuery('');
+    setDraft(emptyDraft);
+    setEditId(null);
+    setError('');
+    setCatSelect('');
+    setCustomCategory('');
+    // reset position each time it opens
+    setDrag({active:false, dx:0, dy:0});
   }, [open]);
 
   // Build the category list from: master + existing tags
@@ -117,9 +151,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
     return finalOrder.map(cat => ({ category: cat, items: byCat.get(cat) || [] }));
   }, [tags, query, sortedCategories]);
-
-  // If not open, render nothing (after all hooks have run)
-  if (!open) return null;
 
   // ---- actions ----
   function startNew() {
@@ -197,7 +228,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     addTag(next);
     setDraft(d => ({ ...d, code: '', name: '' }));
     setError('');
-    // keep category selection as-is for rapid entry
     codeInputRef.current?.focus();
   }
 
@@ -287,16 +317,48 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const headerNote =
     'Lights category always renders orange on the plan, regardless of saved color.';
 
+  // ====== when category selection changes, jump to that category in the table ======
+  useEffect(() => {
+    if (!open) return;
+    const cat =
+      catSelect === CUSTOM_CAT_VALUE
+        ? customCategory.trim()
+        : (catSelect || draft.category || '').trim();
+
+    if (!cat) return;
+    if (query) setQuery(''); // ensure category is visible
+    // Allow DOM to render before scrolling.
+    const id = window.setTimeout(() => scrollToCategory(cat), 0);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catSelect, customCategory]);
+
+  if (!open) return null;
+
   return (
     <div style={S.backdrop} onMouseDown={onClose}>
-      <div style={S.modal} onMouseDown={e => e.stopPropagation()}>
-        {/* Title Bar */}
-        <div style={S.titleBar}>
+      <div
+        // draggable modal: fixed, centered baseline + drag offsets
+        style={{
+          ...S.modal,
+          position: 'fixed',
+          left: '50%',
+          top: '8vh',
+          transform: `translate(-50%, 0) translate(${drag.dx}px, ${drag.dy}px)`,
+          cursor: drag.active ? 'grabbing' : 'default',
+        }}
+        onMouseDown={e => e.stopPropagation()}
+      >
+        {/* Title Bar (drag handle) */}
+        <div
+          style={{ ...S.titleBar, cursor: 'grab' }}
+          onMouseDown={onTitleMouseDown}
+        >
           <div>
             <div style={S.title}>Tag Database</div>
             <div style={S.subtitle}>{headerNote}</div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, cursor: 'auto' }}>
             <button className="btn" onClick={loadDefaults}>Load Defaults</button>
             <button className="btn" onClick={() => fileRef.current?.click()}>Import JSON</button>
             <button className="btn" onClick={() => downloadTagsFile('tags.json', exportTags())}>Export JSON</button>
@@ -417,7 +479,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         </div>
 
         {/* Grouped Table */}
-        <div style={S.tableWrap}>
+        <div style={S.tableWrap} ref={tableWrapRef}>
           <table style={S.table}>
             <thead>
               <tr>
@@ -432,7 +494,9 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
               {filteredGroups.map(group => (
                 <React.Fragment key={group.category || '(Uncategorized)'}>
                   {/* Category Header Row */}
-                  <tr>
+                  <tr
+                    ref={(el) => { categoryRowRefs.current[group.category || ''] = el; }}
+                  >
                     <td colSpan={5} style={{ padding:'10px 6px', background:'#fafafa', borderTop:'1px solid #eee', fontWeight:700 }}>
                       {group.category || 'Uncategorized'}
                     </td>
@@ -488,8 +552,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 /* ---------- Inline styles ---------- */
 const S: Record<string, React.CSSProperties> = {
   backdrop: {
-    position:'fixed', inset:0, background:'rgba(0,0,0,0.35)', zIndex:9999,
-    display:'flex', alignItems:'center', justifyContent:'center'
+    position:'fixed', inset:0, background:'rgba(0,0,0,0.35)', zIndex:9999
   },
   modal: {
     background:'#fff', width:1000, maxWidth:'92vw', maxHeight:'90vh',
@@ -551,7 +614,7 @@ const S: Record<string, React.CSSProperties> = {
     padding: '10px 6px',
     fontSize: 12,
     color: '#555',
-    borderBottom: '1px solid #eee', // <— fixed
+    borderBottom: '1px solid #eee',
     position: 'sticky',
     top: 0,
     background: '#fff',
