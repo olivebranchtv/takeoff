@@ -14,7 +14,6 @@ type Props = {
 type Draft = Omit<Tag, 'id'>;
 const emptyDraft: Draft = { code: '', name: '', category: '', color: '#FFA500' };
 
-/** Category sort priority, then everything else alphabetically */
 const MASTER_CATEGORY_ORDER = [
   'Lights','Receptacles','Switches','Stub-Ups','Fire Alarm','Breakers','Panels','Disconnects',
   'Raceways & Pathways','Conductors & Feeders','Data/Communications','Security','AV / Sound',
@@ -30,27 +29,26 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [editId, setEditId] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
-  const [catSelect, setCatSelect] = useState<string>('');          // editor dropdown value
-  const [customCategory, setCustomCategory] = useState<string>(''); // for “Custom…”
+  const [catSelect, setCatSelect] = useState<string>('');
+  const [customCategory, setCustomCategory] = useState<string>('');
   const fileRef = useRef<HTMLInputElement>(null);
   const editorCardRef = useRef<HTMLDivElement>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
 
   // Draggable modal
-  const [pos, setPos] = useState<{x:number;y:number}>({ x: 64, y: 64 });
+  const [pos, setPos] = useState<{x:number;y:number}>({ x: 48, y: 48 });
   const dragRef = useRef<{active:boolean; sx:number; sy:number; ox:number; oy:number}>({
     active:false, sx:0, sy:0, ox:0, oy:0
   });
 
-  // Map of category header rows for jump scrolling
+  // Category anchors for jump
   const groupRefs = useRef(new Map<string, HTMLTableRowElement>());
   const scrollToCategory = (cat: string) => {
-    const key = cat || 'Uncategorized';
-    const row = groupRefs.current.get(key);
-    if (row) row.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const row = groupRefs.current.get(cat || 'Uncategorized');
+    row?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // Reset UI when closed; ensure defaults present when opened (load all 318 on first use)
+  // Reset UI & ensure defaults exist
   useEffect(() => {
     if (!open) {
       setQuery('');
@@ -59,24 +57,19 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       setError('');
       setCatSelect('');
       setCustomCategory('');
-      // extra safety: ensure we never leave drag listeners attached between opens
-      onDragEnd();
+      onDragEnd(); // safety: remove listeners when closed
       return;
     }
     try {
       const existing = new Set<string>((tags as Tag[]).map(t => (t.code || '').toUpperCase()));
       const missing = DEFAULT_MASTER_TAGS.filter(t => !existing.has((t.code || '').toUpperCase()));
-      if (missing.length > 0) importTags(missing);
-    } catch { /* ignore */ }
+      if (missing.length) importTags(missing);
+    } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Also cleanup listeners on unmount (prevents “won’t open later” issue)
-  useEffect(() => () => {
-    onDragEnd();
-  }, []);
+  useEffect(() => () => onDragEnd(), []);
 
-  // Build category list from master + existing
   const allCategories = useMemo(() => {
     const set = new Set<string>();
     DEFAULT_MASTER_TAGS.forEach(t => t.category && set.add(t.category));
@@ -84,23 +77,22 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     return Array.from(set);
   }, [tags]);
 
-  // Sorted categories
   const sortedCategories = useMemo(() => {
     const ordered = MASTER_CATEGORY_ORDER.filter(c => allCategories.includes(c));
     const rest = allCategories.filter(c => !MASTER_CATEGORY_ORDER.includes(c)).sort((a, b) => a.localeCompare(b));
     return [...ordered, ...rest];
   }, [allCategories]);
 
-  // Filtered + grouped list
   const filteredGroups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = [...(tags as Tag[])];
-    const filtered = !q ? list : list.filter(
-      t =>
-        (t.code || '').toLowerCase().includes(q) ||
-        (t.name || '').toLowerCase().includes(q) ||
-        (t.category || '').toLowerCase().includes(q)
-    );
+    const filtered = q
+      ? (tags as Tag[]).filter(
+          t =>
+            (t.code || '').toLowerCase().includes(q) ||
+            (t.name || '').toLowerCase().includes(q) ||
+            (t.category || '').toLowerCase().includes(q)
+        )
+      : (tags as Tag[]);
 
     const byCat = new Map<string, Tag[]>();
     for (const t of filtered) {
@@ -109,24 +101,20 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       arr.push(t);
       byCat.set(cat, arr);
     }
-    for (const [k, arr] of byCat.entries()) {
-      arr.sort((a, b) => (a.code || '').localeCompare(b.code || ''));
-      byCat.set(k, arr);
-    }
+    for (const [k, arr] of byCat.entries()) arr.sort((a, b) => (a.code || '').localeCompare(b.code || ''));
 
     const known = sortedCategories.filter(c => byCat.has(c));
-    const unknown = Array.from(byCat.keys()).filter(c => !sortedCategories.includes(c)).sort((a, b) => a.localeCompare(b));
-    const finalOrder = [...known, ...unknown];
+    const unknown = Array.from(byCat.keys()).filter(c => !sortedCategories.includes(c)).sort((a,b)=>a.localeCompare(b));
+    const final = [...known, ...unknown];
 
-    return finalOrder.map(cat => ({ category: cat, items: byCat.get(cat) || [] }));
+    return final.map(cat => ({ category: cat, items: byCat.get(cat) || [] }));
   }, [tags, query, sortedCategories]);
 
-  // refresh groupRefs whenever grouping changes
   useEffect(() => { groupRefs.current = new Map(); }, [filteredGroups]);
 
   if (!open) return null;
 
-  /* ---------- actions ---------- */
+  // actions
   function startNew() {
     setEditId(null);
     setDraft(d => ({ ...emptyDraft, color: d.color || '#FFA500' }));
@@ -169,7 +157,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     setError('');
   }
 
-  // VALIDATION — exact duplicate only (EM allowed even if EM-RH exists)
+  // Exact duplicate only (EM allowed even if EM-RH exists)
   function validate(next: Draft): string {
     if (!next.code.trim()) return 'Code is required.';
     if (!/^[a-z0-9\-/# ]+$/i.test(next.code.trim())) return 'Use letters, numbers, space, hyphen, slash, # only.';
@@ -236,7 +224,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     reader.readAsText(f);
   }
 
-  // Add-to-project also upserts the tag into master DB if needed
   function addToProject(tag: Tag) {
     const exists =
       (tags as Tag[]).some(
@@ -273,7 +260,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   const headerNote = 'Lights category always renders orange on the plan, regardless of saved color.';
 
-  // Drag handlers
+  // Drag handlers (drag anywhere on title bar)
   function onDragStart(e: React.MouseEvent) {
     dragRef.current = { active:true, sx:e.clientX, sy:e.clientY, ox:pos.x, oy:pos.y };
     window.addEventListener('mousemove', onDragMove);
@@ -297,16 +284,15 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         style={{ ...S.modal, left: pos.x, top: pos.y }}
         onMouseDown={e => e.stopPropagation()}
       >
-        {/* Title Bar (drag by the whole bar or the small handle) */}
         <div style={S.titleBar} onMouseDown={onDragStart}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <div style={{ ...S.dragHandle }} title="Drag" aria-label="Drag" />
+            <div style={S.dragHandle} />
             <div>
               <div style={S.title}>Tag Database</div>
               <div style={S.subtitle}>{headerNote}</div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap:'wrap' }}>
             <button className="btn" onClick={loadDefaults}>Load Defaults</button>
             <button className="btn" onClick={() => fileRef.current?.click()}>Import JSON</button>
             <button className="btn" onClick={() => downloadTagsFile('tags.json', exportTags())}>Export JSON</button>
@@ -314,7 +300,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
           </div>
         </div>
 
-        {/* Toolbar */}
         <div style={S.toolbar}>
           <input
             placeholder="Search by code, name, or category…"
@@ -322,7 +307,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             onChange={e => setQuery(e.target.value)}
             style={S.search}
           />
-          {/* Jump to category */}
           <select
             style={S.jump}
             defaultValue=""
@@ -336,16 +320,13 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             <option value="">Jump to category…</option>
             {sortedCategories.map(c => <option value={c} key={c}>{c}</option>)}
           </select>
-
           <button className="btn" onClick={startNew}>New Tag</button>
         </div>
 
-        {/* Scrollable content area (editor + table) */}
+        {/* BIGGER, SCROLLABLE CONTENT: editor (compact) + tall table */}
         <div style={S.content}>
-          {/* Editor Card */}
           <div style={S.card} ref={editorCardRef}>
             <div style={S.formRow}>
-              {/* Color grid */}
               <div style={{ minWidth: 232 }}>
                 <div style={S.label}>Color</div>
                 <div style={S.colorGrid}>
@@ -369,16 +350,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                 </div>
               </div>
 
-              {/* Fields */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'minmax(120px, 160px) minmax(220px, 320px) 1fr',
-                  gap: 12,
-                  alignItems: 'center',
-                  flex: 1,
-                }}
-              >
+              <div style={{ display:'grid', gridTemplateColumns:'minmax(120px, 160px) minmax(220px, 320px) 1fr', gap: 10, alignItems:'center', flex:1 }}>
                 <div>
                   <div style={S.label}>Code</div>
                   <input
@@ -436,8 +408,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                 </div>
               </div>
 
-              {/* Actions */}
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+              <div style={{ display:'flex', alignItems:'flex-end', gap: 8 }}>
                 {editId ? (
                   <>
                     <button className="btn" onClick={saveEdit}>Save</button>
@@ -452,7 +423,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             {error && <div style={S.error}>{error}</div>}
           </div>
 
-          {/* Grouped Table */}
+          {/* Tall table area */}
           <div style={S.tableWrap}>
             <table style={S.table}>
               <thead>
@@ -467,31 +438,22 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
               <tbody>
                 {filteredGroups.map(group => (
                   <React.Fragment key={group.category || 'Uncategorized'}>
-                    {/* Category Header Row */}
-                    <tr
-                      ref={el => { if (el) groupRefs.current.set(group.category || 'Uncategorized', el); }}
-                    >
-                      <td colSpan={5} style={{ padding:'10px 6px', background:'#fafafa', borderTop:'1px solid #eee', fontWeight:700 }}>
+                    <tr ref={el => { if (el) groupRefs.current.set(group.category || 'Uncategorized', el); }}>
+                      <td colSpan={5} style={{ padding:'8px 6px', background:'#fafafa', borderTop:'1px solid #eee', fontWeight:700, position:'sticky', top:34, zIndex:1 }}>
                         {group.category || 'Uncategorized'}
                       </td>
                     </tr>
-                    {/* Items */}
                     {group.items.map((t: Tag) => (
-                      <tr key={t.id}>
+                      <tr key={t.id} style={{ height:32 }}>
                         <td>
-                          <div style={{ width:20, height:20, borderRadius:4, background:t.color, border:'1px solid #999', margin:'0 auto' }} />
+                          <div style={{ width:18, height:18, borderRadius:4, background:t.color, border:'1px solid #999', margin:'0 auto' }} />
                         </td>
                         <td style={{ fontWeight:600 }}>{t.code}</td>
                         <td>{t.category}</td>
                         <td>{t.name}</td>
                         <td>
                           <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
-                            <button
-                              className="btn"
-                              title="Add to current project"
-                              aria-label={`Add ${t.code} to current project`}
-                              onClick={() => addToProject(t)}
-                            >+</button>
+                            <button className="btn" title="Add to current project" aria-label={`Add ${t.code} to current project`} onClick={() => addToProject(t)}>+</button>
                             <button className="btn" onClick={() => startEdit(t)}>Edit</button>
                             <button className="btn" onClick={() => remove(t.id)}>Delete</button>
                           </div>
@@ -499,25 +461,18 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                       </tr>
                     ))}
                     {group.items.length === 0 && (
-                      <tr>
-                        <td colSpan={5} style={{ color:'#777', padding:'10px 6px' }}>No items in this category.</td>
-                      </tr>
+                      <tr><td colSpan={5} style={{ color:'#777', padding:'8px 6px' }}>No items in this category.</td></tr>
                     )}
                   </React.Fragment>
                 ))}
                 {filteredGroups.length === 0 && (
-                  <tr>
-                    <td colSpan={5} style={{ textAlign:'center', color:'#666', padding:'14px 0' }}>
-                      No tags match your search.
-                    </td>
-                  </tr>
+                  <tr><td colSpan={5} style={{ textAlign:'center', color:'#666', padding:'14px 0' }}>No tags match your search.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Hidden file input */}
         <input ref={fileRef} type="file" accept="application/json" onChange={onPickFile} style={{ display:'none' }} />
       </div>
     </div>
@@ -532,59 +487,50 @@ const S: Record<string, React.CSSProperties> = {
   },
   modal: {
     position:'fixed',
-    background:'#fff', width:1000, maxWidth:'92vw', maxHeight:'90vh',
-    overflow:'hidden', borderRadius:12, boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
+    background:'#fff',
+    width: 1200,               // wider
+    maxWidth:'96vw',
+    maxHeight:'96vh',          // taller
+    overflow:'hidden',
+    borderRadius:12,
+    boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
     display:'flex', flexDirection:'column'
   },
   titleBar: {
     display:'flex', alignItems:'center', justifyContent:'space-between',
-    padding:'14px 16px 8px', borderBottom:'1px solid #eee', background:'#fafafa',
-    cursor:'move' // drag anywhere on the title bar
+    padding:'12px 14px', borderBottom:'1px solid #eee', background:'#fafafa',
+    cursor:'move'
   },
-  dragHandle: {
-    width:16, height:16, borderRadius:3, background:'#ddd', border:'1px solid #c9c9c9',
-    boxShadow:'inset 0 0 0 2px #f4f4f4'
-  },
-  title: { fontSize:20, fontWeight:700, marginBottom:4 },
+  dragHandle: { width:14, height:14, borderRadius:3, background:'#ddd', border:'1px solid #c9c9c9', boxShadow:'inset 0 0 0 2px #f4f4f4' },
+  title: { fontSize:20, fontWeight:700, marginBottom:2 },
   subtitle: { fontSize:12, color:'#666' },
   toolbar: {
     display:'flex', gap:8, alignItems:'center',
-    padding:'10px 16px', borderBottom:'1px solid #f2f2f2', background:'#fff'
+    padding:'8px 14px', borderBottom:'1px solid #f2f2f2', background:'#fff'
   },
-  search: {
-    flex:1, padding:'10px 12px', border:'1px solid #ccc', borderRadius:8, fontSize:14,
-    lineHeight: '20px', boxSizing: 'border-box'
-  },
-  jump:   { width:240, padding:'10px 12px', border:'1px solid #ccc', borderRadius:8, fontSize:14, boxSizing:'border-box' },
+  search: { flex:1, padding:'10px 12px', border:'1px solid #ccc', borderRadius:8, fontSize:14, lineHeight:'20px', boxSizing:'border-box' },
+  jump:   { width:260, padding:'10px 12px', border:'1px solid #ccc', borderRadius:8, fontSize:14 },
 
-  // NEW: scrollable content wrapper so editor+table never get cut off
-  content: { flex:1, overflowY:'auto', padding:'0 0 8px' },
+  // Key: give the interior ALL the space and make the table flex to fill it
+  content: { flex:1, display:'flex', flexDirection:'column', overflow:'hidden' },
 
-  card:   { padding:'12px 16px', borderBottom:'1px solid #f2f2f2', background:'#fff' },
-  formRow: { display:'grid', gridTemplateColumns:'232px 1fr auto', gap:16, alignItems:'start' },
+  card:   { padding:'10px 14px', borderBottom:'1px solid #f2f2f2', background:'#fff' },
+  formRow: { display:'grid', gridTemplateColumns:'232px 1fr auto', gap:14, alignItems:'start' },
   label:  { fontSize:12, fontWeight:600, color:'#444', marginBottom:6 },
-  input:  {
-    width:'100%', padding:'10px 12px', border:'1px solid #ccc', borderRadius:8, fontSize:14,
-    lineHeight:'20px', boxSizing:'border-box', minWidth:0
-  },
-  colorGrid: {
-    display:'grid',
-    gridTemplateColumns:'repeat(auto-fill, 28px)',
-    gap:8,
-    maxHeight: 140,
-    overflowY: 'auto',
-    paddingRight: 4
-  },
+  input:  { width:'100%', padding:'10px 12px', border:'1px solid #ccc', borderRadius:8, fontSize:14, lineHeight:'20px', boxSizing:'border-box', minWidth:0 },
+  colorGrid: { display:'grid', gridTemplateColumns:'repeat(auto-fill, 28px)', gap:8, maxHeight: 140, overflowY:'auto', paddingRight: 4 },
   swatch: { width:24, height:24, borderRadius:4, cursor:'pointer' },
-  error:  { marginTop:10, color:'#b00020', fontSize:13, fontWeight:600 },
-  tableWrap: { overflow:'auto', padding:'0 16px 16px' },
+  error:  { marginTop:8, color:'#b00020', fontSize:13, fontWeight:600 },
+
+  // The table region now fills the remaining height (tons of rows visible)
+  tableWrap: { flex:1, overflow:'auto', padding:'0 14px 14px' },
   table:  { width:'100%', borderCollapse:'separate', borderSpacing:0 },
-  thNarrow: { width:70, textAlign:'center', padding:'10px 6px', fontSize:12, color:'#555',
-    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff' },
-  thCode:   { width:100, textAlign:'left', padding:'10px 6px', fontSize:12, color:'#555',
-    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff' },
-  thCat:    { width:200, textAlign:'left', padding:'10px 6px', fontSize:12, color:'#555',
-    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff' },
-  thActions:{ width:210, textAlign:'right', padding:'10px 6px', fontSize:12, color:'#555',
-    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff' },
+  thNarrow: { width:64, textAlign:'center', padding:'8px 6px', fontSize:12, color:'#555',
+    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff', zIndex:2 },
+  thCode:   { width:100, textAlign:'left', padding:'8px 6px', fontSize:12, color:'#555',
+    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff', zIndex:2 },
+  thCat:    { width:220, textAlign:'left', padding:'8px 6px', fontSize:12, color:'#555',
+    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff', zIndex:2 },
+  thActions:{ width:210, textAlign:'right', padding:'8px 6px', fontSize:12, color:'#555',
+    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff', zIndex:2 },
 };
