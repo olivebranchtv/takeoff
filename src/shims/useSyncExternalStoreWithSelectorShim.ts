@@ -1,6 +1,6 @@
 // src/shims/useSyncExternalStoreWithSelectorShim.ts
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector';
 
-// Re-export so both styles work:
 export { useSyncExternalStoreWithSelector };
+// Provide a default for code that (incorrectly) default-imports it.
 export default useSyncExternalStoreWithSelector;
