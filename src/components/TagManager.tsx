@@ -84,8 +84,9 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   function validate(next: Draft): string {
     if (!next.code.trim()) return 'Code is required.';
-    if (!/^[a-z0-9\-/#]+$/i.test(next.code.trim())) {
-      return 'Use letters, numbers, hyphen, slash, # only.';
+    // Allow spaces because some of your master codes have them (e.g. "125/MLO/2 Pole")
+    if (!/^[a-z0-9\-/# ]+$/i.test(next.code.trim())) {
+      return 'Use letters, numbers, space, hyphen, slash, # only.';
     }
     const dup = (tags as Tag[]).find(t => t.code.toUpperCase() === next.code.trim().toUpperCase());
     if (!editId && dup) return `Code “${next.code.toUpperCase()}” already exists.`;
@@ -145,6 +146,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     alert('Add-to-Project is not wired yet.');
   }
 
+  // Seeds the store DB from the static master list if missing
   function loadDefaults() {
     DEFAULT_MASTER_TAGS.forEach(mt => {
       const exists = tags.find((t: Tag) => t.code.toUpperCase() === mt.code.toUpperCase());
@@ -334,7 +336,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   titleBar: {
     display:'flex', alignItems:'flex-start', justifyContent:'space-between',
-    padding:'14px 16px 8px', borderBottom:'1px solid #eee', background:'#fafafa'
+    padding:'14px 16px 8px', borderBottom:'1px solid '#eee', background:'#fafafa'
   },
   title: { fontSize:20, fontWeight:700, marginBottom:4 },
   subtitle: { fontSize:12, color:'#666' },
@@ -343,10 +345,10 @@ const S: Record<string, React.CSSProperties> = {
     padding:'10px 16px', borderBottom:'1px solid #f2f2f2', background:'#fff'
   },
   search: {
-    flex:1, padding:'8px 10px', border:'1px solid #ccc', borderRadius:8, fontSize:14
+    flex:1, padding:'8px 10px', border:'1px solid '#ccc', borderRadius:8, fontSize:14
   },
   card: {
-    padding:'12px 16px', borderBottom:'1px solid #f2f2f2', background:'#fff'
+    padding:'12px 16px', borderBottom:'1px solid '#f2f2f2', background:'#fff'
   },
   formRow: {
     display:'grid',
@@ -356,7 +358,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   label: { fontSize:12, fontWeight:600, color:'#444', marginBottom:6 },
   input: {
-    width:'100%', padding:'8px 10px', border:'1px solid #ccc', borderRadius:8, fontSize:14
+    width:'100%', padding:'8px 10px', border:'1px solid '#ccc', borderRadius:8, fontSize:14
   },
   colorGrid: {
     display:'grid', gridTemplateColumns:'repeat(10, 24px)', gap:6
@@ -375,18 +377,18 @@ const S: Record<string, React.CSSProperties> = {
   },
   thNarrow: {
     width:70, textAlign:'center', padding:'10px 6px', fontSize:12, color:'#555',
-    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff'
+    borderBottom:'1px solid '#eee', position:'sticky', top:0, background:'#fff'
   },
   thCode: {
     width:100, textAlign:'left', padding:'10px 6px', fontSize:12, color:'#555',
-    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff'
+    borderBottom:'1px solid '#eee', position:'sticky', top:0, background:'#fff'
   },
   thCat: {
     width:200, textAlign:'left', padding:'10px 6px', fontSize:12, color:'#555',
-    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff'
+    borderBottom:'1px solid '#eee', position:'sticky', top:0, background:'#fff'
   },
   thActions: {
     width:210, textAlign:'right', padding:'10px 6px', fontSize:12, color:'#555',
-    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff'
+    borderBottom:'1px solid '#eee', position:'sticky', top:0, background:'#fff'
   },
 };
