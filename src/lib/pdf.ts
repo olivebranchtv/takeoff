@@ -5,11 +5,12 @@
  */
 
 import { getDocument, GlobalWorkerOptions, version } from 'pdfjs-dist/build/pdf.mjs';
+import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 export type PDFDoc = any;
 
-// CRITICAL: Disable worker completely to avoid all external requests
-GlobalWorkerOptions.workerSrc = '';
+// Set worker source to satisfy PDF.js requirements, but disable worker usage
+GlobalWorkerOptions.workerSrc = workerUrl;
 
 // Configuration that prevents any external network requests
 const SAFE_DOC_OPTS = {
