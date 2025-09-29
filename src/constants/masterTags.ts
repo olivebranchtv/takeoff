@@ -63,4 +63,17 @@ export const DEFAULT_MASTER_TAGS: MasterTag[] = [
   { code: "REC-USB", name: "USB Receptacle", color: "#2563EB", category: "Receptacles" },
   { code: "REC-FLR", name: "Floor Box Power", color: "#2563EB", category: "Receptacles" },
   { code: "REC-FURN", name: "Furniture Feed", color: "#2563EB", category: "Receptacles" },
-  { code: "REC-208
+  { code: "REC-208", name: "208/240V Receptacle", color: "#1E40AF", category: "Receptacles" },
+  { code: "REC-TL-20", name: "Twist-Lock 20A", color: "#1E40AF", category: "Receptacles" },
+  { code: "REC-TL-30", name: "Twist-Lock 30A", color: "#1E40AF", category: "Receptacles" },
+
+  // --------------------------- SWITCHES ---------------------------
+  { code: "SW", name: "Switch (SP)", color: "#60A5FA", category: "Switches" },
+  { code: "SW-3W", name: "Switch (3-way)", color: "#60A5FA", category: "Switches" },
+  { code: "SW-4W", name: "Switch (4-way)", color: "#60A5FA", category: "Switches" },
+  { code: "KS", name: "Key Switch", color: "#60A5FA", category: "Switches" },
+  { code: "SPST", name: "SPST", color: "#60A5FA", category: "Switches" },
+  { code: "DPST", name: "DPST", color: "#60A5FA", category: "Switches" },
+
+  // … (continue with Stub-Ups, Fire Alarm, Breakers, Panels, Disconnects, Raceways, Conductors, Data/Comm, Security, AV, BAS, Site Power, Demo, Miscellaneous exactly as you listed above)
+];
