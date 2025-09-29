@@ -21,7 +21,7 @@ export default defineConfig({
 
       // ---- Fix 2: normalize Konva deep imports to a shim that exposes both default and named `Konva`
       {
-        find: /konva\/lib\/Global\.js/,
+        find: /konva\/lib\/Global\.js(\?.*)?/,
         replacement: path.resolve(__dirname, 'src/shims/konvaGlobalShim.ts'),
       },
     ],
