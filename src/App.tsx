@@ -37,6 +37,16 @@ function b64ToAb(b64: string): ArrayBuffer {
   return out.buffer;
 }
 
+/** Small helper for UI labels */
+function baseNameNoExt(path: string) {
+  const just = (path || '').split('/').pop() || path || '';
+  const dot = just.lastIndexOf('.');
+  return dot > 0 ? just.slice(0, dot) : just || 'Untitled';
+}
+
+/** Preferred category order for pickers (others follow alphabetically) */
+const MASTER_CATEGORY_ORDER = ['Lights', 'Receptacles'];
+
 export default function App() {
   /* ---------- refs ---------- */
   const pdfFileRef = useRef<HTMLInputElement>(null);
@@ -158,7 +168,7 @@ export default function App() {
       if (bundle.pdf && typeof bundle.pdf.bytesBase64 === 'string' && bundle.pdf.bytesBase64.length > 0) {
         try {
           const ab = b64ToAb(bundle.pdf.bytesBase64);
-          const doc = await loadPdfFromBytes(ab);
+          const doc = await loadPdfFromBytes(new Uint8Array(ab)); // ensure Uint8Array
           setPdf(doc);
           setPdfName(bundle.pdf.name || 'document.pdf');
           setFileName(bundle.pdf.name || 'document.pdf');
@@ -213,7 +223,7 @@ export default function App() {
     setPdfBytesBase64(base64);
     setPdfName(file.name);
 
-    const doc = await loadPdfFromBytes(buf);
+    const doc = await loadPdfFromBytes(new Uint8Array(buf)); // ensure Uint8Array
     setPdf(doc);
     setFileName(file.name);
     setPages([]);
@@ -222,6 +232,7 @@ export default function App() {
     // page labels if available, else Page N
     let labels: string[] = [];
     try {
+      // @ts-ignore optional in pdf.js
       const raw = await (doc as any).getPageLabels?.();
       labels = raw && Array.isArray(raw)
         ? raw.map((l: string, i: number) => l || `Page ${i + 1}`)
@@ -284,44 +295,31 @@ export default function App() {
   }, [pages]);
 
   /* =========================================================================================
-     UI HELPERS
+     ADD-FROM-DB PICKER (grouped by category, Lights/Receptacles first)
      ========================================================================================= */
-  function colorForTag(t: TagLite) {
-    return (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color;
-  }
-
-  // Build grouped options for the Add-from-DB picker:
-  const PICKER_TOP_CATS = ['Lights', 'Receptacles'] as const;
-
   const pickerGroups = useMemo(() => {
-    // tags available to add (not already in Project Tags)
-    const notAlreadyAdded = (tags as Tag[])
-      .filter(t => !projectTags.some(p => (p.code || '').toUpperCase() === (t.code || '').toUpperCase()));
+    const remaining = (tags as Tag[])
+      .filter(t => !projectTags.some(p => p.id === t.id));
 
-    // group by category
-    const byCat = new Map<string, TagLite[]>();
-    for (const t of notAlreadyAdded) {
-      const cat = (t.category || 'Uncategorized').trim() || 'Uncategorized';
-      const arr = byCat.get(cat) || [];
-      arr.push({ id: t.id, code: t.code, name: t.name, color: t.color, category: t.category });
+    const byCat = new Map<string, Tag[]>();
+    for (const t of remaining) {
+      const cat = t.category || '';
+      const arr = byCat.get(cat) ?? [];
+      arr.push(t);
       byCat.set(cat, arr);
     }
     // sort items inside each category by code
     for (const arr of byCat.values()) {
       arr.sort((a, b) => (a.code || '').localeCompare(b.code || ''));
     }
-    // category order: Lights, Receptacles, then others alphabetically
-    const allCats = Array.from(byCat.keys());
-    const pinned = PICKER_TOP_CATS.filter(c => byCat.has(c as unknown as string)) as unknown as string[];
-    const rest = allCats.filter(c => !PICKER_TOP_CATS.includes(c as any)).sort((a, b) => a.localeCompare(b));
-
-    return [...pinned, ...rest].map(cat => ({ category: cat, items: byCat.get(cat)! }));
+    // order categories
+    const cats = Array.from(byCat.keys());
+    const ordered = [
+      ...MASTER_CATEGORY_ORDER.filter(c => byCat.has(c)),
+      ...cats.filter(c => !MASTER_CATEGORY_ORDER.includes(c)).sort((a, b) => a.localeCompare(b))
+    ];
+    return ordered.map(cat => ({ cat, items: byCat.get(cat)! }));
   }, [tags, projectTags]);
-
-  const flatPickerList = useMemo(
-    () => pickerGroups.flatMap(g => g.items),
-    [pickerGroups]
-  );
 
   // Header label always prefers store's project name
   const headerProjectLabel = useStore(s => s.getProjectName());
@@ -465,7 +463,7 @@ export default function App() {
                 title={`${t.code} — ${t.name}`}
                 style={{display:'flex', alignItems:'center', gap:6, position:'relative'}}
               >
-                <span style={{width:20, height:20, borderRadius:4, border:'1px solid #444', background: colorForTag(t)}} />
+                <span style={{width:20, height:20, borderRadius:4, border:'1px solid #444', background: (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color}} />
                 <span style={{minWidth:26, textAlign:'center', fontWeight: active ? 700 : 600}}>{t.code}</span>
                 <span
                   onClick={(e)=>{ e.stopPropagation(); setProjectTags(list => list.filter(x => x.id !== t.id)); if (currentTag === t.code) setCurrentTag(''); }}
@@ -483,50 +481,49 @@ export default function App() {
           {pickerOpen && (
             <div
               style={{
-                position:'fixed',
-                top:140,
-                right:12,
-                background:'#fff',
-                border:'1px solid #ddd',
-                borderRadius:6,
-                padding:8,
-                width:360,
-                zIndex:999
+                position:'fixed', top:140, right:12, background:'#fff',
+                border:'1px solid #ddd', borderRadius:6, padding:8, width:360, zIndex:999
               }}
+              onMouseLeave={()=>setPickerOpen(false)}
             >
-              <div style={{display:'flex', gap:8, alignItems:'center'}}>
+              <div style={{display:'flex', gap:8}}>
                 <select
                   className="btn"
                   value={pickerSel}
                   onChange={(e)=>setPickerSel(e.target.value)}
-                  style={{flex:1}}
+                  style={{flex:1, maxHeight:320, overflow:'auto'}}
                 >
                   <option value="">— Select tag —</option>
-                  {pickerGroups.map(g => (
-                    <optgroup key={g.category} label={g.category}>
-                      {g.items.map(t => (
-                        <option key={t.id} value={t.id}>{t.code} — {t.name}</option>
+                  {pickerGroups.map(group => (
+                    <optgroup key={group.cat || '(Uncategorized)'} label={group.cat || 'Uncategorized'}>
+                      {group.items.map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.code} — {t.name}
+                        </option>
                       ))}
                     </optgroup>
                   ))}
                 </select>
                 <button
                   className="btn"
+                  disabled={!pickerSel}
                   onClick={()=>{
-                    const pick = flatPickerList.find(t => t.id === pickerSel);
+                    const pick = (tags as Tag[]).find(t => t.id === pickerSel);
                     if (!pick) return;
-                    setProjectTags(list => (list.some(x => x.id === pick.id) ? list : [...list, pick]));
+                    setProjectTags(list =>
+                      (list.some(x => x.id === pick.id) ? list :
+                        [...list, { id: pick.id, code: pick.code, name: pick.name, color: pick.color, category: pick.category }])
+                    );
                     setCurrentTag(pick.code);
                     setTool('count');
                     setPickerSel('');
                     setPickerOpen(false);
                   }}
-                >
-                  Add
-                </button>
-                <button className="btn" title="Close" onClick={()=>setPickerOpen(false)}>×</button>
+                >Add</button>
               </div>
-              <div style={{marginTop:6, fontSize:12, color:'#666'}}>Tip: open “Tags” to load the master DB first.</div>
+              <div style={{marginTop:6, fontSize:12, color:'#666'}}>
+                Tip: grouped by category. Lights & Receptacles first.
+              </div>
             </div>
           )}
         </div>
@@ -587,7 +584,6 @@ export default function App() {
         open={tagsOpen}
         onClose={()=>setTagsOpen(false)}
         onAddToProject={(t: Tag) => {
-          // Add once to the local Project Tags bar used by App
           setProjectTags(list => (list.some(x => x.id === t.id) ? list
             : [...list, { id: t.id, code: t.code, name: t.name, color: t.color, category: t.category }]));
           setCurrentTag(t.code);
