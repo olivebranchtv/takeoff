@@ -102,7 +102,7 @@ export default function App() {
   const [fileMenuOpen, setFileMenuOpen] = useState(false);
   const [lastSaveBase, setLastSaveBase] = useState<string | null>(null);
 
-  /* ---------- per-project “Project Tags” ---------- */
+  /* ---------- per-project "Project Tags" ---------- */
   const [projectTags, setProjectTags] = useState<TagLite[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSel, setPickerSel] = useState<string>('');
@@ -121,7 +121,7 @@ export default function App() {
     activePage, setActivePage,
     tags,
     currentTag, setCurrentTag,
-    selectedIds, setSelectedIds,
+    setSelectedIds,
     setProjectName,
   } = useStore();
 
@@ -162,7 +162,7 @@ export default function App() {
     setPageCount(0);
     setPageLabels([]);
     setActivePage(0);
-    setSelectedIds([]);
+    useStore.getState().setSelectedIds([]);
     setCurrentTag('');
     setProjectTags([]);
     setProjectName('Untitled Project');
@@ -220,7 +220,7 @@ export default function App() {
           setPageCount(doc.numPages);
           setPageLabels(await resolvePageLabels(doc));
           setActivePage(0);
-          setSelectedIds([]);
+          useStore.getState().setSelectedIds([]);
           
           console.log(`[Open Project] PDF loaded successfully: ${doc.numPages} pages`);
         } catch (err: any) {
@@ -276,7 +276,7 @@ export default function App() {
     setPageCount(doc.numPages);
     setPageLabels(await resolvePageLabels(doc));
     setActivePage(0);
-    setSelectedIds([]);
+    useStore.getState().setSelectedIds([]);
   }, [setFileName, setPages, setPageCount, setPageLabels, setActivePage, setSelectedIds]);
 
   /* =========================================================================================
@@ -564,7 +564,7 @@ export default function App() {
                 </button>
                 <button className="btn" title="Close" onClick={()=>setPickerOpen(false)}>×</button>
               </div>
-              <div style={{marginTop:6, fontSize:12, color:'#666'}}>Tip: open “Tags” to load the master DB first.</div>
+              <div style={{marginTop:6, fontSize:12, color:'#666'}}>Tip: open "Tags" to load the master DB first.</div>
             </div>
           )}
         </div>
