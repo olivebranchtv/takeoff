@@ -3,12 +3,16 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 
+// Keep esbuild away from a few “spicy” deps during dev pre-bundling.
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
+      // your existing app alias
       '@': path.resolve(__dirname, 'src'),
-      // Make both default and named imports work for with-selector:
+
+      // FIX: Some code imports a *default* from with-selector (but it has no default).
+      // Point that module id to our shim that re-exports both named *and* default.
       'use-sync-external-store/shim/with-selector':
         path.resolve(__dirname, 'src/shims/useSyncExternalStoreWithSelectorShim.ts'),
     },
