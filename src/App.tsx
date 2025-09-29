@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type { PDFDoc } from '@/lib/pdf';
 import { loadPdfFromBytes } from '@/lib/pdf';
 import PDFViewport from '@/components/PDFViewport';
@@ -8,7 +8,6 @@ import { useStore } from '@/state/store';
 import { exportJSON, importJSON, loadProject, saveProject } from '@/utils/persist';
 import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
 import { pathLength } from '@/utils/geometry';
-import { DEFAULT_MASTER_TAGS } from '@/constants/masterTags';
 
 /* Tag shape used by the DB + project bar */
 type TagLite = { id: string; code: string; name: string; color: string; category?: string };
@@ -36,38 +35,6 @@ function b64ToAb(b64: string): ArrayBuffer {
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out.buffer;
-}
-
-/** Small helper for UI labels */
-function baseNameNoExt(path: string) {
-  const just = (path || '').split('/').pop() || path || '';
-  const dot = just.lastIndexOf('.');
-  return dot > 0 ? just.slice(0, dot) : just || 'Untitled';
-}
-
-/* =========================================================================================
-   TINY HELPER — ensure master Tag DB is loaded (deduped)
-   ========================================================================================= */
-function ensureMasterTagsLoaded() {
-  const s = useStore.getState() as any;
-  const current: Tag[] = Array.isArray(s.tags) ? s.tags : [];
-  // If we already have a large tag set, do nothing.
-  if (current.length >= 250) return;
-
-  const have = new Set(current.map(t => (t.code || '').toUpperCase()));
-  const missing = DEFAULT_MASTER_TAGS.filter(mt => !have.has((mt.code || '').toUpperCase()));
-
-  if (!missing.length) return;
-
-  // Prefer addTag one-by-one to avoid clobbering anything customized
-  if (typeof s.addTag === 'function') {
-    for (const m of missing) {
-      s.addTag({ code: m.code, name: m.name, category: m.category, color: m.color });
-    }
-  } else if (typeof s.importTags === 'function') {
-    // Fallback: merge (preserve existing, append missing)
-    s.importTags([...current, ...missing]);
-  }
 }
 
 export default function App() {
@@ -109,9 +76,6 @@ export default function App() {
     setSelectedIds,
     setProjectName, // used to force header to the project name from the bundle
   } = useStore();
-
-  // Seed master tags once at mount so "Add from DB" has the full set
-  useEffect(() => { ensureMasterTagsLoaded(); }, []);
 
   /* =========================================================================================
      FILE MENU  — New / Open (.skdproj) / Save (.skdproj) / Save As (.skdproj) / Print / Close
@@ -258,7 +222,6 @@ export default function App() {
     // page labels if available, else Page N
     let labels: string[] = [];
     try {
-      // @ts-ignore optional in pdf.js
       const raw = await (doc as any).getPageLabels?.();
       labels = raw && Array.isArray(raw)
         ? raw.map((l: string, i: number) => l || `Page ${i + 1}`)
@@ -326,9 +289,39 @@ export default function App() {
   function colorForTag(t: TagLite) {
     return (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color;
   }
-  const availableForPicker = tags
-    .filter(t => !projectTags.some(p => p.code.toUpperCase() === (t.code || '').toUpperCase()))
-    .sort((a, b) => (a.code || '').localeCompare(b.code || ''));
+
+  // Build grouped options for the Add-from-DB picker:
+  const PICKER_TOP_CATS = ['Lights', 'Receptacles'] as const;
+
+  const pickerGroups = useMemo(() => {
+    // tags available to add (not already in Project Tags)
+    const notAlreadyAdded = (tags as Tag[])
+      .filter(t => !projectTags.some(p => (p.code || '').toUpperCase() === (t.code || '').toUpperCase()));
+
+    // group by category
+    const byCat = new Map<string, TagLite[]>();
+    for (const t of notAlreadyAdded) {
+      const cat = (t.category || 'Uncategorized').trim() || 'Uncategorized';
+      const arr = byCat.get(cat) || [];
+      arr.push({ id: t.id, code: t.code, name: t.name, color: t.color, category: t.category });
+      byCat.set(cat, arr);
+    }
+    // sort items inside each category by code
+    for (const arr of byCat.values()) {
+      arr.sort((a, b) => (a.code || '').localeCompare(b.code || ''));
+    }
+    // category order: Lights, Receptacles, then others alphabetically
+    const allCats = Array.from(byCat.keys());
+    const pinned = PICKER_TOP_CATS.filter(c => byCat.has(c as unknown as string)) as unknown as string[];
+    const rest = allCats.filter(c => !PICKER_TOP_CATS.includes(c as any)).sort((a, b) => a.localeCompare(b));
+
+    return [...pinned, ...rest].map(cat => ({ category: cat, items: byCat.get(cat)! }));
+  }, [tags, projectTags]);
+
+  const flatPickerList = useMemo(
+    () => pickerGroups.flatMap(g => g.items),
+    [pickerGroups]
+  );
 
   // Header label always prefers store's project name
   const headerProjectLabel = useStore(s => s.getProjectName());
@@ -486,30 +479,52 @@ export default function App() {
         </div>
 
         <div style={{position:'relative'}}>
-          <button
-            className="btn"
-            onClick={()=>{
-              // make sure master DB is there before opening the small picker
-              ensureMasterTagsLoaded();
-              setPickerOpen(v=>!v);
-            }}
-          >
-            Add from DB
-          </button>
+          <button className="btn" onClick={()=>setPickerOpen(v=>!v)}>Add from DB</button>
           {pickerOpen && (
-            <div style={{position:'fixed', top:140, right:12, background:'#fff', border:'1px solid #ddd', borderRadius:6, padding:8, width:300, zIndex:999}}
-                 onMouseLeave={()=>setPickerOpen(false)}>
-              <div style={{display:'flex', gap:8}}>
-                <select className="btn" value={pickerSel} onChange={(e)=>setPickerSel(e.target.value)} style={{flex:1}}>
+            <div
+              style={{
+                position:'fixed',
+                top:140,
+                right:12,
+                background:'#fff',
+                border:'1px solid #ddd',
+                borderRadius:6,
+                padding:8,
+                width:360,
+                zIndex:999
+              }}
+            >
+              <div style={{display:'flex', gap:8, alignItems:'center'}}>
+                <select
+                  className="btn"
+                  value={pickerSel}
+                  onChange={(e)=>setPickerSel(e.target.value)}
+                  style={{flex:1}}
+                >
                   <option value="">— Select tag —</option>
-                  {availableForPicker.map(t => <option key={t.id} value={t.id}>{t.code} — {t.name}</option>)}
+                  {pickerGroups.map(g => (
+                    <optgroup key={g.category} label={g.category}>
+                      {g.items.map(t => (
+                        <option key={t.id} value={t.id}>{t.code} — {t.name}</option>
+                      ))}
+                    </optgroup>
+                  ))}
                 </select>
-                <button className="btn" onClick={()=>{
-                  const pick = availableForPicker.find(t => t.id === pickerSel);
-                  if (!pick) return;
-                  setProjectTags(list => [...list, { id: pick.id, code: pick.code, name: pick.name, color: pick.color, category: pick.category }]);
-                  setPickerSel(''); setPickerOpen(false);
-                }}>Add</button>
+                <button
+                  className="btn"
+                  onClick={()=>{
+                    const pick = flatPickerList.find(t => t.id === pickerSel);
+                    if (!pick) return;
+                    setProjectTags(list => (list.some(x => x.id === pick.id) ? list : [...list, pick]));
+                    setCurrentTag(pick.code);
+                    setTool('count');
+                    setPickerSel('');
+                    setPickerOpen(false);
+                  }}
+                >
+                  Add
+                </button>
+                <button className="btn" title="Close" onClick={()=>setPickerOpen(false)}>×</button>
               </div>
               <div style={{marginTop:6, fontSize:12, color:'#666'}}>Tip: open “Tags” to load the master DB first.</div>
             </div>
