@@ -65,7 +65,7 @@ export default function App() {
     tags,                 // Tag Database (not the Project Tags)
     currentTag, setCurrentTag,
     setSelectedIds,
-    // NEW for header project name
+    // project name for header
     projectName, setProjectName,
   } = useStore();
 
@@ -133,51 +133,68 @@ export default function App() {
 
   /** open .skdproj and auto-restore embedded PDF (store.fromProject handles legacy coercions) */
   async function doOpenProject(file: File) {
-    const text = await file.text();
+    let text = '';
     try {
+      text = await file.text();
       const parsed = JSON.parse(text);
-      const bundle: SKDBundle = parsed?.kind === 'skdproj'
-        ? parsed
-        : { kind: 'skdproj', version: 1, core: parsed, projectTags: [], pdf: undefined };
+      const bundle: SKDBundle =
+        parsed && parsed.kind === 'skdproj'
+          ? parsed
+          : { kind: 'skdproj', version: 1, core: parsed as ProjectSave, projectTags: [], pdf: undefined };
 
-      // load the store portion (robust to legacy via store.fromProject)
-      useStore.getState().fromProject(bundle.core);
+      // Load the store portion (robust to legacy via store.fromProject)
+      try {
+        useStore.getState().fromProject(bundle.core);
+      } catch (err: any) {
+        // Soft-fail: log and keep going so PDF/UI can still load
+        console.warn('[Open Project] fromProject warning:', err?.message || err);
+      }
 
-      // restore project tags
+      // Restore project tags safely
       setProjectTags(Array.isArray(bundle.projectTags) ? bundle.projectTags : []);
 
-      // restore PDF if present
-      if (bundle.pdf?.bytesBase64) {
-        const ab = b64ToAb(bundle.pdf.bytesBase64);
-        const doc = await loadPdfFromBytes(ab);
-        setPdf(doc);
-        setPdfName(bundle.pdf.name || 'document.pdf');
-        setFileName(bundle.pdf.name || 'document.pdf');
-        setPdfBytesBase64(bundle.pdf.bytesBase64);
-        // set viewer metadata
-        setPages([]);                 // allow viewport to build fresh
-        setPageCount(doc.numPages);
-        let labels: string[] = [];
+      // Restore PDF if present
+      if (bundle.pdf && typeof bundle.pdf.bytesBase64 === 'string' && bundle.pdf.bytesBase64.length > 0) {
         try {
-          const raw = await (doc as any).getPageLabels?.();
-          labels = raw && Array.isArray(raw)
-            ? raw.map((l: string, i: number) => l || `Page ${i + 1}`)
-            : Array.from({ length: doc.numPages }, (_, i) => `Page ${i + 1}`);
-        } catch {
-          labels = Array.from({ length: doc.numPages }, (_, i) => `Page ${i + 1}`);
+          const ab = b64ToAb(bundle.pdf.bytesBase64);
+          const doc = await loadPdfFromBytes(ab);
+          setPdf(doc);
+          setPdfName(bundle.pdf.name || 'document.pdf');
+          setFileName(bundle.pdf.name || 'document.pdf');
+          setPdfBytesBase64(bundle.pdf.bytesBase64);
+
+          // viewer metadata
+          setPages([]);                 // allow viewport to build fresh
+          setPageCount(doc.numPages);
+          let labels: string[] = [];
+          try {
+            const raw = await (doc as any).getPageLabels?.();
+            labels = raw && Array.isArray(raw)
+              ? raw.map((l: string, i: number) => l || `Page ${i + 1}`)
+              : Array.from({ length: doc.numPages }, (_, i) => `Page ${i + 1}`);
+          } catch {
+            labels = Array.from({ length: doc.numPages }, (_, i) => `Page ${i + 1}`);
+          }
+          setPageLabels(labels);
+          setActivePage(0);
+          setSelectedIds([]);
+        } catch (err: any) {
+          console.warn('[Open Project] Could not load embedded PDF:', err?.message || err);
+          // Still allow the project to open without a PDF
+          setPdf(null);
+          setFileName('');
         }
-        setPageLabels(labels);
-        setActivePage(0);
-        setSelectedIds([]);
       } else {
+        // No embedded PDF — project opens, user can open PDF next
         setPdf(null);
         setFileName('');
-        alert('Project opened. Now open the matching PDF.');
       }
 
       setLastSaveBase(file.name.replace(/\.skdproj$/i, '').replace(/\.json$/i, ''));
     } catch (e: any) {
-      alert('Invalid .skdproj: ' + (e?.message || 'Unknown error'));
+      // Previously this used alert(); switch to non-blocking log
+      console.warn('[Open Project] Invalid .skdproj:', e?.message || e, { filePreview: text.slice(0, 200) });
+      // Leave UI as-is so user can attempt another open; do not block.
     }
   }
 
