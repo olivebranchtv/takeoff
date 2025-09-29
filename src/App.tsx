@@ -50,10 +50,6 @@ function normalizeBase64(input: string): string {
   const mod = src.length % 4;
   if (mod === 2) src += '==';
   else if (mod === 3) src += '=';
-  else if (mod !== 0 && mod !== 2 && mod !== 3) {
-    // extremely odd, but don't crash — pdf.js will fail later if truly invalid
-  }
-
   return src;
 }
 
@@ -67,7 +63,6 @@ function b64ToAb(b64: string): ArrayBuffer {
 
 /** quick sanity check that bytes look like a PDF ("%PDF") somewhere near the start */
 function looksLikePdf(bytes: Uint8Array): boolean {
-  // Some PDFs can have a BOM or small junk; search first 64 bytes
   const searchLen = Math.min(bytes.length, 64);
   for (let i = 0; i <= searchLen - 5; i++) {
     if (
@@ -76,18 +71,19 @@ function looksLikePdf(bytes: Uint8Array): boolean {
       bytes[i + 2] === 0x44 && // D
       bytes[i + 3] === 0x46 && // F
       bytes[i + 4] === 0x2d // -
-    ) {
-      return true;
-    }
+    ) return true;
   }
   return false;
 }
 
-/** Always return simple "Page N" labels; never call into pdf.js (avoids fragile APIs). */
+/** Simple labels to avoid fragile pdf.js APIs. */
 async function resolvePageLabels(doc: any): Promise<string[]> {
   const count = (doc?.numPages ?? 0) | 0;
   return Array.from({ length: count }, (_, i) => `Page ${i + 1}`);
 }
+
+/** Preferred category order for pickers (others follow alphabetically) */
+const MASTER_CATEGORY_ORDER = ['Lights', 'Receptacles'];
 
 export default function App() {
   /* ---------- refs ---------- */
@@ -104,9 +100,9 @@ export default function App() {
 
   /* ---------- File menu ---------- */
   const [fileMenuOpen, setFileMenuOpen] = useState(false);
-  const [lastSaveBase, setLastSaveBase] = useState<string | null>(null); // basename without extension
+  const [lastSaveBase, setLastSaveBase] = useState<string | null>(null);
 
-  /* ---------- per-project “Project Tags” (starts empty) ---------- */
+  /* ---------- per-project “Project Tags” ---------- */
   const [projectTags, setProjectTags] = useState<TagLite[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSel, setPickerSel] = useState<string>('');
@@ -158,7 +154,6 @@ export default function App() {
 
   function doNewProject() {
     if (!confirm('Start a new project? Unsaved changes will be lost.')) return;
-    // clear viewer + store
     setPdf(null);
     setPdfName('');
     setPdfBytesBase64(null);
@@ -208,15 +203,9 @@ export default function App() {
       // restore PDF if present
       if (bundle.pdf && typeof bundle.pdf.bytesBase64 === 'string' && bundle.pdf.bytesBase64.length > 0) {
         try {
-          // Robust decode of embedded base64
           const ab = b64ToAb(bundle.pdf.bytesBase64);
           const u8 = new Uint8Array(ab);
-
-          // If it doesn't look like a PDF, surface a clear message (and abort)
-          if (!looksLikePdf(u8)) {
-            throw new Error('Embedded PDF bytes were not recognized as a PDF (missing %PDF- header)');
-          }
-
+          if (!looksLikePdf(u8)) throw new Error('Embedded bytes are not a PDF (missing %PDF- header)');
           const doc = await loadPdfFromBytes(u8);
 
           setPdf(doc);
@@ -224,14 +213,12 @@ export default function App() {
           setFileName(bundle.pdf.name || 'document.pdf');
           setPdfBytesBase64(bundle.pdf.bytesBase64);
 
-          // viewer metadata
-          setPages([]);                 // allow viewport to build fresh
+          setPages([]);
           setPageCount(doc.numPages);
           setPageLabels(await resolvePageLabels(doc));
           setActivePage(0);
           setSelectedIds([]);
         } catch (err: any) {
-          // Show the raw error message but keep the console helpful
           console.warn('[Open Project] Could not load embedded PDF:', err?.message || err);
           setPdf(null);
           setFileName('');
@@ -261,18 +248,21 @@ export default function App() {
      ========================================================================================= */
   const openPdf = useCallback(async (file: File) => {
     const buf = await file.arrayBuffer();
-    const base64 = (() => {
-      // serialize bytes to base64 for embedding later
-      let binary = '';
-      const view = new Uint8Array(buf);
-      for (let i = 0; i < view.length; i++) binary += String.fromCharCode(view[i]);
-      return btoa(binary);
-    })();
 
-    setPdfBytesBase64(base64);
+    // Store as base64 in the project bundle
+    let b64 = '';
+    {
+      const v = new Uint8Array(buf);
+      let s = '';
+      for (let i = 0; i < v.length; i++) s += String.fromCharCode(v[i]);
+      b64 = btoa(s);
+    }
+
+    setPdfBytesBase64(b64);
     setPdfName(file.name);
 
-    const doc = await loadPdfFromBytes(buf);
+    // Always feed pdf.js a Uint8Array
+    const doc = await loadPdfFromBytes(new Uint8Array(buf));
     setPdf(doc);
     setFileName(file.name);
     setPages([]);
@@ -332,42 +322,36 @@ export default function App() {
   }, [pages]);
 
   /* =========================================================================================
-     UI HELPERS
+     ADD-FROM-DB PICKER (grouped by category, Lights/Receptacles first)
      ========================================================================================= */
-  function colorForTag(t: TagLite) {
-    return (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color;
-  }
-
-  // Build grouped options for the Add-from-DB picker:
   const PICKER_TOP_CATS = ['Lights', 'Receptacles'] as const;
 
   const pickerGroups = useMemo(() => {
-    // tags available to add (not already in Project Tags)
-    const notAlreadyAdded = (tags as Tag[])
-      .filter(t => !projectTags.some(p => (p.code || '').toUpperCase() === (t.code || '').toUpperCase()));
+    const remaining = (tags as Tag[])
+      .filter(t => !projectTags.some(p => p.id === t.id));
 
-    // group by category
-    const byCat = new Map<string, TagLite[]>();
-    for (const t of notAlreadyAdded) {
-      const cat = (t.category || 'Uncategorized').trim() || 'Uncategorized';
-      const arr = byCat.get(cat) || [];
-      arr.push({ id: t.id, code: t.code, name: t.name, color: t.color, category: t.category });
+    const byCat = new Map<string, Tag[]>();
+    for (const t of remaining) {
+      const cat = t.category || 'Uncategorized';
+      const arr = byCat.get(cat) ?? [];
+      arr.push(t);
       byCat.set(cat, arr);
     }
-    // sort items inside each category by code
     for (const arr of byCat.values()) {
       arr.sort((a, b) => (a.code || '').localeCompare(b.code || ''));
     }
-    // category order: Lights, Receptacles, then others alphabetically
-    const allCats = Array.from(byCat.keys());
-    const pinned = PICKER_TOP_CATS.filter(c => byCat.has(c as unknown as string)) as unknown as string[];
-    const rest = allCats.filter(c => !PICKER_TOP_CATS.includes(c as any)).sort((a, b) => a.localeCompare(b));
-
-    return [...pinned, ...rest].map(cat => ({ category: cat, items: byCat.get(cat)! }));
+    const cats = Array.from(byCat.keys());
+    const ordered = [
+      ...PICKER_TOP_CATS.filter(c => byCat.has(c as unknown as string)) as unknown as string[],
+      ...cats.filter(c => !PICKER_TOP_CATS.includes(c as any)).sort((a, b) => a.localeCompare(b)),
+    ];
+    return ordered.map(cat => ({ category: cat, items: byCat.get(cat)! }));
   }, [tags, projectTags]);
 
   const flatPickerList = useMemo(
-    () => pickerGroups.flatMap(g => g.items),
+    () => pickerGroups.flatMap(g => g.items.map(t => ({
+      id: t.id, code: t.code, name: t.name, color: t.color, category: t.category
+    }))),
     [pickerGroups]
   );
 
@@ -456,8 +440,7 @@ export default function App() {
       </div>
 
       {/* TOOLBAR (tools + zoom) */}
-      <div className="toolbar" style={{display:'flex', alignItems:'center', gap:8, padding:'8px 12px', borderBottom:'1px solid #e6e6e6', position:'sticky', top:48, background:'#fff', zIndex:40}}>
-        {/* Page nav */}
+      <div className="toolbar" style={{display:'flex', alignItems:'center', gap:8, padding:'8px 12px', borderBottom:'1px solid '#e6e6e6', position:'sticky', top:48, background:'#fff', zIndex:40}}>
         {pageCount > 0 && (
           <div style={{display:'flex', alignItems:'center', gap:6}}>
             <button className="btn" onClick={()=>setActivePage(Math.max(0, activePage-1))} disabled={activePage<=0}>◀</button>
@@ -513,7 +496,7 @@ export default function App() {
                 title={`${t.code} — ${t.name}`}
                 style={{display:'flex', alignItems:'center', gap:6, position:'relative'}}
               >
-                <span style={{width:20, height:20, borderRadius:4, border:'1px solid #444', background: colorForTag(t)}} />
+                <span style={{width:20, height:20, borderRadius:4, border:'1px solid #444', background: (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color}} />
                 <span style={{minWidth:26, textAlign:'center', fontWeight: active ? 700 : 600}}>{t.code}</span>
                 <span
                   onClick={(e)=>{ e.stopPropagation(); setProjectTags(list => list.filter(x => x.id !== t.id)); if (currentTag === t.code) setCurrentTag(''); }}
@@ -587,37 +570,16 @@ export default function App() {
         transition:'grid-template-columns .18s ease',
         minHeight:0, flex:1, position:'relative'
       }}>
-        {/* Toggle button – always visible */}
         {leftOpen ? (
-          <button
-            className="btn"
-            onClick={()=>setLeftOpen(false)}
-            style={{position:'absolute', top:8, left:8, zIndex:5}}
-            title="Hide sidebar"
-          >‹ Hide</button>
+          <button className="btn" onClick={()=>setLeftOpen(false)} style={{position:'absolute', top:8, left:8, zIndex:5}} title="Hide sidebar">‹ Hide</button>
         ) : (
-          <button
-            className="btn"
-            onClick={()=>setLeftOpen(true)}
-            style={{position:'absolute', top:8, left:8, zIndex:5}}
-            title="Show sidebar"
-          >☰ BOM</button>
+          <button className="btn" onClick={()=>setLeftOpen(true)} style={{position:'absolute', top:8, left:8, zIndex:5}} title="Show sidebar">☰ BOM</button>
         )}
 
-        {/* SIDEBAR */}
-        <aside
-          className="sidebar"
-          style={{
-            borderRight:'1px solid #eee',
-            overflow:'auto',
-            opacity: leftOpen ? 1 : 0,
-            pointerEvents: leftOpen ? 'auto' : 'none'
-          }}
-        >
+        <aside className="sidebar" style={{ borderRight:'1px solid #eee', overflow:'auto', opacity: leftOpen ? 1 : 0, pointerEvents: leftOpen ? 'auto' : 'none' }}>
           <SidebarBOM bom={bom} />
         </aside>
 
-        {/* VIEWPORT */}
         <div style={{position:'relative', overflow:'auto'}}>
           {!pdf && (
             <div style={{padding:'2rem'}}>
@@ -630,12 +592,10 @@ export default function App() {
         </div>
       </div>
 
-      {/* TAG MANAGER — pass onAddToProject so Project Tags bar updates */}
       <TagManager
         open={tagsOpen}
         onClose={()=>setTagsOpen(false)}
         onAddToProject={(t: Tag) => {
-          // Add once to the local Project Tags bar used by App
           setProjectTags(list => (list.some(x => x.id === t.id) ? list
             : [...list, { id: t.id, code: t.code, name: t.name, color: t.color, category: t.category }]));
           setCurrentTag(t.code);
@@ -704,15 +664,9 @@ function SidebarBOM({ bom }:{
   );
 }
 
-/* small menu item component */
 function MenuItem({label, onClick}:{label:string; onClick:()=>void}) {
   return (
-    <div
-      onClick={onClick}
-      style={{padding:'10px 14px', cursor:'pointer'}}
-      onKeyDown={(e)=>{ if (e.key==='Enter') onClick(); }}
-      tabIndex={0}
-    >
+    <div onClick={onClick} style={{padding:'10px 14px', cursor:'pointer'}} onKeyDown={(e)=>{ if (e.key==='Enter') onClick(); }} tabIndex={0}>
       {label}
     </div>
   );
