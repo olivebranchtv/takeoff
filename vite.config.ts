@@ -3,13 +3,14 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 
-// Avoid esbuild flakiness with heavy libs (pdfjs, konva, zustand) and
-// use terser for minification. Also wire up "@" => src alias.
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      // Make both default and named imports work for with-selector:
+      'use-sync-external-store/shim/with-selector':
+        path.resolve(__dirname, 'src/shims/useSyncExternalStoreWithSelectorShim.ts'),
     },
   },
   optimizeDeps: {
