@@ -10,6 +10,12 @@ export default defineConfig({
       // app alias
       { find: '@', replacement: path.resolve(__dirname, 'src') },
 
+      // Original module alias to avoid circular dependency
+      {
+        find: '#use-sync-external-store-original',
+        replacement: 'use-sync-external-store/shim/with-selector',
+      },
+
       // IMPORTANT: catch imports of:
       //   'use-sync-external-store/shim/with-selector'
       //   'use-sync-external-store/shim/with-selector.js'

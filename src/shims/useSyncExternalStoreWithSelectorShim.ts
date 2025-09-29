@@ -1,5 +1,5 @@
 // src/shims/useSyncExternalStoreWithSelectorShim.ts
-import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector';
+import { useSyncExternalStoreWithSelector } from '#use-sync-external-store-original';
 
 export { useSyncExternalStoreWithSelector };
 // Provide a default for code that (incorrectly) default-imports it.
