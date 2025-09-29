@@ -22,7 +22,7 @@ type SKDBundle = {
 };
 
 /* =========================================================================================
-   helpers for base64 <-> ArrayBuffer
+   helpers for base64 <-> buffers
    ========================================================================================= */
 function abToB64(buf: ArrayBuffer): string {
   let binary = '';
@@ -30,11 +30,12 @@ function abToB64(buf: ArrayBuffer): string {
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
 }
-function b64ToAb(b64: string): ArrayBuffer {
+/** IMPORTANT: return Uint8Array (PDF.js prefers this) */
+function b64ToU8(b64: string): Uint8Array {
   const bin = atob(b64);
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out.buffer;
+  return out;
 }
 
 /** Small helper for UI labels */
@@ -81,7 +82,7 @@ export default function App() {
     tags,
     currentTag, setCurrentTag,
     setSelectedIds,
-    setProjectName, // used to force header to the project name from the bundle
+    setProjectName,
   } = useStore();
 
   /* =========================================================================================
@@ -89,7 +90,6 @@ export default function App() {
      ========================================================================================= */
 
   const makeBundle = useCallback<() => SKDBundle>(() => {
-    // bundle the store's project data + the Project Tags list + embedded PDF
     const core: ProjectSave = useStore.getState().toProject();
     const bundle: SKDBundle = {
       kind: 'skdproj',
@@ -114,7 +114,6 @@ export default function App() {
 
   function doNewProject() {
     if (!confirm('Start a new project? Unsaved changes will be lost.')) return;
-    // clear viewer + store
     setPdf(null);
     setPdfName('');
     setPdfBytesBase64(null);
@@ -130,7 +129,7 @@ export default function App() {
     setLastSaveBase(null);
   }
 
-  /** open .skdproj and auto-restore embedded PDF (store.fromProject handles legacy coercions) */
+  /** open .skdproj and auto-restore embedded PDF */
   async function doOpenProject(file: File) {
     let text = '';
     try {
@@ -141,14 +140,14 @@ export default function App() {
           ? parsed
           : { kind: 'skdproj', version: 1, core: parsed as ProjectSave, projectTags: [], pdf: undefined };
 
-      // Load the store portion (robust to legacy via store.fromProject)
+      // Load store portion
       try {
         useStore.getState().fromProject(bundle.core);
       } catch (err: any) {
         console.warn('[Open Project] fromProject warning:', err?.message || err);
       }
 
-      // ensure header uses the project name saved in the bundle
+      // header project name
       try {
         const coreAny: any = bundle.core ?? {};
         const openedName =
@@ -158,14 +157,14 @@ export default function App() {
         setProjectName(openedName);
       } catch { /* ignore */ }
 
-      // Restore project tags safely
+      // restore project tags
       setProjectTags(Array.isArray(bundle.projectTags) ? bundle.projectTags : []);
 
-      // Restore PDF if present
+      // restore PDF using Uint8Array
       if (bundle.pdf && typeof bundle.pdf.bytesBase64 === 'string' && bundle.pdf.bytesBase64.length > 0) {
         try {
-          const ab = b64ToAb(bundle.pdf.bytesBase64); // ← revert to original decoder
-          const doc = await loadPdfFromBytes(ab);
+          const u8 = b64ToU8(bundle.pdf.bytesBase64);
+          const doc = await loadPdfFromBytes(u8); // <— KEY CHANGE: pass Uint8Array
           setPdf(doc);
           setPdfName(bundle.pdf.name || 'document.pdf');
           setFileName(bundle.pdf.name || 'document.pdf');
@@ -188,21 +187,17 @@ export default function App() {
           setSelectedIds([]);
         } catch (err: any) {
           console.warn('[Open Project] Could not load embedded PDF:', err?.message || err);
-          // Still allow the project to open without a PDF
           setPdf(null);
           setFileName('');
         }
       } else {
-        // No embedded PDF — project opens, user can open PDF next
         setPdf(null);
         setFileName('');
       }
 
       setLastSaveBase(file.name.replace(/\.skdproj$/i, '').replace(/\.json$/i, ''));
     } catch (e: any) {
-      // Previously this used alert(); switch to non-blocking log
       console.warn('[Open Project] Invalid .skdproj:', e?.message || e, { filePreview: text.slice(0, 200) });
-      // Leave UI as-is so user can attempt another open; do not block.
     }
   }
 
@@ -224,7 +219,7 @@ export default function App() {
     setPdfBytesBase64(base64);
     setPdfName(file.name);
 
-    const doc = await loadPdfFromBytes(buf);
+    const doc = await loadPdfFromBytes(new Uint8Array(buf)); // also pass Uint8Array here
     setPdf(doc);
     setFileName(file.name);
     setPages([]);
@@ -233,7 +228,6 @@ export default function App() {
     // page labels if available, else Page N
     let labels: string[] = [];
     try {
-      // @ts-ignore optional in pdf.js
       const raw = await (doc as any).getPageLabels?.();
       labels = raw && Array.isArray(raw)
         ? raw.map((l: string, i: number) => l || `Page ${i + 1}`)
@@ -377,9 +371,9 @@ export default function App() {
           accept=".skdproj,application/json"
           style={{display:'none'}}
           onChange={async (e)=>{
-            const input = e.currentTarget;               // capture before await
+            const input = e.currentTarget;
             const f = input.files?.[0];
-            input.value = '';                            // reset immediately (avoid pooled event issue)
+            input.value = ''; // reset immediately (avoid pooled event issue)
             if (f) await doOpenProject(f);
           }}
         />
@@ -393,9 +387,9 @@ export default function App() {
           accept="application/pdf"
           style={{display:'none'}}
           onChange={async (e)=>{
-            const input = e.currentTarget;               // capture before await
+            const input = e.currentTarget;
             const f = input.files?.[0];
-            input.value = '';                            // reset immediately
+            input.value = '';
             if (f) await openPdf(f);
           }}
         />
@@ -506,30 +500,14 @@ export default function App() {
         transition:'grid-template-columns .18s ease',
         minHeight:0, flex:1, position:'relative'
       }}>
-        {/* COLLAPSE RE-OPEN HANDLE WHEN CLOSED */}
         {!leftOpen && (
-          <button
-            className="btn"
-            onClick={()=>setLeftOpen(true)}
-            style={{position:'absolute', top:8, left:8, zIndex:5}}
-            title="Show sidebar"
-          >☰ BOM</button>
+          <button className="btn" onClick={()=>setLeftOpen(true)} style={{position:'absolute', top:8, left:8, zIndex:5}} title="Show sidebar">☰ BOM</button>
         )}
 
-        {/* SIDEBAR */}
-        <aside
-          className="sidebar"
-          style={{
-            borderRight:'1px solid #eee',
-            overflow:'auto',
-            opacity: leftOpen ? 1 : 0,
-            pointerEvents: leftOpen ? 'auto' : 'none'
-          }}
-        >
+        <aside className="sidebar" style={{borderRight:'1px solid #eee', overflow:'auto', opacity: leftOpen ? 1 : 0, pointerEvents: leftOpen ? 'auto' : 'none'}}>
           <SidebarBOM bom={bom} />
         </aside>
 
-        {/* VIEWPORT */}
         <div style={{position:'relative', overflow:'auto'}}>
           {!pdf && (
             <div style={{padding:'2rem'}}>
@@ -542,7 +520,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* TAG MANAGER MODAL — IMPORTANT: pass `open` prop */}
       <TagManager open={tagsOpen} onClose={()=>setTagsOpen(false)} />
     </div>
   );
@@ -562,7 +539,7 @@ function SidebarBOM({ bom }:{
       </div>
 
       <div style={{padding:'10px'}}>
-        <div style={{padding:'0 0 12px 0', color:'#666', fontSize:13}}>
+        <div style={{padding:'0 0 12px 0', color:'#666', fontSize:13'}}>
           {bom.calibratedCount}/{bom.totalPages} page(s) calibrated.
         </div>
 
