@@ -1,31 +1,20 @@
 // src/lib/pdf.ts
-import { getDocument, GlobalWorkerOptions, version } from "pdfjs-dist";
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
+// IMPORTANT: use the ESM worker and let Vite turn it into a URL we can point to.
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
-let workerInitialized = false;
+GlobalWorkerOptions.workerSrc = workerSrc;
 
-function initWorker() {
-  if (workerInitialized) return;
-  try {
-    // Use the installed pdfjs-dist version when available; otherwise fall back.
-    const v = typeof version === "string" && version ? version : "3.11.174";
-    // Classic worker URL (works across bundlers)
-    const cdn = `https://unpkg.com/pdfjs-dist@${v}/build/pdf.worker.min.js`;
-    (GlobalWorkerOptions as any).workerSrc = cdn;
-  } catch {
-    // Last-resort fallback
-    (GlobalWorkerOptions as any).workerSrc =
-      "https://unpkg.com/pdfjs-dist@latest/build/pdf.worker.min.js";
-  }
-  workerInitialized = true;
-}
+export type PDFDoc = import('pdfjs-dist').PDFDocumentProxy;
 
-export type PDFDoc = import("pdfjs-dist").PDFDocumentProxy;
-
-export async function loadPdfFromBytes(
-  bytes: ArrayBuffer | Uint8Array
-): Promise<PDFDoc> {
-  initWorker();
+/** Load a PDF from bytes (ArrayBuffer or Uint8Array) */
+export async function loadPdfFromBytes(bytes: ArrayBuffer | Uint8Array): Promise<PDFDoc> {
   const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-  const task = getDocument({ data });
+  const task = getDocument({
+    data,
+    // keep things simple & compatible across environments
+    useWorkerFetch: false,
+    isEvalSupported: true,
+  });
   return task.promise;
 }
