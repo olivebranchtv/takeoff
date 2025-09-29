@@ -1,5 +1,4 @@
-// src/components/TagManager.tsx
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useStore } from '@/state/store';
 import type { Tag } from '@/types';
 import { downloadTagsFile } from '@/utils/persist';
@@ -12,35 +11,15 @@ type Props = {
 };
 
 type Draft = Omit<Tag, 'id'>;
-
 const emptyDraft: Draft = { code: '', name: '', category: '', color: '#FFA500' };
 
 /** Category sort priority, then everything else alphabetically */
 const MASTER_CATEGORY_ORDER = [
-  'Lights',
-  'Receptacles',
-  'Switches',
-  'Stub-Ups',
-  'Fire Alarm',
-  'Breakers',
-  'Panels',
-  'Disconnects',
-  'Raceways & Pathways',
-  'Conductors & Feeders',
-  'Data/Communications',
-  'Security',
-  'AV / Sound',
-  'BAS/Controls',
-  'Site Power',
-  'Demolition / Temporary',
-  'Miscellaneous',
+  'Lights','Receptacles','Switches','Stub-Ups','Fire Alarm','Breakers','Panels','Disconnects',
+  'Raceways & Pathways','Conductors & Feeders','Data/Communications','Security','AV / Sound',
+  'BAS/Controls','Site Power','Demolition / Temporary','Miscellaneous',
 ];
-
 const CUSTOM_CAT_VALUE = '__CUSTOM__';
-
-function clamp(n: number, lo: number, hi: number) {
-  return Math.max(lo, Math.min(hi, n));
-}
 
 export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const store = useStore() as any;
@@ -50,47 +29,19 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [editId, setEditId] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
-  const [catSelect, setCatSelect] = useState<string>(''); // dropdown value
+  const [catSelect, setCatSelect] = useState<string>('');          // dropdown value
   const [customCategory, setCustomCategory] = useState<string>(''); // for “Custom…”
   const fileRef = useRef<HTMLInputElement>(null);
-
   const editorCardRef = useRef<HTMLDivElement>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
 
-  // ---------- DRAGGABLE MODAL POSITION ----------
-  const [pos, setPos] = useState<{ left: number; top: number }>(() => {
-    // sensible initial position near top/center
-    const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-    const width = Math.min(1000, vw * 0.92);
-    return { left: Math.max(12, (vw - width) / 2), top: 48 };
+  // --- NEW: drag state (so the modal can be moved) ---
+  const [pos, setPos] = useState<{x:number;y:number}>({ x: 64, y: 64 });
+  const dragRef = useRef<{active:boolean; sx:number; sy:number; ox:number; oy:number}>({
+    active:false, sx:0, sy:0, ox:0, oy:0
   });
-  const dragStart = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
 
-  const startDrag = (e: React.MouseEvent) => {
-    dragStart.current = { x: e.clientX, y: e.clientY, left: pos.left, top: pos.top };
-    document.body.style.userSelect = 'none';
-    window.addEventListener('mousemove', onDrag);
-    window.addEventListener('mouseup', endDrag);
-  };
-  const onDrag = (e: MouseEvent) => {
-    if (!dragStart.current) return;
-    const dx = e.clientX - dragStart.current.x;
-    const dy = e.clientY - dragStart.current.y;
-    const vw = window.innerWidth, vh = window.innerHeight;
-    // keep within viewport bounds with a bit of margin
-    setPos({
-      left: clamp(dragStart.current.left + dx, 8, vw - 320),
-      top: clamp(dragStart.current.top + dy, 8, vh - 120)
-    });
-  };
-  const endDrag = () => {
-    dragStart.current = null;
-    document.body.style.userSelect = '';
-    window.removeEventListener('mousemove', onDrag);
-    window.removeEventListener('mouseup', endDrag);
-  };
-
-  // reset UI when opened/closed & recenter when opening
+  // Reset UI state when closed
   useEffect(() => {
     if (!open) {
       setQuery('');
@@ -101,19 +52,15 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       setCustomCategory('');
       return;
     }
-    // recenter horizontally when opening (keeps last top)
-    const vw = window.innerWidth;
-    const width = Math.min(1000, vw * 0.92);
-    setPos(p => ({ left: Math.max(12, (vw - width) / 2), top: Math.max(16, p.top) }));
-  }, [open]);
 
-  // close with ESC
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+    // --- NEW: auto-load defaults once if DB is empty ---
+    if ((tags as Tag[]).length === 0 && Array.isArray(DEFAULT_MASTER_TAGS)) {
+      const existing = new Set<string>((tags as Tag[]).map(t => (t.code || '').toUpperCase()));
+      const toAdd = DEFAULT_MASTER_TAGS.filter(t => !existing.has((t.code || '').toUpperCase()));
+      if (toAdd.length) importTags(toAdd);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // Build the category list from: master + existing tags
   const allCategories = useMemo(() => {
@@ -126,9 +73,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   // Sorted categories: first in MASTER_CATEGORY_ORDER (if present), then others alphabetically
   const sortedCategories = useMemo(() => {
     const ordered = MASTER_CATEGORY_ORDER.filter(c => allCategories.includes(c));
-    const rest = allCategories
-      .filter(c => !MASTER_CATEGORY_ORDER.includes(c))
-      .sort((a, b) => a.localeCompare(b));
+    const rest = allCategories.filter(c => !MASTER_CATEGORY_ORDER.includes(c)).sort((a, b) => a.localeCompare(b));
     return [...ordered, ...rest];
   }, [allCategories]);
 
@@ -136,14 +81,12 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const filteredGroups = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = [...(tags as Tag[])];
-    const filtered = !q
-      ? list
-      : list.filter(
-          t =>
-            (t.code || '').toLowerCase().includes(q) ||
-            (t.name || '').toLowerCase().includes(q) ||
-            (t.category || '').toLowerCase().includes(q)
-        );
+    const filtered = !q ? list : list.filter(
+      t =>
+        (t.code || '').toLowerCase().includes(q) ||
+        (t.name || '').toLowerCase().includes(q) ||
+        (t.category || '').toLowerCase().includes(q)
+    );
 
     // Group by category
     const byCat = new Map<string, Tag[]>();
@@ -162,13 +105,15 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
     // Order categories per sortedCategories, then any “unknown” cats alphabetically
     const known = sortedCategories.filter(c => byCat.has(c));
-    const unknown = Array.from(byCat.keys())
-      .filter(c => !sortedCategories.includes(c))
-      .sort((a, b) => a.localeCompare(b));
+    const unknown = Array.from(byCat.keys()).filter(c => !sortedCategories.includes(c)).sort((a, b) => a.localeCompare(b));
     const finalOrder = [...known, ...unknown];
 
     return finalOrder.map(cat => ({ category: cat, items: byCat.get(cat) || [] }));
   }, [tags, query, sortedCategories]);
+
+  // --- NEW: map of category header <tr> for jump scrolling ---
+  const groupRefs = useRef(new Map<string, HTMLTableRowElement>());
+  useEffect(() => { groupRefs.current = new Map(); }, [filteredGroups]);
 
   // If not open, render nothing (after all hooks have run)
   if (!open) return null;
@@ -216,20 +161,12 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     setError('');
   }
 
-  // EXACT-MATCH duplicate check (EM is allowed even if EM-RH exists)
   function validate(next: Draft): string {
-    const code = next.code.trim();
-    if (!code) return 'Code is required.';
-    if (!/^[a-z0-9\-/# ]+$/i.test(code)) {
-      return 'Use letters, numbers, space, hyphen, slash, # only.';
-    }
+    if (!next.code.trim()) return 'Code is required.';
+    if (!/^[a-z0-9\-/# ]+$/i.test(next.code.trim())) return 'Use letters, numbers, space, hyphen, slash, # only.';
     if (!next.category.trim()) return 'Category is required.';
-
-    const normCode = code.toUpperCase();
-    const dup = (tags as Tag[]).find(
-      t => (t.code || '').trim().toUpperCase() === normCode
-    );
-    if (!editId && dup) return `Code “${normCode}” already exists.`;
+    const dup = (tags as Tag[]).find(t => t.code.toUpperCase() === next.code.trim().toUpperCase());
+    if (!editId && dup) return `Code “${next.code.toUpperCase()}” already exists.`;
     return '';
   }
 
@@ -240,16 +177,9 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   function add() {
     const category = resolvedCategory();
-    const next: Draft = {
-      ...draft,
-      code: draft.code.trim().toUpperCase(),
-      category,
-    };
+    const next: Draft = { ...draft, code: draft.code.trim().toUpperCase(), category };
     const msg = validate(next);
-    if (msg) {
-      setError(msg);
-      return;
-    }
+    if (msg) { setError(msg); return; }
     addTag(next);
     setDraft(d => ({ ...d, code: '', name: '' }));
     setError('');
@@ -259,24 +189,12 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   function saveEdit() {
     if (!editId) return;
     const category = resolvedCategory();
-    const next: Draft = {
-      ...draft,
-      code: draft.code.trim().toUpperCase(),
-      category,
-    };
+    const next: Draft = { ...draft, code: draft.code.trim().toUpperCase(), category };
     const msg = validate(next);
     if (msg && msg.includes('already exists')) {
-      const conflict = (tags as Tag[]).find(
-        t => (t.code || '').trim().toUpperCase() === next.code.toUpperCase()
-      );
-      if (!conflict || conflict.id !== editId) {
-        setError(msg);
-        return;
-      }
-    } else if (msg) {
-      setError(msg);
-      return;
-    }
+      const conflict = (tags as Tag[]).find(t => t.code.toUpperCase() === next.code.toUpperCase());
+      if (!conflict || conflict.id !== editId) { setError(msg); return; }
+    } else if (msg) { setError(msg); return; }
 
     updateTag(editId, next);
     cancelEdit();
@@ -306,10 +224,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   }
 
   function addToProject(tag: Tag) {
-    if (onAddToProject) {
-      onAddToProject(tag);
-      return;
-    }
+    if (onAddToProject) { onAddToProject(tag); return; }
     const tried =
       store?.addProjectTag?.(tag) ??
       store?.addProjectTagById?.(tag.id) ??
@@ -321,41 +236,57 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   function loadDefaults() {
     let added = 0;
     DEFAULT_MASTER_TAGS.forEach(mt => {
-      const exists = (tags as Tag[]).find(
-        t => (t.code || '').toUpperCase() === mt.code.toUpperCase()
-      );
+      const exists = (tags as Tag[]).find(t => (t.code || '').toUpperCase() === mt.code.toUpperCase());
       if (!exists) {
-        addTag({
-          code: mt.code,
-          name: mt.name,
-          category: mt.category,
-          color: mt.color,
-        });
+        addTag({ code: mt.code, name: mt.name, category: mt.category, color: mt.color });
         added++;
       }
     });
-    alert(
-      `Default master tags loaded. Added ${added} new tag(s). Total master: ${DEFAULT_MASTER_TAGS.length}.`
-    );
+    alert(`Default master tags loaded. Added ${added} new tag(s). Total master: ${DEFAULT_MASTER_TAGS.length}.`);
   }
 
-  const headerNote =
-    'Lights category always renders orange on the plan, regardless of saved color.';
+  const headerNote = 'Lights category always renders orange on the plan, regardless of saved color.';
+
+  // --- Drag handlers (title bar only) ---
+  function onDragStart(e: React.MouseEvent) {
+    const el = e.currentTarget as HTMLDivElement;
+    dragRef.current = { active:true, sx:e.clientX, sy:e.clientY, ox:pos.x, oy:pos.y };
+    window.addEventListener('mousemove', onDragMove);
+    window.addEventListener('mouseup', onDragEnd);
+  }
+  function onDragMove(e: MouseEvent) {
+    if (!dragRef.current.active) return;
+    const dx = e.clientX - dragRef.current.sx;
+    const dy = e.clientY - dragRef.current.sy;
+    setPos({ x: Math.max(8, dragRef.current.ox + dx), y: Math.max(8, dragRef.current.oy + dy) });
+  }
+  function onDragEnd() {
+    dragRef.current.active = false;
+    window.removeEventListener('mousemove', onDragMove);
+    window.removeEventListener('mouseup', onDragEnd);
+  }
 
   return (
     <div style={S.backdrop} onMouseDown={onClose}>
-      {/* Draggable modal */}
       <div
-        style={{ ...S.modal, left: pos.left, top: pos.top, position: 'fixed' }}
-        onMouseDown={e => e.stopPropagation()}
+        style={{ ...S.modal, left: pos.x, top: pos.y }}
+        onMouseDown={e => e.stopPropagation()} // keep clicks inside from closing
       >
-        {/* Title Bar — drag handle */}
-        <div style={S.titleBar} onMouseDown={startDrag}>
-          <div>
-            <div style={S.title}>Tag Database</div>
-            <div style={S.subtitle}>{headerNote}</div>
+        {/* Title Bar (draggable handle at the left side) */}
+        <div style={S.titleBar}>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <div
+              style={{ ...S.dragHandle }}
+              onMouseDown={onDragStart}
+              title="Drag"
+              aria-label="Drag"
+            />
+            <div>
+              <div style={S.title}>Tag Database</div>
+              <div style={S.subtitle}>{headerNote}</div>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn" onClick={loadDefaults}>Load Defaults</button>
             <button className="btn" onClick={() => fileRef.current?.click()}>Import JSON</button>
             <button className="btn" onClick={() => downloadTagsFile('tags.json', exportTags())}>Export JSON</button>
@@ -371,6 +302,23 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             onChange={e => setQuery(e.target.value)}
             style={S.search}
           />
+          {/* NEW: jump to category */}
+          <select
+            style={S.jump}
+            defaultValue=""
+            onChange={e => {
+              const cat = e.target.value;
+              if (!cat) return;
+              const row = groupRefs.current.get(cat);
+              row?.scrollIntoView({ behavior:'smooth', block:'start' });
+              // reset to placeholder so user sees “Jump to category…”
+              e.currentTarget.value = '';
+            }}
+          >
+            <option value="">Jump to category…</option>
+            {sortedCategories.map(c => <option value={c} key={c}>{c}</option>)}
+          </select>
+
           <button className="btn" onClick={startNew}>New Tag</button>
         </div>
 
@@ -413,7 +361,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                   style={S.input}
                   onKeyDown={(e)=>{ if (e.key==='Enter') (editId ? saveEdit() : add()); }}
                 />
-                {error && error.toLowerCase().includes('code') && <div style={S.error}>{error}</div>}
               </div>
 
               <div>
@@ -473,8 +420,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             </div>
           </div>
 
-          {/* general error (non-code) */}
-          {!!error && !error.toLowerCase().includes('code') && <div style={S.error}>{error}</div>}
+          {error && <div style={S.error}>{error}</div>}
         </div>
 
         {/* Grouped Table */}
@@ -493,7 +439,9 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
               {filteredGroups.map(group => (
                 <React.Fragment key={group.category || '(Uncategorized)'}>
                   {/* Category Header Row */}
-                  <tr>
+                  <tr
+                    ref={el => { if (el) groupRefs.current.set(group.category || 'Uncategorized', el); }}
+                  >
                     <td colSpan={5} style={{ padding:'10px 6px', background:'#fafafa', borderTop:'1px solid #eee', fontWeight:700 }}>
                       {group.category || 'Uncategorized'}
                     </td>
@@ -549,18 +497,23 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 /* ---------- Inline styles ---------- */
 const S: Record<string, React.CSSProperties> = {
   backdrop: {
-    position:'fixed', inset:0, background:'rgba(0,0,0,0.35)', zIndex:9999
-    // NOTE: no centering here; modal uses its own left/top for dragging
+    position:'fixed', inset:0, background:'rgba(0,0,0,0.35)', zIndex:9999,
+    display:'flex', alignItems:'flex-start', justifyContent:'flex-start'
   },
   modal: {
+    position:'fixed',
     background:'#fff', width:1000, maxWidth:'92vw', maxHeight:'90vh',
     overflow:'hidden', borderRadius:12, boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
     display:'flex', flexDirection:'column'
   },
   titleBar: {
-    display:'flex', alignItems:'flex-start', justifyContent:'space-between',
+    display:'flex', alignItems:'center', justifyContent:'space-between',
     padding:'14px 16px 8px', borderBottom:'1px solid #eee', background:'#fafafa',
-    cursor:'move', userSelect:'none'
+    cursor:'default'
+  },
+  dragHandle: {
+    width:16, height:16, borderRadius:3, background:'#ddd', border:'1px solid #c9c9c9',
+    boxShadow:'inset 0 0 0 2px #f4f4f4', cursor:'move'
   },
   title: { fontSize:20, fontWeight:700, marginBottom:4 },
   subtitle: { fontSize:12, color:'#666' },
@@ -568,65 +521,23 @@ const S: Record<string, React.CSSProperties> = {
     display:'flex', gap:8, alignItems:'center',
     padding:'10px 16px', borderBottom:'1px solid #f2f2f2', background:'#fff'
   },
-  search: {
-    flex:1, padding:'8px 10px', border:'1px solid #ccc', borderRadius:8, fontSize:14
-  },
-  card: {
-    padding:'12px 16px', borderBottom:'1px solid #f2f2f2', background:'#fff'
-  },
-  formRow: {
-    display:'grid',
-    gridTemplateColumns:'210px 1fr auto',
-    gap:16,
-    alignItems:'start'
-  },
-  label: { fontSize:12, fontWeight:600, color:'#444', marginBottom:6 },
-  input: {
-    width:'100%', padding:'8px 10px', border:'1px solid #ccc', borderRadius:8, fontSize:14
-  },
-  colorGrid: {
-    display:'grid', gridTemplateColumns:'repeat(10, 24px)', gap:6
-  },
-  swatch: {
-    width:20, height:20, borderRadius:4, cursor:'pointer'
-  },
-  error: {
-    marginTop:8, color:'#b00020', fontSize:13, fontWeight:600
-  },
-  tableWrap: {
-    overflow:'auto', padding:'0 16px 16px'
-  },
-  table: {
-    width:'100%', borderCollapse:'separate', borderSpacing:0
-  },
-  thNarrow: {
-    width:70, textAlign:'center', padding:'10px 6px', fontSize:12, color:'#555',
-    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff'
-  },
-  thCode: {
-    width:100, textAlign:'left', padding:'10px 6px', fontSize:12, color:'#555',
-    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff'
-  },
-  thCat: {
-    width: 200,
-    textAlign: 'left',
-    padding: '10px 6px',
-    fontSize: 12,
-    color: '#555',
-    borderBottom: '1px solid #eee',
-    position: 'sticky',
-    top: 0,
-    background: '#fff',
-  },
-  thActions: {
-    width: 210,
-    textAlign: 'right',
-    padding: '10px 6px',
-    fontSize: 12,
-    color: '#555',
-    borderBottom: '1px solid #eee',
-    position: 'sticky',
-    top: 0,
-    background: '#fff',
-  },
+  search: { flex:1, padding:'8px 10px', border:'1px solid #ccc', borderRadius:8, fontSize:14 },
+  jump:   { width:220, padding:'8px 10px', border:'1px solid #ccc', borderRadius:8, fontSize:14 },
+  card:   { padding:'12px 16px', borderBottom:'1px solid #f2f2f2', background:'#fff' },
+  formRow: { display:'grid', gridTemplateColumns:'210px 1fr auto', gap:16, alignItems:'start' },
+  label:  { fontSize:12, fontWeight:600, color:'#444', marginBottom:6 },
+  input:  { width:'100%', padding:'8px 10px', border:'1px solid #ccc', borderRadius:8, fontSize:14 },
+  colorGrid: { display:'grid', gridTemplateColumns:'repeat(10, 24px)', gap:6 },
+  swatch: { width:20, height:20, borderRadius:4, cursor:'pointer' },
+  error:  { marginTop:10, color:'#b00020', fontSize:13, fontWeight:600 },
+  tableWrap: { overflow:'auto', padding:'0 16px 16px' },
+  table:  { width:'100%', borderCollapse:'separate', borderSpacing:0 },
+  thNarrow: { width:70, textAlign:'center', padding:'10px 6px', fontSize:12, color:'#555',
+    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff' },
+  thCode:   { width:100, textAlign:'left', padding:'10px 6px', fontSize:12, color:'#555',
+    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff' },
+  thCat:    { width:200, textAlign:'left', padding:'10px 6px', fontSize:12, color:'#555',
+    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff' },
+  thActions:{ width:210, textAlign:'right', padding:'10px 6px', fontSize:12, color:'#555',
+    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff' },
 };
