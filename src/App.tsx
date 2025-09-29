@@ -1,4 +1,3 @@
-// src/App.tsx
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type { PDFDoc } from '@/lib/pdf';
 import { loadPdf } from '@/lib/pdf';
@@ -9,30 +8,72 @@ import { exportJSON, importJSON, loadProject, saveProject } from '@/utils/persis
 import type { AnyTakeoffObject, ProjectSave } from '@/types';
 import { pathLength } from '@/utils/geometry';
 
+/* ---------- helpers to embed / restore PDFs ---------- */
+function bufToBase64(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+function base64ToBlob(b64: string, mime = 'application/pdf'): Blob {
+  const bin = atob(b64);
+  const len = bin.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(bufToBase64(r.result as ArrayBuffer));
+    r.onerror = reject;
+    r.readAsArrayBuffer(file);
+  });
+}
+
 /** Tag entry shown in the Project Tags bar */
 type TagLite = { id: string; code: string; name: string; color: string; category?: string };
 
+/** Project metadata captured on “New Project” */
+type ProjectMeta = { name: string; client?: string; bid?: string };
+
+/** .skdproj bundle */
+type SkdProjBundle = {
+  kind: 'skdproj';
+  version: number;
+  meta?: ProjectMeta;
+  core: ProjectSave;
+  projectTags: TagLite[];
+  pdf?: { name: string; base64: string }; // embedded working pdf
+};
+
 export default function App() {
-  // ---------------- Refs ----------------
+  // ---------- refs ----------
   const pdfFileRef = useRef<HTMLInputElement>(null);
   const projFileRef = useRef<HTMLInputElement>(null);
+  const fileBtnRef = useRef<HTMLButtonElement>(null);
 
-  // ---------------- Viewer/PDF ----------------
+  // ---------- viewer/pdf ----------
   const [pdf, setPdf] = useState<PDFDoc | null>(null);
+  const [embeddedPdf, setEmbeddedPdf] = useState<{ name: string; base64: string } | null>(null);
 
-  // ---------------- Tag Manager modal ----------------
+  // ---------- Tag Manager modal ----------
   const [tagsOpen, setTagsOpen] = useState(false);
 
-  // ---------------- File menu ----------------
-  const [fileMenuOpen, setFileMenuOpen] = useState(false);
-  const [lastSaveBase, setLastSaveBase] = useState<string | null>(null);
+  // ---------- Project Meta modal ----------
+  const [metaOpen, setMetaOpen] = useState(false);
+  const [meta, setMeta] = useState<ProjectMeta>({ name: '' });
 
-  // ---------------- Per-project “Project Tags” (starts empty) ----------------
+  // ---------- File menu ----------
+  const [fileMenuOpen, setFileMenuOpen] = useState(false);
+
+  // ---------- per-project “Project Tags” (starts empty) ----------
   const [projectTags, setProjectTags] = useState<TagLite[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSel, setPickerSel] = useState<string>('');
+  const [lastSaveBase, setLastSaveBase] = useState<string | null>(null);
 
-  // ---------------- Store ----------------
+  // ---------- store ----------
   const {
     tool, setTool,
     zoom, setZoom,
@@ -42,19 +83,19 @@ export default function App() {
     pageLabels, setPageLabels,
     activePage, setActivePage,
     tags, currentTag, setCurrentTag,
-    clearSelection,                    // use clearSelection instead of setSelectedIds
+    clearSelection, // use clearSelection instead of setSelectedIds
   } = useStore();
 
   // =========================================================================================
   // FILE MENU — New / Open (.skdproj) / Save (.skdproj) / Save As (.skdproj) / Print / Close
   // =========================================================================================
-  const makeBundle = useCallback(() => {
+  const makeBundle = useCallback((): SkdProjBundle => {
     const core: ProjectSave = useStore.getState().toProject();
-    return { kind: 'skdproj', version: 1, projectTags, core };
-  }, [projectTags]);
+    return { kind: 'skdproj', version: 2, meta, projectTags, core, pdf: embeddedPdf ?? undefined };
+  }, [meta, projectTags, embeddedPdf]);
 
   const downloadBundle = useCallback((basename?: string) => {
-    const base = (basename || lastSaveBase || 'project').replace(/\.(skdproj|json)$/i, '');
+    const base = (basename || lastSaveBase || meta.name || 'project').replace(/\.(skdproj|json)$/i, '');
     const filename = `${base}.skdproj`;
     const blob = new Blob([JSON.stringify(makeBundle(), null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -62,38 +103,68 @@ export default function App() {
     a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
     setLastSaveBase(base);
-  }, [makeBundle, lastSaveBase]);
+  }, [makeBundle, lastSaveBase, meta.name]);
 
-  function doNewProject() {
-    if (!confirm('Start a new project? Unsaved changes will be lost.')) return;
+  function doNewProjectFlow() {
+    // Show modal to collect metadata BEFORE clearing
+    setMetaOpen(true);
+  }
+
+  function commitNewProject(newMeta: ProjectMeta) {
+    // clear viewer + store + set meta
+    setMeta(newMeta);
     setPdf(null);
+    setEmbeddedPdf(null);
     setFileName('');
     setPages([]);
     setPageCount(0);
     setPageLabels([]);
     setActivePage(0);
-    clearSelection();               // <- replaces setSelectedIds([])
+    clearSelection();
     setCurrentTag('');
     setProjectTags([]);
-    setLastSaveBase(null);
+    setLastSaveBase(newMeta.name || null);
   }
 
   function doOpenProject(file: File) {
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const text = String(reader.result || '');
-        const parsed = JSON.parse(text);
-        const bundle = parsed?.kind === 'skdproj'
-          ? parsed
-          : { kind: 'skdproj', version: 1, core: parsed, projectTags: [] };
+        const parsed = JSON.parse(text) as SkdProjBundle;
 
+        const bundle: SkdProjBundle = parsed?.kind === 'skdproj'
+          ? parsed
+          : { kind: 'skdproj', version: 1, core: parsed as any, projectTags: [], meta: { name: file.name.replace(/\.skdproj$/i, '') } };
+
+        // load store
         useStore.getState().fromProject(bundle.core);
+        // restore meta + project tags
+        setMeta(bundle.meta ?? { name: '' });
         setProjectTags(bundle.projectTags || []);
-        setPdf(null);
-        setFileName('');
-        setLastSaveBase(file.name.replace(/\.skdproj$/i, '').replace(/\.json$/i, ''));
-        alert('Project opened. Now open the matching PDF.');
+        // restore embedded pdf if present
+        if (bundle.pdf?.base64) {
+          const blob = base64ToBlob(bundle.pdf.base64);
+          const named = new File([blob], bundle.pdf.name || 'drawing.pdf', { type: 'application/pdf' });
+          const doc = await loadPdf(named);
+          setPdf(doc);
+          setFileName(named.name);
+          setEmbeddedPdf({ name: named.name, base64: bundle.pdf.base64 });
+          // rebuild labels
+          const labels = Array.from({ length: doc.numPages }, (_, i) => `Page ${i+1}`);
+          setPageLabels(labels);
+          setPageCount(doc.numPages);
+          setActivePage(0);
+          clearSelection();
+        } else {
+          // No embedded pdf: ask user to open one
+          setPdf(null);
+          setFileName('');
+          setEmbeddedPdf(null);
+          alert('Project opened. Open the matching PDF (File ▸ Open PDF).');
+        }
+
+        setLastSaveBase(bundle.meta?.name || file.name.replace(/\.skdproj$/i, '').replace(/\.json$/i, ''));
       } catch (e: any) {
         alert('Invalid .skdproj: ' + e.message);
       }
@@ -103,24 +174,32 @@ export default function App() {
 
   function doSave() { downloadBundle(); }
   function doSaveAs() {
-    const name = prompt('Save As (.skdproj basename):', lastSaveBase ?? 'project');
+    const name = prompt('Save As (.skdproj basename):', lastSaveBase ?? meta.name ?? 'project');
     if (!name) return;
     downloadBundle(name);
   }
   function doPrint() { window.print(); }
-  function doCloseProject() { doNewProject(); }
+  function doCloseProject() {
+    if (!confirm('Close project? Unsaved changes will be lost.')) return;
+    commitNewProject({ name: '' });
+  }
 
   // =========================================================================================
-  // OPEN PDF
+  // OPEN PDF (and embed into bundle)
   // =========================================================================================
   const openPdf = useCallback(async (file: File) => {
     const doc = await loadPdf(file);
     setPdf(doc);
     setFileName(file.name);
+
+    // embed bytes for saving into .skdproj
+    const base64 = await readFileAsBase64(file);
+    setEmbeddedPdf({ name: file.name, base64 });
+
     setPages([]);
     setPageCount(doc.numPages);
 
-    // Page labels if present — else "Page N"
+    // page labels if available, else Page N
     let labels: string[] = [];
     try {
       // @ts-ignore optional in pdf.js
@@ -133,7 +212,7 @@ export default function App() {
     }
     setPageLabels(labels);
     setActivePage(0);
-    clearSelection();               // <- replaces setSelectedIds([])
+    clearSelection();
   }, [setFileName, setPages, setPageCount, setPageLabels, setActivePage, clearSelection]);
 
   // =========================================================================================
@@ -186,7 +265,7 @@ export default function App() {
   }, [pages]);
 
   // =========================================================================================
-  // HELPERS
+  // UI HELPERS
   // =========================================================================================
   const navCount = pageCount || (pdf?.numPages ?? 0);
   function colorForTag(t: TagLite) {
@@ -201,7 +280,7 @@ export default function App() {
   // =========================================================================================
   return (
     <div className="app_root" style={{display:'flex', flexDirection:'column', height:'100vh'}}>
-      {/* FILE BAR (sticky, compact, horizontal scroll if needed) */}
+      {/* FILE BAR (sticky, compact, body-level menu) */}
       <div
         style={{
           display:'flex', alignItems:'center', gap:8, padding:'6px 10px',
@@ -209,31 +288,10 @@ export default function App() {
           overflowX:'auto', whiteSpace:'nowrap'
         }}
       >
-        <div style={{position:'relative'}}>
-          <button className="btn btn--primary" onClick={()=>setFileMenuOpen(v=>!v)}>File ▾</button>
-          {fileMenuOpen && (
-            <div
-              style={{
-                position:'absolute', top:'110%', left:0, background:'#fff', color:'#111',
-                border:'1px solid #ddd', borderRadius:6, boxShadow:'0 6px 24px rgba(0,0,0,.14)',
-                width:220, overflow:'hidden', zIndex:1000
-              }}
-              onMouseLeave={()=>setFileMenuOpen(false)}
-            >
-              <MenuItem label="New" onClick={()=>{setFileMenuOpen(false); doNewProject();}} />
-              <MenuItem label="Open…" onClick={()=>{setFileMenuOpen(false); projFileRef.current?.click();}} />
-              <MenuItem label="Save" onClick={()=>{setFileMenuOpen(false); doSave();}} />
-              <MenuItem label="Save As…" onClick={()=>{setFileMenuOpen(false); doSaveAs();}} />
-              <MenuItem label="Print" onClick={()=>{setFileMenuOpen(false); doPrint();}} />
-              <div style={{borderTop:'1px solid #eee'}} />
-              <MenuItem label="Close Project" onClick={()=>{setFileMenuOpen(false); doCloseProject();}} />
-            </div>
-          )}
-        </div>
-
+        <button ref={fileBtnRef} className="btn btn--primary" onClick={()=>setFileMenuOpen(true)}>File ▾</button>
         <div style={{fontSize:14, fontWeight:700, marginInlineEnd:8}}>SKD Services</div>
 
-        {/* hidden project file input */}
+        {/* hidden project file input (.skdproj) */}
         <input
           ref={projFileRef}
           type="file"
@@ -244,7 +302,7 @@ export default function App() {
 
         <div style={{flex:1}} />
 
-        {/* quick open PDF */}
+        {/* quick open PDF right from the menu bar */}
         <input
           ref={pdfFileRef}
           type="file"
@@ -255,6 +313,19 @@ export default function App() {
         <button className="btn" onClick={()=>pdfFileRef.current?.click()}>Open PDF</button>
         <span style={{marginLeft:8, maxWidth:240, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}} title={fileName}>{fileName}</span>
       </div>
+
+      {/* File menu overlay (fixed, topmost) */}
+      {fileMenuOpen && (
+        <FileMenuOverlay onClose={()=>setFileMenuOpen(false)}>
+          <MenuItem label="New…" onClick={()=>{ setFileMenuOpen(false); doNewProjectFlow(); }} />
+          <MenuItem label="Open Project…" onClick={()=>{ setFileMenuOpen(false); projFileRef.current?.click(); }} />
+          <MenuItem label="Save Project" onClick={()=>{ setFileMenuOpen(false); doSave(); }} />
+          <MenuItem label="Save Project As…" onClick={()=>{ setFileMenuOpen(false); doSaveAs(); }} />
+          <MenuItem label="Print" onClick={()=>{ setFileMenuOpen(false); doPrint(); }} />
+          <div style={{borderTop:'1px solid #eee'}} />
+          <MenuItem label="Close Project" onClick={()=>{ setFileMenuOpen(false); doCloseProject(); }} />
+        </FileMenuOverlay>
+      )}
 
       {/* TOOLS BAR (sticky, compact, horizontal scroll) */}
       <div
@@ -308,18 +379,18 @@ export default function App() {
         <button className="btn" onClick={()=>{
           const data: ProjectSave = useStore.getState().toProject();
           saveProject(data);
-          alert('Saved locally. Use File ▸ Save for .skdproj.');
+          alert('Saved locally. Use File ▸ Save Project for .skdproj.');
         }}>Save (Local)</button>
         <button className="btn" onClick={()=>{
           const data = loadProject();
-          if (data){ useStore.getState().fromProject(data); setPdf(null); alert('Loaded local project. Use File ▸ Open for .skdproj.'); }
+          if (data){ useStore.getState().fromProject(data); setPdf(null); setEmbeddedPdf(null); alert('Loaded local project. Use File ▸ Open Project for .skdproj.'); }
           else alert('No local save.');
         }}>Load (Local)</button>
         <button className="btn" onClick={()=>{ navigator.clipboard.writeText(exportJSON(useStore.getState().toProject())); alert('Copied JSON.'); }}>Export JSON</button>
         <button className="btn" onClick={()=>{
           const s=prompt('Paste JSON:');
           if(!s) return;
-          try{ useStore.getState().fromProject(importJSON(s)); setPdf(null); alert('Imported. Open the matching PDF.'); }
+          try{ useStore.getState().fromProject(importJSON(s)); setPdf(null); setEmbeddedPdf(null); alert('Imported. Open / embed the matching PDF.'); }
           catch(e:any){ alert('Invalid JSON: '+e.message); }
         }}>Import JSON</button>
       </div>
@@ -401,6 +472,10 @@ export default function App() {
             <div className="label" style={{fontWeight:700}}>BOM Summary</div>
             <button className="btn" onClick={()=>{
               const rows = [
+                ['Project', meta.name || ''],
+                ['Client', meta.client || ''],
+                ['Bid #', meta.bid || ''],
+                [],
                 ['Total Tags', String(bom.totalTags)],
                 ['Segment LF', bom.segLF.toFixed(2)],
                 ['Polyline LF', bom.plLF.toFixed(2)],
@@ -465,13 +540,108 @@ export default function App() {
 
       {/* Footer HUD */}
       <div className="hud" style={{borderTop:'1px solid #eee', padding:'6px 10px', fontSize:12, color:'#555'}}>
-        Tool: {tool} • Zoom: {Math.round(zoom*100)}% • Page {navCount ? (activePage+1) : 0}/{navCount}
+        Tool: {tool} • Zoom: {Math.round(zoom*100)}% • Page {navCount ? (activePage+1) : 0}/{navCount} {meta.name ? `• Project: ${meta.name}` : ''}
       </div>
 
       {/* Tag DB modal */}
       <TagManager open={tagsOpen} onClose={()=>setTagsOpen(false)} />
 
+      {/* New Project modal */}
+      {metaOpen && (
+        <ProjectMetaModal
+          initial={meta}
+          onCancel={()=>setMetaOpen(false)}
+          onCreate={(m)=>{
+            setMetaOpen(false);
+            commitNewProject(m);
+          }}
+        />
+      )}
+
       <InlineStyles />
+    </div>
+  );
+}
+
+/* ------- body-level File menu overlay (always on top) ------- */
+function FileMenuOverlay({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        position:'fixed', inset:0, zIndex:9999,
+        background:'rgba(0,0,0,.08)'
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          position:'absolute', top:10, left:10, width:240,
+          background:'#fff', color:'#111', border:'1px solid #ddd', borderRadius:8,
+          boxShadow:'0 10px 28px rgba(0,0,0,.18)', overflow:'hidden'
+        }}
+        onClick={(e)=>e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ------- New Project modal (name required; client/bid optional) ------- */
+function ProjectMetaModal({
+  initial,
+  onCancel,
+  onCreate
+}: {
+  initial: ProjectMeta;
+  onCancel: () => void;
+  onCreate: (meta: ProjectMeta) => void;
+}) {
+  const [name, setName] = useState(initial?.name ?? '');
+  const [client, setClient] = useState(initial?.client ?? '');
+  const [bid, setBid] = useState(initial?.bid ?? '');
+
+  function submit() {
+    if (!name.trim()) { alert('Project Name is required.'); return; }
+    onCreate({ name: name.trim(), client: client.trim() || undefined, bid: bid.trim() || undefined });
+  }
+
+  return (
+    <div
+      style={{
+        position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,.15)',
+        display:'flex', alignItems:'center', justifyContent:'center'
+      }}
+      onClick={onCancel}
+    >
+      <div
+        style={{
+          width:380, background:'#fff', border:'1px solid #ddd', borderRadius:10,
+          boxShadow:'0 15px 40px rgba(0,0,0,.25)', padding:16
+        }}
+        onClick={(e)=>e.stopPropagation()}
+      >
+        <div style={{fontWeight:700, fontSize:16, marginBottom:10}}>New Project</div>
+        <div style={{display:'grid', rowGap:10}}>
+          <label style={{display:'grid', rowGap:4}}>
+            <span style={{fontSize:13, color:'#444'}}>Project Name <span style={{color:'#d00'}}>*</span></span>
+            <input className="btn" style={{width:'100%'}} value={name} onChange={e=>setName(e.target.value)} />
+          </label>
+          <label style={{display:'grid', rowGap:4}}>
+            <span style={{fontSize:13, color:'#444'}}>Client (optional)</span>
+            <input className="btn" style={{width:'100%'}} value={client} onChange={e=>setClient(e.target.value)} />
+          </label>
+          <label style={{display:'grid', rowGap:4}}>
+            <span style={{fontSize:13, color:'#444'}}>Bid # (optional)</span>
+            <input className="btn" style={{width:'100%'}} value={bid} onChange={e=>setBid(e.target.value)} />
+          </label>
+        </div>
+
+        <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:14}}>
+          <button className="btn" onClick={onCancel}>Cancel</button>
+          <button className="btn btn--primary" onClick={submit}>Create</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -481,7 +651,7 @@ function MenuItem({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <div
       onClick={onClick}
-      style={{padding:'9px 12px', cursor:'pointer', fontSize:14}}
+      style={{padding:'10px 12px', cursor:'pointer', fontSize:14}}
       onMouseEnter={(e)=>{(e.currentTarget as HTMLDivElement).style.background='#f5f7fb';}}
       onMouseLeave={(e)=>{(e.currentTarget as HTMLDivElement).style.background='transparent';}}
     >
@@ -499,13 +669,13 @@ function InlineStyles() {
   s.innerHTML = `
     .btn{
       border:1px solid #c9d2e0;background:#fff;padding:.28rem .45rem;border-radius:6px;
-      cursor:pointer;font:500 13px/1.15 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif
+      cursor:pointer;font:500 13px/1.15 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif
     }
     .btn:hover{background:#f7f9fc}
     .btn.active{border-color:#0d6efd;color:#0d6efd;background:#eef5ff}
     .btn:disabled{opacity:.45;cursor:not-allowed}
     .btn--primary{color:#fff;border-color:#2d5c8f;background:#124a85}
-    .badge{padding:0 .35rem;color:#555;font:600 13px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif}
+    .badge{padding:0 .35rem;color:#555;font:600 13px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
     select.btn{padding:.22rem .35rem}
   `;
   document.head.appendChild(s);
