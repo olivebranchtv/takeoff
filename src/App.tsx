@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import type { PDFDoc } from '@/lib/pdf';
 import { loadPdfFromBytes } from '@/lib/pdf';
 import PDFViewport from '@/components/PDFViewport';
@@ -8,6 +8,7 @@ import { useStore } from '@/state/store';
 import { exportJSON, importJSON, loadProject, saveProject } from '@/utils/persist';
 import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
 import { pathLength } from '@/utils/geometry';
+import { DEFAULT_MASTER_TAGS } from '@/constants/masterTags';
 
 /* Tag shape used by the DB + project bar */
 type TagLite = { id: string; code: string; name: string; color: string; category?: string };
@@ -42,6 +43,31 @@ function baseNameNoExt(path: string) {
   const just = (path || '').split('/').pop() || path || '';
   const dot = just.lastIndexOf('.');
   return dot > 0 ? just.slice(0, dot) : just || 'Untitled';
+}
+
+/* =========================================================================================
+   TINY HELPER — ensure master Tag DB is loaded (deduped)
+   ========================================================================================= */
+function ensureMasterTagsLoaded() {
+  const s = useStore.getState() as any;
+  const current: Tag[] = Array.isArray(s.tags) ? s.tags : [];
+  // If we already have a large tag set, do nothing.
+  if (current.length >= 250) return;
+
+  const have = new Set(current.map(t => (t.code || '').toUpperCase()));
+  const missing = DEFAULT_MASTER_TAGS.filter(mt => !have.has((mt.code || '').toUpperCase()));
+
+  if (!missing.length) return;
+
+  // Prefer addTag one-by-one to avoid clobbering anything customized
+  if (typeof s.addTag === 'function') {
+    for (const m of missing) {
+      s.addTag({ code: m.code, name: m.name, category: m.category, color: m.color });
+    }
+  } else if (typeof s.importTags === 'function') {
+    // Fallback: merge (preserve existing, append missing)
+    s.importTags([...current, ...missing]);
+  }
 }
 
 export default function App() {
@@ -83,6 +109,9 @@ export default function App() {
     setSelectedIds,
     setProjectName, // used to force header to the project name from the bundle
   } = useStore();
+
+  // Seed master tags once at mount so "Add from DB" has the full set
+  useEffect(() => { ensureMasterTagsLoaded(); }, []);
 
   /* =========================================================================================
      FILE MENU  — New / Open (.skdproj) / Save (.skdproj) / Save As (.skdproj) / Print / Close
@@ -457,7 +486,16 @@ export default function App() {
         </div>
 
         <div style={{position:'relative'}}>
-          <button className="btn" onClick={()=>setPickerOpen(v=>!v)}>Add from DB</button>
+          <button
+            className="btn"
+            onClick={()=>{
+              // make sure master DB is there before opening the small picker
+              ensureMasterTagsLoaded();
+              setPickerOpen(v=>!v);
+            }}
+          >
+            Add from DB
+          </button>
           {pickerOpen && (
             <div style={{position:'fixed', top:140, right:12, background:'#fff', border:'1px solid #ddd', borderRadius:6, padding:8, width:300, zIndex:999}}
                  onMouseLeave={()=>setPickerOpen(false)}>
