@@ -1,20 +1,49 @@
 // src/lib/pdf.ts
+/* Local, CDN-free PDF.js setup that works in Vite */
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
-// IMPORTANT: use the ESM worker and let Vite turn it into a URL we can point to.
-import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 
-GlobalWorkerOptions.workerSrc = workerSrc;
+let workerReady = false;
 
-export type PDFDoc = import('pdfjs-dist').PDFDocumentProxy;
+function ensureWorker() {
+  if (workerReady) return;
 
-/** Load a PDF from bytes (ArrayBuffer or Uint8Array) */
-export async function loadPdfFromBytes(bytes: ArrayBuffer | Uint8Array): Promise<PDFDoc> {
-  const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-  const task = getDocument({
-    data,
-    // keep things simple & compatible across environments
-    useWorkerFetch: false,
-    isEvalSupported: true,
-  });
-  return task.promise;
+  // Try modern ESM worker (pdfjs >= 3.x ships .mjs)
+  try {
+    const w = new Worker(
+      new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url),
+      { type: 'module' }
+    );
+    GlobalWorkerOptions.workerPort = w;
+    workerReady = true;
+    return;
+  } catch {}
+
+  // Fallback to classic worker path (some installs still have .js)
+  try {
+    const w = new Worker(
+      new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url),
+      // classic worker is fine here
+      { type: 'classic' as any }
+    );
+    GlobalWorkerOptions.workerPort = w;
+    workerReady = true;
+    return;
+  } catch (err) {
+    // Final fallback: fake worker (slower, but functional)
+    console.warn('[pdf] Worker startup failed, using fake worker:', err);
+    GlobalWorkerOptions.workerSrc = ''; // triggers fake worker mode
+    workerReady = true;
+  }
+}
+
+export type PDFDoc = PDFDocumentProxy;
+
+/** Load a PDF from raw bytes (ArrayBuffer or Uint8Array). */
+export async function loadPdfFromBytes(
+  bytes: ArrayBuffer | Uint8Array | number[]
+): Promise<PDFDoc> {
+  ensureWorker();
+  const loadingTask = getDocument({ data: bytes as any });
+  return loadingTask.promise;
 }
