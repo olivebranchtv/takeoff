@@ -30,19 +30,27 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [editId, setEditId] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
-  const [catSelect, setCatSelect] = useState<string>('');          // dropdown value
+  const [catSelect, setCatSelect] = useState<string>('');          // editor dropdown value
   const [customCategory, setCustomCategory] = useState<string>(''); // for “Custom…”
   const fileRef = useRef<HTMLInputElement>(null);
   const editorCardRef = useRef<HTMLDivElement>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
 
-  // --- NEW: drag state (so the modal can be moved) ---
+  // Draggable modal
   const [pos, setPos] = useState<{x:number;y:number}>({ x: 64, y: 64 });
   const dragRef = useRef<{active:boolean; sx:number; sy:number; ox:number; oy:number}>({
     active:false, sx:0, sy:0, ox:0, oy:0
   });
 
-  // Reset UI state when closed
+  // Map of category header rows for jump scrolling
+  const groupRefs = useRef(new Map<string, HTMLTableRowElement>());
+  const scrollToCategory = (cat: string) => {
+    const key = cat || 'Uncategorized';
+    const row = groupRefs.current.get(key);
+    if (row) row.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // Reset UI when closed; ensure defaults present when opened (load all 318 on first use)
   useEffect(() => {
     if (!open) {
       setQuery('');
@@ -53,17 +61,15 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       setCustomCategory('');
       return;
     }
-
-    // --- auto-load defaults once if DB is empty ---
-    if ((tags as Tag[]).length === 0 && Array.isArray(DEFAULT_MASTER_TAGS)) {
+    try {
       const existing = new Set<string>((tags as Tag[]).map(t => (t.code || '').toUpperCase()));
-      const toAdd = DEFAULT_MASTER_TAGS.filter(t => !existing.has((t.code || '').toUpperCase()));
-      if (toAdd.length) importTags(toAdd);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+      const missing = DEFAULT_MASTER_TAGS.filter(t => !existing.has((t.code || '').toUpperCase()));
+      if (missing.length > 0) importTags(missing);
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Build the category list from: master + existing tags
+  // Build category list from master + existing
   const allCategories = useMemo(() => {
     const set = new Set<string>();
     DEFAULT_MASTER_TAGS.forEach(t => t.category && set.add(t.category));
@@ -71,14 +77,14 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     return Array.from(set);
   }, [tags]);
 
-  // Sorted categories: first in MASTER_CATEGORY_ORDER (if present), then others alphabetically
+  // Sorted categories
   const sortedCategories = useMemo(() => {
     const ordered = MASTER_CATEGORY_ORDER.filter(c => allCategories.includes(c));
     const rest = allCategories.filter(c => !MASTER_CATEGORY_ORDER.includes(c)).sort((a, b) => a.localeCompare(b));
     return [...ordered, ...rest];
   }, [allCategories]);
 
-  // normalized + filtered list, then grouped by category
+  // Filtered + grouped list
   const filteredGroups = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = [...(tags as Tag[])];
@@ -89,22 +95,18 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         (t.category || '').toLowerCase().includes(q)
     );
 
-    // Group by category
     const byCat = new Map<string, Tag[]>();
     for (const t of filtered) {
-      const cat = t.category || '';
+      const cat = t.category || 'Uncategorized';
       const arr = byCat.get(cat) || [];
       arr.push(t);
       byCat.set(cat, arr);
     }
-
-    // Sort each category's tags by code alphabetically
     for (const [k, arr] of byCat.entries()) {
       arr.sort((a, b) => (a.code || '').localeCompare(b.code || ''));
       byCat.set(k, arr);
     }
 
-    // Order categories per sortedCategories, then any “unknown” cats alphabetically
     const known = sortedCategories.filter(c => byCat.has(c));
     const unknown = Array.from(byCat.keys()).filter(c => !sortedCategories.includes(c)).sort((a, b) => a.localeCompare(b));
     const finalOrder = [...known, ...unknown];
@@ -112,14 +114,12 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     return finalOrder.map(cat => ({ category: cat, items: byCat.get(cat) || [] }));
   }, [tags, query, sortedCategories]);
 
-  // --- map of category header <tr> for jump scrolling ---
-  const groupRefs = useRef(new Map<string, HTMLTableRowElement>());
+  // refresh groupRefs whenever grouping changes
   useEffect(() => { groupRefs.current = new Map(); }, [filteredGroups]);
 
-  // If not open, render nothing (after all hooks have run)
   if (!open) return null;
 
-  // ---- actions ----
+  /* ---------- actions ---------- */
   function startNew() {
     setEditId(null);
     setDraft(d => ({ ...emptyDraft, color: d.color || '#FFA500' }));
@@ -136,7 +136,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     setEditId(t.id);
     setDraft({ code: t.code, name: t.name, category: t.category, color: t.color });
     setError('');
-    // initialize dropdown according to the existing category
     const cat = t.category || '';
     if (cat && sortedCategories.includes(cat)) {
       setCatSelect(cat);
@@ -151,6 +150,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     requestAnimationFrame(() => {
       editorCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       codeInputRef.current?.focus();
+      if (cat) scrollToCategory(cat);
     });
   }
 
@@ -185,6 +185,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     setDraft(d => ({ ...d, code: '', name: '' }));
     setError('');
     codeInputRef.current?.focus();
+    if (category) scrollToCategory(category);
   }
 
   function saveEdit() {
@@ -198,6 +199,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     } else if (msg) { setError(msg); return; }
 
     updateTag(editId, next);
+    if (category) scrollToCategory(category);
     cancelEdit();
   }
 
@@ -224,14 +226,12 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     reader.readAsText(f);
   }
 
-  // UPDATED: ensure that adding to a project also persists to master DB (upsert by code/id)
+  // Add-to-project also upserts the tag into master DB if needed
   function addToProject(tag: Tag) {
-    // 1) Upsert into master DB
     const exists =
       (tags as Tag[]).some(
         t => t.id === tag.id || (t.code || '').toUpperCase() === (tag.code || '').toUpperCase()
       );
-
     if (!exists) {
       addTag({
         code: (tag.code || '').toUpperCase(),
@@ -240,15 +240,12 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         color: tag.color || '#FFA500'
       });
     }
-
-    // 2) Then add to current project
     if (onAddToProject) { onAddToProject(tag); return; }
     const tried =
       (store as any)?.addProjectTag?.(tag) ??
       (store as any)?.addProjectTagById?.(tag.id) ??
       (store as any)?.addTagToProject?.(tag);
     if (tried !== undefined) return;
-
     alert('Add-to-Project is not wired yet.');
   }
 
@@ -266,7 +263,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   const headerNote = 'Lights category always renders orange on the plan, regardless of saved color.';
 
-  // --- Drag handlers (title bar only) ---
+  // Drag handlers
   function onDragStart(e: React.MouseEvent) {
     dragRef.current = { active:true, sx:e.clientX, sy:e.clientY, ox:pos.x, oy:pos.y };
     window.addEventListener('mousemove', onDragMove);
@@ -288,17 +285,12 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     <div style={S.backdrop} onMouseDown={onClose}>
       <div
         style={{ ...S.modal, left: pos.x, top: pos.y }}
-        onMouseDown={e => e.stopPropagation()} // keep clicks inside from closing
+        onMouseDown={e => e.stopPropagation()}
       >
-        {/* Title Bar (draggable handle at the left side) */}
+        {/* Title Bar */}
         <div style={S.titleBar}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <div
-              style={{ ...S.dragHandle }}
-              onMouseDown={onDragStart}
-              title="Drag"
-              aria-label="Drag"
-            />
+            <div style={{ ...S.dragHandle }} onMouseDown={onDragStart} title="Drag" aria-label="Drag" />
             <div>
               <div style={S.title}>Tag Database</div>
               <div style={S.subtitle}>{headerNote}</div>
@@ -327,8 +319,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             onChange={e => {
               const cat = e.target.value;
               if (!cat) return;
-              const row = groupRefs.current.get(cat);
-              row?.scrollIntoView({ behavior:'smooth', block:'start' });
+              scrollToCategory(cat);
               e.currentTarget.value = '';
             }}
           >
@@ -343,7 +334,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         <div style={S.card} ref={editorCardRef}>
           <div style={S.formRow}>
             {/* Color grid */}
-            <div style={{ minWidth: 210 }}>
+            <div style={{ minWidth: 232 }}>
               <div style={S.label}>Color</div>
               <div style={S.colorGrid}>
                 {palette.map((c: string) => {
@@ -367,7 +358,15 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             </div>
 
             {/* Fields */}
-            <div style={{ display: 'grid', gridTemplateColumns: '130px 220px 1fr', gap: 12, alignItems: 'center', flex: 1 }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(120px, 160px) minmax(220px, 320px) 1fr',
+                gap: 12,
+                alignItems: 'center',
+                flex: 1,
+              }}
+            >
               <div>
                 <div style={S.label}>Code</div>
                 <input
@@ -382,7 +381,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
               <div>
                 <div style={S.label}>Category</div>
-                <div style={{ display:'flex', gap:8 }}>
+                <div style={{ display:'flex', gap:8, minWidth:0 }}>
                   <select
                     value={catSelect || (sortedCategories.includes(draft.category) ? draft.category : (draft.category ? CUSTOM_CAT_VALUE : ''))}
                     onChange={(e) => {
@@ -393,6 +392,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                       } else {
                         setDraft(d => ({ ...d, category: v }));
                         setCustomCategory('');
+                        if (v) scrollToCategory(v);
                       }
                     }}
                     style={S.input}
@@ -454,7 +454,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             </thead>
             <tbody>
               {filteredGroups.map(group => (
-                <React.Fragment key={group.category || '(Uncategorized)'}>
+                <React.Fragment key={group.category || 'Uncategorized'}>
                   {/* Category Header Row */}
                   <tr
                     ref={el => { if (el) groupRefs.current.set(group.category || 'Uncategorized', el); }}
@@ -538,14 +538,27 @@ const S: Record<string, React.CSSProperties> = {
     display:'flex', gap:8, alignItems:'center',
     padding:'10px 16px', borderBottom:'1px solid #f2f2f2', background:'#fff'
   },
-  search: { flex:1, padding:'8px 10px', border:'1px solid #ccc', borderRadius:8, fontSize:14 },
-  jump:   { width:220, padding:'8px 10px', border:'1px solid #ccc', borderRadius:8, fontSize:14 },
+  search: {
+    flex:1, padding:'10px 12px', border:'1px solid #ccc', borderRadius:8, fontSize:14,
+    lineHeight: '20px', boxSizing: 'border-box'
+  },
+  jump:   { width:240, padding:'10px 12px', border:'1px solid #ccc', borderRadius:8, fontSize:14, boxSizing:'border-box' },
   card:   { padding:'12px 16px', borderBottom:'1px solid #f2f2f2', background:'#fff' },
-  formRow: { display:'grid', gridTemplateColumns:'210px 1fr auto', gap:16, alignItems:'start' },
+  formRow: { display:'grid', gridTemplateColumns:'232px 1fr auto', gap:16, alignItems:'start' },
   label:  { fontSize:12, fontWeight:600, color:'#444', marginBottom:6 },
-  input:  { width:'100%', padding:'8px 10px', border:'1px solid #ccc', borderRadius:8, fontSize:14 },
-  colorGrid: { display:'grid', gridTemplateColumns:'repeat(10, 24px)', gap:6 },
-  swatch: { width:20, height:20, borderRadius:4, cursor:'pointer' },
+  input:  {
+    width:'100%', padding:'10px 12px', border:'1px solid #ccc', borderRadius:8, fontSize:14,
+    lineHeight:'20px', boxSizing:'border-box', minWidth:0
+  },
+  colorGrid: {
+    display:'grid',
+    gridTemplateColumns:'repeat(auto-fill, 28px)',
+    gap:8,
+    maxHeight: 140,
+    overflowY: 'auto',
+    paddingRight: 4
+  },
+  swatch: { width:24, height:24, borderRadius:4, cursor:'pointer' },
   error:  { marginTop:10, color:'#b00020', fontSize:13, fontWeight:600 },
   tableWrap: { overflow:'auto', padding:'0 16px 16px' },
   table:  { width:'100%', borderCollapse:'separate', borderSpacing:0 },
