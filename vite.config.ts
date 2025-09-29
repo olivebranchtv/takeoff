@@ -10,27 +10,24 @@ export default defineConfig({
       // App alias
       { find: '@', replacement: path.resolve(__dirname, 'src') },
 
-      // ------------------------------------------------------------------
-      // FIX 1: react-konva sometimes deep-imports 'konva/lib/Global(.js)'
-      // Route that to a shim exposing default + named Konva.
-      // ------------------------------------------------------------------
-      { find: 'konva/lib/Global.js', replacement: path.resolve(__dirname, 'src/shims/konvaGlobalShim.ts') },
-      { find: 'konva/lib/Global',   replacement: path.resolve(__dirname, 'src/shims/konvaGlobalShim.ts') },
+      // --- Fix: react-konva deep import & any konva import shape -> our shim
+      { find: 'konva/lib/Global.js', replacement: path.resolve(__dirname, 'src/shims/konvaShim.ts') },
+      { find: 'konva/lib/Global',   replacement: path.resolve(__dirname, 'src/shims/konvaShim.ts') },
+      { find: 'konva',              replacement: path.resolve(__dirname, 'src/shims/konvaShim.ts') },
 
-      // ------------------------------------------------------------------
-      // FIX 2: some deps expect a *default* from with-selector (but it has none).
-      // We alias ONLY the *bare* ids (no query/extension), to our shim.
-      // Our shim will import the REAL module using '?real' so alias won’t match.
-      // This avoids the “Detected cycle while resolving name …” error.
-      // ------------------------------------------------------------------
-      { find: 'use-sync-external-store/shim/with-selector',
-        replacement: path.resolve(__dirname, 'src/shims/useSyncExternalStoreWithSelectorShim.ts') },
-      { find: 'use-sync-external-store/shim/with-selector.js',
-        replacement: path.resolve(__dirname, 'src/shims/useSyncExternalStoreWithSelectorShim.ts') },
+      // --- Fix: some deps expect default from with-selector (it has none)
+      // Alias ONLY the bare ids; shim imports real module with `?real` to avoid alias recursion.
+      {
+        find: 'use-sync-external-store/shim/with-selector',
+        replacement: path.resolve(__dirname, 'src/shims/useSyncExternalStoreWithSelectorShim.ts'),
+      },
+      {
+        find: 'use-sync-external-store/shim/with-selector.js',
+        replacement: path.resolve(__dirname, 'src/shims/useSyncExternalStoreWithSelectorShim.ts'),
+      },
     ],
   },
   optimizeDeps: {
-    // keep dev pre-bundle away from these heavy libs
     exclude: ['konva', 'react-konva', 'pdfjs-dist', 'zustand'],
   },
   build: {
