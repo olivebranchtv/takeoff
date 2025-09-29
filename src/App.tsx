@@ -190,11 +190,11 @@ export default function App() {
           ? parsed
           : { kind: 'skdproj', version: 1, core: parsed as ProjectSave, projectTags: [], pdf: undefined };
 
-      // Load the store portion
+      // Load the store portion (restore pages/objects/tags BEFORE loading PDF)
       try {
         const state = useStore.getState();
         
-        // Restore pages with objects
+        // Restore pages with objects (these include your tag placements & measurements)
         if (bundle.core.pages && Array.isArray(bundle.core.pages)) {
           state.setPages(bundle.core.pages.map(page => ({
             pageIndex: page.pageIndex,
@@ -228,10 +228,10 @@ export default function App() {
         setProjectName(openedName);
       } catch { /* ignore */ }
 
-      // restore project tags
+      // restore project tags (project-level tag list)
       setProjectTags(Array.isArray(bundle.projectTags) ? bundle.projectTags : []);
 
-      // restore PDF if present
+      // restore PDF if present — DO NOT CLEAR PAGES after loading (keep restored objects!)
       if (bundle.pdf && typeof bundle.pdf.bytesBase64 === 'string' && bundle.pdf.bytesBase64.length > 0) {
         try {
           console.log('[Open Project] Loading embedded PDF...');
@@ -247,7 +247,7 @@ export default function App() {
           setFileName(bundle.pdf.name || 'document.pdf');
           setPdfBytesBase64(bundle.pdf.bytesBase64);
 
-          setPages([]);
+          // Keep existing restored pages; just refresh doc metadata
           setPageCount(doc.numPages);
           setPageLabels(await resolvePageLabels(doc));
           setActivePage(0);
@@ -303,6 +303,7 @@ export default function App() {
     const doc = await loadPdfFromBytes(new Uint8Array(buf));
     setPdf(doc);
     setFileName(file.name);
+    // For standalone PDF open, start fresh pages (this is intended)
     setPages([]);
     setPageCount(doc.numPages);
     setPageLabels(await resolvePageLabels(doc));
