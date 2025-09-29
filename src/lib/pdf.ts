@@ -8,10 +8,10 @@ import { getDocument, GlobalWorkerOptions, version } from 'pdfjs-dist/build/pdf.
 
 export type PDFDoc = any;
 
-// Completely disable worker to avoid all CORS and network issues
+// Completely disable worker and all external resource loading
 GlobalWorkerOptions.workerSrc = '';
 
-// Force all operations to run in main thread without any worker or external fetching
+// Force all operations to run in main thread without any external fetching
 const COMMON_DOC_OPTS = {
   disableWorker: true,
   isEvalSupported: false,
@@ -19,10 +19,13 @@ const COMMON_DOC_OPTS = {
   disableRange: true,
   disableStream: true,
   disableAutoFetch: true,
-  disableFontFace: false,
-  standardFontDataUrl: undefined,
-  cMapUrl: undefined,
+  disableFontFace: true,  // Disable font loading completely
+  standardFontDataUrl: '',  // Empty string instead of undefined
+  cMapUrl: '',  // Empty string instead of undefined
   cMapPacked: false,
+  verbosity: 0,  // Disable verbose logging
+  maxImageSize: -1,  // Disable image size limits
+  disableCreateObjectURL: true,  // Prevent blob URL creation
 };
 
 /** Load a PDF from raw bytes. Accepts ArrayBuffer, Uint8Array, or number[]. */
