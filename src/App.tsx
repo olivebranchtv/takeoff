@@ -32,7 +32,7 @@ function abToB64(buf: ArrayBuffer): string {
 }
 function b64ToAb(b64: string): ArrayBuffer {
   // tolerant base64 decode (adds padding if missing)
-  let src = b64.replace(/[\r\n\s]/g, '');
+  let src = (b64 || '').replace(/[\r\n\s]/g, '');
   const pad = src.length % 4;
   if (pad === 2) src += '==';
   else if (pad === 3) src += '=';
@@ -42,17 +42,18 @@ function b64ToAb(b64: string): ArrayBuffer {
   return out.buffer;
 }
 
-// Single helper so both code paths use identical, safe label logic
+/** Always returns a sane array of labels, even if pdf.js exposes a weird non-callable value. */
 async function resolvePageLabels(doc: any): Promise<string[]> {
   try {
-    if (doc && typeof doc.getPageLabels === 'function') {
-      const raw = await doc.getPageLabels();
+    const maybeFn = doc && (doc as any).getPageLabels;
+    if (maybeFn && typeof maybeFn === 'function') {
+      const raw = await maybeFn.call(doc);
       if (Array.isArray(raw)) {
         return raw.map((l: string, i: number) => l || `Page ${i + 1}`);
       }
     }
-  } catch {
-    // fall through to default below
+  } catch (err) {
+    console.warn('[PageLabels] Ignored error:', err);
   }
   const count = (doc?.numPages ?? 0) | 0;
   return Array.from({ length: count }, (_, i) => `Page ${i + 1}`);
@@ -255,7 +256,6 @@ export default function App() {
           continue;
         }
         const verts = (obj as AnyTakeoffObject).vertices ?? [];
-        the
         const lenPx = pathLength(verts);
         const lf = ppf > 0 ? lenPx / ppf : 0;
 
