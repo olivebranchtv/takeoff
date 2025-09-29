@@ -546,11 +546,25 @@ const S: Record<string, React.CSSProperties> = {
     borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff'
   },
   thCat: {
-    width:200, textAlign:'left', padding:'10px 6px', fontSize:12, color:'#555',
-    borderBottom:'1px solid '#eee', position:'sticky', top:0, background:'#fff'
+    width: 200,
+    textAlign: 'left',
+    padding: '10px 6px',
+    fontSize: 12,
+    color: '#555',
+    borderBottom: '1px solid #eee', // <— fixed
+    position: 'sticky',
+    top: 0,
+    background: '#fff',
   },
   thActions: {
-    width:210, textAlign:'right', padding:'10px 6px', fontSize:12, color:'#555',
-    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff'
+    width: 210,
+    textAlign: 'right',
+    padding: '10px 6px',
+    fontSize: 12,
+    color: '#555',
+    borderBottom: '1px solid #eee',
+    position: 'sticky',
+    top: 0,
+    background: '#fff',
   },
 };
