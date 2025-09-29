@@ -42,19 +42,8 @@ function b64ToAb(b64: string): ArrayBuffer {
   return out.buffer;
 }
 
-/** Always returns a sane array of labels, even if pdf.js exposes a weird non-callable value. */
+/** Always return simple "Page N" labels; never call into pdf.js (avoids 'me is not a function'). */
 async function resolvePageLabels(doc: any): Promise<string[]> {
-  try {
-    const maybeFn = doc && (doc as any).getPageLabels;
-    if (maybeFn && typeof maybeFn === 'function') {
-      const raw = await maybeFn.call(doc);
-      if (Array.isArray(raw)) {
-        return raw.map((l: string, i: number) => l || `Page ${i + 1}`);
-      }
-    }
-  } catch (err) {
-    console.warn('[PageLabels] Ignored error:', err);
-  }
   const count = (doc?.numPages ?? 0) | 0;
   return Array.from({ length: count }, (_, i) => `Page ${i + 1}`);
 }
