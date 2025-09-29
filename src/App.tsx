@@ -1,7 +1,7 @@
 // src/App.tsx
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type { PDFDoc } from '@/lib/pdf';
-import { loadPdfFromBytes } from '@/lib/pdf'; // use the new helper
+import { loadPdfFromBytes } from '@/lib/pdf';
 import PDFViewport from '@/components/PDFViewport';
 import TagManager from '@/components/TagManager';
 import { useStore } from '@/state/store';
@@ -20,13 +20,6 @@ type SKDBundle = {
   projectTags: TagLite[];
   pdf?: { name: string; bytesBase64: string };
 };
-
-/** Small helper for UI labels */
-function baseNameNoExt(path: string) {
-  const just = (path || '').split('/').pop() || path || '';
-  const dot = just.lastIndexOf('.');
-  return dot > 0 ? just.slice(0, dot) : just || 'Untitled';
-}
 
 export default function App() {
   /* ---------- refs ---------- */
@@ -62,11 +55,10 @@ export default function App() {
     pageCount, setPageCount,
     pageLabels, setPageLabels,
     activePage, setActivePage,
-    tags,                 // Tag Database (not the Project Tags)
+    tags,
     currentTag, setCurrentTag,
     setSelectedIds,
-    // project name for header
-    projectName, setProjectName,
+    setProjectName, // used to force header to the project name from the bundle
   } = useStore();
 
   /* =========================================================================================
@@ -146,9 +138,18 @@ export default function App() {
       try {
         useStore.getState().fromProject(bundle.core);
       } catch (err: any) {
-        // Soft-fail: log and keep going so PDF/UI can still load
         console.warn('[Open Project] fromProject warning:', err?.message || err);
       }
+
+      // **NEW**: ensure header uses the project name saved in the bundle
+      try {
+        const coreAny: any = bundle.core ?? {};
+        const openedName =
+          typeof coreAny.name === 'string' && coreAny.name.trim() ? coreAny.name :
+          typeof coreAny.projectName === 'string' && coreAny.projectName.trim() ? coreAny.projectName :
+          'Untitled Project';
+        setProjectName(openedName);
+      } catch { /* ignore */ }
 
       // Restore project tags safely
       setProjectTags(Array.isArray(bundle.projectTags) ? bundle.projectTags : []);
@@ -297,10 +298,8 @@ export default function App() {
     .filter(t => !projectTags.some(p => p.code.toUpperCase() === (t.code || '').toUpperCase()))
     .sort((a, b) => (a.code || '').localeCompare(b.code || ''));
 
-  // Derived label for header project name (fallback to file base name)
-  const headerProjectLabel = (projectName && projectName.trim())
-    ? projectName
-    : baseNameNoExt(pdfName || fileName || 'Untitled');
+  // **NEW** header always prefers the store's project name over PDF name
+  const headerProjectLabel = useStore(s => s.getProjectName());
 
   /* =========================================================================================
      RENDER
@@ -314,7 +313,7 @@ export default function App() {
           {fileMenuOpen && (
             <div
               style={{
-                position:'fixed', // over everything
+                position:'fixed',
                 top:56, left:12, background:'#fff', color:'#111',
                 border:'1px solid #ddd', borderRadius:6, boxShadow:'0 8px 28px rgba(0,0,0,.18)',
                 width:240, zIndex:1000
