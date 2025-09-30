@@ -10,7 +10,7 @@ export default defineConfig({
   },
   // Optimize dependencies and prevent external requests
   optimizeDeps: {
-    include: ['pdfjs-dist/build/pdf.mjs'],
+    include: ['pdfjs-dist'],
     exclude: ['pdfjs-dist/build/pdf.worker.min.js']
   },
   // Prevent preload warnings

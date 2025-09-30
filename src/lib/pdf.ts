@@ -4,14 +4,14 @@
  * This eliminates all CORS and worker-related issues
  */
 
-import { getDocument, GlobalWorkerOptions, version } from 'pdfjs-dist';
+import * as pdfjsLib from 'pdfjs-dist';
 // @ts-ignore - Worker URL import
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
-export type PDFDoc = any;
+export type PDFDoc = pdfjsLib.PDFDocumentProxy;
 
 // Set worker source to satisfy PDF.js requirements, but disable worker usage
-GlobalWorkerOptions.workerSrc = workerUrl;
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
 // Configuration that prevents any external network requests
 const SAFE_DOC_OPTS = {
@@ -62,7 +62,7 @@ export async function loadPdfFromBytes(
 
     console.log(`Loading PDF: ${u8.length} bytes, version detected: ${version}`);
 
-    const task = getDocument({ 
+    const task = pdfjsLib.getDocument({ 
       data: u8, 
       ...SAFE_DOC_OPTS,
       // Additional safety measures

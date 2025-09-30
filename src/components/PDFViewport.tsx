@@ -413,7 +413,7 @@ function halfPoint(pts: {x:number;y:number}[]) {
 /* --------- Renderers --------- */
 
 function renderObject(
-  obj: AnyTakeoffObject,
+  obj: any,
   selected: boolean,
   s: number,
   pageIndex: number,
