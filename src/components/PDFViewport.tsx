@@ -5,6 +5,7 @@ import { Stage, Layer, Group, Line, Text as KText, Transformer, Rect, Circle } f
 import Konva from 'konva';
 import { pathLength, simplifyRDP } from '@/utils/geometry';
 import type { AnyTakeoffObject } from '@/types';
+import MeasureOptionsDialog from './MeasureOptionsDialog';
 
 type Props = { pdf: PDFDoc | null };
 
