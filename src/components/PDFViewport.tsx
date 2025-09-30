@@ -222,7 +222,7 @@ export default function PDFViewport({ pdf }: Props) {
         drawingRef.current.pts.push(posPage);
       }
     } else if (tool === 'freeform') {
-      if (drawingRef.current.type !== 'freeform') {
+      if (!drawingRef.current.type || drawingRef.current.type !== 'freeform') {
         // Show measure options dialog before starting freeform
         setPendingMeasureType('freeform');
         setMeasureDialogOpen(true);
