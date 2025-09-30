@@ -123,15 +123,54 @@ export async function exportProfessionalBOM(
   // Load pricing from Supabase
   const pricingData = await loadMaterialPricingFromSupabase();
   const priceMap = new Map<string, { cost: number; laborHours: number }>();
+  const pricingArray: Array<{ category: string; description: string; cost: number; laborHours: number }> = [];
 
   if (pricingData && pricingData.length > 0) {
     pricingData.forEach(p => {
       const key = `${p.category}::${p.description}`;
-      priceMap.set(key, {
+      const priceInfo = {
+        cost: p.material_cost || 0,
+        laborHours: p.labor_hours || 0
+      };
+      priceMap.set(key, priceInfo);
+
+      // Also store for fuzzy matching
+      pricingArray.push({
+        category: p.category,
+        description: p.description,
         cost: p.material_cost || 0,
         laborHours: p.labor_hours || 0
       });
     });
+  }
+
+  // Fuzzy matcher - finds closest match in database
+  function findPrice(category: string, description: string): { cost: number; laborHours: number } {
+    // Try exact match first
+    const exactKey = `${category}::${description}`;
+    const exact = priceMap.get(exactKey);
+    if (exact && (exact.cost > 0 || exact.laborHours > 0)) return exact;
+
+    // Normalize for fuzzy matching
+    const normDesc = description.toLowerCase()
+      .replace(/["']/g, '')
+      .replace(/\s+/g, '')
+      .replace(/-/g, '')
+      .trim();
+
+    // Find matches in same category by checking if database description contains key terms
+    const keyTerms = normDesc.split(/[,\/]/).filter(t => t.length > 2);
+
+    const candidates = pricingArray.filter(p => {
+      if (p.category !== category) return false;
+      const dbDesc = p.description.toLowerCase().replace(/["']/g, '').replace(/\s+/g, '').replace(/-/g, '');
+      // Check if database description contains assembly key terms
+      return keyTerms.some(term => dbDesc.includes(term));
+    });
+
+    // Return first match with pricing
+    const match = candidates.find(c => c.cost > 0 || c.laborHours > 0);
+    return match ? { cost: match.cost, laborHours: match.laborHours } : { cost: 0, laborHours: 0 };
   }
 
   // Get all data
@@ -235,8 +274,7 @@ export async function exportProfessionalBOM(
       return a.description.localeCompare(b.description);
     })
     .map(mat => {
-      const priceKey = `${mat.category}::${mat.description}`;
-      const pricing = priceMap.get(priceKey) || { cost: 0, laborHours: 0 };
+      const pricing = findPrice(mat.category, mat.description);
       const unitCost = pricing.cost;
       const laborPerUnit = pricing.laborHours;
       const extendedCost = unitCost * mat.totalQty;
