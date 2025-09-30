@@ -15,70 +15,63 @@ export type Tag = {
   category?: string;
 };
 
-/* ===== Measure options for raceways (persisted + stored per object) ===== */
-/** EMT nominal sizes we support ('' = unset). */
+/* ===== Raceway & Conductor enums ===== */
 export type EMTSize =
   | '1/2"' | '3/4"' | '1"' | '1-1/4"' | '1-1/2"' | '2"'
   | '2-1/2"' | '3"' | '3-1/2"' | '4"' | '';
 
-/** User-configurable inputs captured when starting a Polyline/Freeform run. */
+export type WireSize =
+  | '#18' | '#16' | '#14' | '#12' | '#10' | '#8' | '#6' | '#4' | '#3' | '#2' | '#1'
+  | '1/0' | '2/0' | '3/0' | '4/0'
+  | '250' | '300' | '350' | '400' | '500' | '600' | '750' | '';
+
+export type WireMaterial = 'CU' | 'AL';
+export type WireInsulation = 'THHN/THWN-2' | 'XHHW-2' | 'MTW' | 'RW90' | 'USE-2' | 'Other';
+
+export type ConductorSpec = {
+  count: number;              // number of conductors in the group
+  size: WireSize;             // wire size (AWG/kcmil)
+  insulation: WireInsulation; // insulation type
+  material: WireMaterial;     // copper or aluminum
+};
+
+/* ===== Measure options (persisted + stored per object) ===== */
 export type MeasureOptions = {
-  /** EMT size for the raceway being measured (optional until set by user). */
-  emtSize?: EMTSize;
+  // Raceway
+  emtSize: EMTSize;               // EMT raceway size
+  extraRacewayPerPoint: number;   // ft added per vertex for raceway
+  wasteFactor: number;            // multiplicative (e.g., 1.05 = 5% waste)
 
-  /** Extra feet added to raceway length for each vertex/point. */
-  extraRacewayPerPoint: number;
+  // Conductors (up to 3 groups)
+  conductors: [ConductorSpec, ConductorSpec, ConductorSpec];
+  extraConductorPerPoint: number; // ft added per point per conductor
+  boxesPerPoint: number;          // boxes per point along the run
 
-  /** Up to 3 conductor groups (e.g., phase set, neutral, ground). */
-  conductors: Array<{ count: number; size: EMTSize }>; // length 3
-
-  /** Extra feet per point added for each conductor. */
-  extraConductorPerPoint: number;
-
-  /** Junction boxes per point along the run. */
-  boxesPerPoint: number;
-
-  /** Optional linear waste factor (0–1 = 0%–100%). */
-  wastePct?: number;
-
-  /** Display options for drawing. */
+  // Display
   lineColor: string;
   pointColor: string;
   lineWeight: number;
   opaquePoints: boolean;
 };
 
-/* ===== Computed measurement result stored on each object ===== */
+/* ===== Result we compute & attach on each measured object ===== */
 export type MeasureResult = {
-  /** Number of points (vertices) in the run. */
   points: number;
-
-  /** Geometric path length (feet) from vertices at current calibration. */
-  baseLengthFt: number;
-
-  /** Raceways */
+  baseLengthFt: number; // geometric length from vertices (before extras/waste)
   raceway: {
-    /** EMT size applied to this object. */
     emtSize: EMTSize;
-    /** Extra LF added by rules (per-point, waste, etc). */
     extraFt: number;
-    /** Final LF used for raceway (baseLengthFt + extras). */
-    lengthFt: number;
+    lengthFt: number;   // total raceway LF after extras & waste
   };
-
-  /** Conductors (each group total LF already multiplied by count). */
   conductors: Array<{
-    size: EMTSize;
+    size: WireSize;
+    insulation: WireInsulation;
+    material: WireMaterial;
     count: number;
-    /** Total LF for this group (count × (base + extras)). */
-    lengthFt: number;
+    lengthFt: number;   // total LF for this group (qty * (base+extra) * waste)
   }>;
-
-  /** Boxes total for this object. */
-  boxes: number;
-
-  /** Optional timestamp for auditing. */
-  calculatedAt?: string; // ISO
+  boxes: number;        // total boxes along the run
+  calculatedAt: string;
 };
 
 /* ===== Takeoff objects ===== */
@@ -92,26 +85,15 @@ export type CountObject = {
   code: string; // required for counts
 };
 
-/** Common fields for line-like objects (segment, polyline, freeform). */
 type LineLikeBase = {
   id: string;
   pageIndex: number;
   vertices: XY[];
-
-  /** Optional tag code (e.g., device/run code). */
-  code?: string;
-
-  /** Optional stored base length (feet) if precomputed. */
-  lengthFt?: number;
-
-  /** Per-object inputs (what the user picked in the popup). */
-  measure?: MeasureOptions;
-
-  /** Per-object computed outputs (what we feed into the BOM). */
-  result?: MeasureResult;
-
-  /** Optional freeform note/comment. */
-  note?: string;
+  code?: string;                // allow tagging of line-like items
+  // Stored at commit time:
+  lengthFt?: number;            // base geometric LF at commit
+  measure?: MeasureOptions;     // user-entered options
+  result?: MeasureResult;       // computed outputs for BOM
 };
 
 export type SegmentObject  = LineLikeBase & { type: 'segment'  };
