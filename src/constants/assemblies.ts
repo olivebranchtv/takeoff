@@ -618,5 +618,566 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
       { id: 'box-1g-surface', description: 'Single-Gang Surface Box, plastic (for low-voltage)', unit: 'EA', quantityPer: 0.5, category: 'Boxes', wasteFactor: 1.02, notes: 'If junction needed' },
       { id: 'emt-connector-1/2', description: 'EMT Connector, 1/2", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
     ]
+  },
+
+  // ============================================================================
+  // POWER & SPECIAL CIRCUITS
+  // ============================================================================
+  {
+    id: 'recep-208v-20a',
+    code: 'RECEP-208V-20A',
+    name: '208V Single-Phase Receptacle 20A Assembly',
+    description: '208V single-phase receptacle NEMA 6-20R for equipment, welders, small machinery',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-208v-20a', description: 'Single Receptacle, 20A, 208V, NEMA 6-20R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'recep-240v-30a',
+    code: 'RECEP-240V-30A',
+    name: '240V 30A Receptacle Assembly',
+    description: '240V 30A receptacle NEMA 6-30R or L6-30R twist-lock for heavy equipment',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-2g', description: 'Raised Device Cover / Mud Ring, two-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-240v-30a', description: 'Single Receptacle, 30A, 240V, NEMA 6-30R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-2g', description: 'Device Cover Plate, two-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-1in', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-10', description: '#10 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'recep-50a-range',
+    code: 'RECEP-50A-RANGE',
+    name: '50A Range/Oven Receptacle Assembly',
+    description: '50A range/oven receptacle NEMA 14-50R, 125/250V for commercial kitchens',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-2g-deep', description: 'Raised Device Cover / Mud Ring, two-gang, deep', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-50a-range', description: 'Range Receptacle, 50A, 125/250V, NEMA 14-50R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-2g', description: 'Device Cover Plate, two-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-1.25in', description: 'EMT Connector, 1-1/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-8', description: '#8 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'recep-twist-lock-30a',
+    code: 'RECEP-L5-30',
+    name: '30A Twist-Lock Receptacle Assembly',
+    description: '30A twist-lock receptacle NEMA L5-30R for generators, temporary power',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-l5-30r', description: 'Twist-Lock Receptacle, 30A, 125V, NEMA L5-30R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-1in', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-10', description: '#10 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'welding-outlet-50a',
+    code: 'WELDING-50A',
+    name: 'Welding Receptacle 50A Assembly',
+    description: 'Welding receptacle 50A, NEMA 6-50R, 250V for shop welders',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-2g-deep', description: 'Raised Device Cover / Mud Ring, two-gang, deep', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-6-50r', description: 'Receptacle, 50A, 250V, NEMA 6-50R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-2g', description: 'Device Cover Plate, two-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-1.25in', description: 'EMT Connector, 1-1/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-8', description: '#8 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+
+  // ============================================================================
+  // MOTOR CONTROL & INDUSTRIAL
+  // ============================================================================
+  {
+    id: 'motor-starter-3hp',
+    code: 'MOTOR-3HP',
+    name: 'Motor Starter 3HP Assembly',
+    description: 'Magnetic motor starter, 3HP, 230V, NEMA size 1 with disconnect and overload',
+    type: 'panel',
+    isActive: true,
+    items: [
+      { id: 'motor-starter-3hp', description: 'Motor Starter, 3HP, 230V, NEMA 1, with overload', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'enclosure-nema1-12x16', description: 'NEMA 1 Enclosure, 12"x16"x6", steel', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'disconnect-30a-nf', description: 'Fusible Disconnect, 30A, 240V, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'emt-connector-1in', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05, notes: 'Line, load, control' },
+      { id: 'grounding-bushing', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'motor-starter-10hp',
+    code: 'MOTOR-10HP',
+    name: 'Motor Starter 10HP Assembly',
+    description: 'Magnetic motor starter, 10HP, 480V, NEMA size 2 with disconnect',
+    type: 'panel',
+    isActive: true,
+    items: [
+      { id: 'motor-starter-10hp', description: 'Motor Starter, 10HP, 480V, NEMA 2, with overload', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'enclosure-nema1-16x20', description: 'NEMA 1 Enclosure, 16"x20"x8", steel', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'disconnect-60a-f', description: 'Fused Disconnect, 60A, 480V, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'emt-connector-1.25in', description: 'EMT Connector, 1-1/4", steel', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', description: 'Grounding Bushing, 1-1/4", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'vfd-5hp',
+    code: 'VFD-5HP',
+    name: 'Variable Frequency Drive 5HP Assembly',
+    description: 'VFD, 5HP, 480V, with disconnect and bypass contactor',
+    type: 'panel',
+    isActive: true,
+    items: [
+      { id: 'vfd-5hp', description: 'Variable Frequency Drive, 5HP, 480V, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'disconnect-30a-nf', description: 'Non-Fused Disconnect, 30A, 480V, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'bypass-contactor', description: 'Bypass Contactor, 30A, 480V coil', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'emt-connector-1in', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 4, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'contactor-lighting-30a',
+    code: 'CONTACTOR-30A',
+    name: 'Lighting Contactor 30A Assembly',
+    description: 'Lighting contactor, 30A, 277V coil for large lighting banks',
+    type: 'panel',
+    isActive: true,
+    items: [
+      { id: 'contactor-30a-4p', description: 'Lighting Contactor, 30A, 4-pole, 277V coil', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'enclosure-nema1-8x10', description: 'NEMA 1 Enclosure, 8"x10"x4", steel', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', description: 'Grounding Bushing, 3/4", insulated throat', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+
+  // ============================================================================
+  // HVAC & MECHANICAL
+  // ============================================================================
+  {
+    id: 'hvac-rtu-whip',
+    code: 'HVAC-RTU-WHIP',
+    name: 'HVAC Rooftop Unit Whip Assembly',
+    description: 'RTU disconnect with 10 ft SEOW whip, 60A, NEMA 3R - most common TI HVAC connection',
+    type: 'panel',
+    isActive: true,
+    items: [
+      { id: 'disconnect-60a-nf-3r', description: 'Non-Fused Disconnect, 60A, 240V, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 },
+      { id: 'whip-seow-10ft-8/4', description: 'SEOW Cord, 10 ft, 8/4, outdoor rated', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 },
+      { id: 'cord-grip-1in', description: 'Cord Grip/Strain Relief, 1", steel, NEMA 3R', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'emt-connector-1in-comp', description: 'EMT Connector, 1", compression (wet location)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'hvac-condenser-disc',
+    code: 'HVAC-COND-DISC',
+    name: 'AC Condenser Disconnect 60A Assembly',
+    description: 'AC condenser disconnect, 60A fused, NEMA 3R for outdoor condensing units',
+    type: 'panel',
+    isActive: true,
+    items: [
+      { id: 'disconnect-60a-fused-3r', description: 'Fused Disconnect, 60A, 240V, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 },
+      { id: 'fuse-class-rk5-60a', description: 'Class RK5 Time-Delay Fuses, 60A, 250V', unit: 'EA', quantityPer: 2, category: 'Disconnects', wasteFactor: 1.02 },
+      { id: 'emt-connector-1in-comp', description: 'EMT Connector, 1", compression (wet location)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'exhaust-fan-control',
+    code: 'EXHAUST-FAN',
+    name: 'Exhaust Fan Control Station Assembly',
+    description: 'Exhaust fan control with timer and disconnect for restrooms, kitchens',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g-deep', description: 'Raised Device Cover / Mud Ring, single-gang, 5/8"', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'timer-switch-60min', description: 'Timer Switch, 60-minute, spring wound, 15A', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+
+  // ============================================================================
+  // EXTERIOR & SITE LIGHTING
+  // ============================================================================
+  {
+    id: 'pole-light-photocell',
+    code: 'POLE-LIGHT',
+    name: 'Parking Lot Pole Light Assembly',
+    description: 'Pole-mounted area light with photocell control, hand-hole base',
+    type: 'fixture',
+    isActive: true,
+    items: [
+      { id: 'pole-base-handhole', description: 'Light Pole Base with Hand-Hole, aluminum', unit: 'EA', quantityPer: 1, category: 'Site Lighting', wasteFactor: 1.00 },
+      { id: 'photocell-120-277v', description: 'Photocell, 120-277V, twist-lock', unit: 'EA', quantityPer: 1, category: 'Site Lighting', wasteFactor: 1.02 },
+      { id: 'emt-connector-1in-comp', description: 'EMT Connector, 1", compression (wet location)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 },
+      { id: 'wirenuts-assorted', description: 'Wire Nuts for connections', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'bollard-light',
+    code: 'BOLLARD-LIGHT',
+    name: 'Landscape Bollard Light Assembly',
+    description: 'Landscape bollard light for pathways, landscaping',
+    type: 'fixture',
+    isActive: true,
+    items: [
+      { id: 'bollard-base-concrete', description: 'Bollard Light Base/Stub for concrete mount', unit: 'EA', quantityPer: 1, category: 'Site Lighting', wasteFactor: 1.00 },
+      { id: 'pvc-conduit-stub-1in', description: 'PVC Conduit Stub, 1", schedule 40, 18" long', unit: 'EA', quantityPer: 1, category: 'Site Lighting', wasteFactor: 1.02 },
+      { id: 'pvc-coupling-1in', description: 'PVC Coupling, 1", schedule 40', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'wirenuts-assorted', description: 'Wire Nuts for connections', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'sign-outlet-timer',
+    code: 'SIGN-OUTLET',
+    name: 'Exterior Sign Outlet Assembly',
+    description: 'Exterior sign outlet with timer and photocell control',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-fs-1g-wp', description: 'FS Box, single-gang, 2" deep, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-20a-125v-wp', description: 'Receptacle, 20A, 125V, weather-resistant', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'cover-wp-1g-inuse', description: 'Weather-Proof In-Use Cover, single-gang', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'photocell-120v', description: 'Photocell, 120V, twist-lock', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4-comp', description: 'EMT Connector, 3/4", compression (wet location)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+    ]
+  },
+  {
+    id: 'ev-charger-level2',
+    code: 'EV-CHARGER-L2',
+    name: 'EV Charging Station Level 2 Assembly',
+    description: 'Electric vehicle charging station, Level 2, 40A, 208/240V with pedestal',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'ev-charger-40a', description: 'EV Charger, Level 2, 40A, 208/240V, wall/pedestal mount', unit: 'EA', quantityPer: 1, category: 'EV Charging', wasteFactor: 1.00, notes: 'Networked or standalone' },
+      { id: 'disconnect-60a-nf-3r', description: 'Non-Fused Disconnect, 60A, 240V, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'EV Charging', wasteFactor: 1.00 },
+      { id: 'emt-connector-1in-comp', description: 'EMT Connector, 1", compression', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+
+  // ============================================================================
+  // LOW VOLTAGE / AV
+  // ============================================================================
+  {
+    id: 'projector-outlet-ceiling',
+    code: 'PROJECTOR-OUTLET',
+    name: 'Ceiling Projector Outlet Assembly',
+    description: 'Ceiling-mounted projector outlet with power, data, and HDMI',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, ceiling rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-15a-125v', description: 'Receptacle, 15A, 125V, standard', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'mudring-2g-low-volt', description: 'Low-Voltage Mud Ring, two-gang (orange)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'hdmi-jack', description: 'HDMI Keystone Jack, female-to-female', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
+      { id: 'cat6-jack', description: 'CAT6 RJ45 Keystone Jack, UTP', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
+      { id: 'plate-combo-power-data', description: 'Combo Plate, power + 2-port data, white', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 }
+    ]
+  },
+  {
+    id: 'tv-mount-outlet',
+    code: 'TV-MOUNT-OUTLET',
+    name: 'Recessed TV Power/Data Outlet Assembly',
+    description: 'Recessed TV power and data outlet behind flat panel displays',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-recessed-tv', description: 'Recessed TV Box, low-voltage + power combo', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-15a-125v', description: 'Receptacle, 15A, 125V, standard', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'hdmi-jack', description: 'HDMI Keystone Jack, female-to-female', unit: 'EA', quantityPer: 2, category: 'Data/Comm', wasteFactor: 1.05 },
+      { id: 'plate-recessed-tv', description: 'Recessed TV Plate, white or ivory', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+    ]
+  },
+  {
+    id: 'sound-speaker-70v',
+    code: 'SPEAKER-70V',
+    name: '70V Distributed Audio Speaker Assembly',
+    description: '70V distributed audio ceiling speaker with volume control',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, ceiling rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'speaker-ring-70v', description: '70V Speaker Mounting Ring/Bracket', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.02 },
+      { id: 'volume-control-70v', description: '70V Volume Control, rotary, wall mount', unit: 'EA', quantityPer: 0.5, category: 'Data/Comm', wasteFactor: 1.02, notes: '1 per 2 speakers avg' },
+      { id: 'emt-connector-1/2', description: 'EMT Connector, 1/2", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+    ]
+  },
+  {
+    id: 'floor-monument-power-data',
+    code: 'FLOOR-MONUMENT',
+    name: 'Floor Monument Power/Data Assembly',
+    description: 'Floor monument box with power and data for conference room tables',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'floor-monument-box', description: 'Floor Monument Box, adjustable, steel or aluminum', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-20a-125v', description: 'Duplex Receptacle, 20A, 125V', unit: 'EA', quantityPer: 2, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'cat6-jack', description: 'CAT6 RJ45 Keystone Jack, UTP', unit: 'EA', quantityPer: 2, category: 'Data/Comm', wasteFactor: 1.05 },
+      { id: 'hdmi-jack', description: 'HDMI Keystone Jack, female-to-female', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
+      { id: 'cover-floor-monument', description: 'Floor Monument Cover/Lid, brushed aluminum', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05 }
+    ]
+  },
+
+  // ============================================================================
+  // BREAKERS (as assemblies for panel schedules)
+  // ============================================================================
+  {
+    id: 'breaker-1p-20a',
+    code: 'BKR-1P-20A',
+    name: 'Circuit Breaker 1-Pole 20A',
+    description: 'Single-pole circuit breaker, 20A, 120V - most common branch circuit',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'breaker-1p-20a', description: 'Circuit Breaker, 1-pole, 20A, 120V, 10kAIC', unit: 'EA', quantityPer: 1, category: 'Breakers', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'breaker-2p-30a',
+    code: 'BKR-2P-30A',
+    name: 'Circuit Breaker 2-Pole 30A',
+    description: 'Two-pole circuit breaker, 30A, 240V for HVAC, equipment',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'breaker-2p-30a', description: 'Circuit Breaker, 2-pole, 30A, 240V, 10kAIC', unit: 'EA', quantityPer: 1, category: 'Breakers', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'breaker-3p-100a',
+    code: 'BKR-3P-100A',
+    name: 'Circuit Breaker 3-Pole 100A',
+    description: 'Three-pole circuit breaker, 100A, 208V for feeders, large equipment',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'breaker-3p-100a', description: 'Circuit Breaker, 3-pole, 100A, 208V, 22kAIC', unit: 'EA', quantityPer: 1, category: 'Breakers', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'breaker-gfci-2p-20a',
+    code: 'BKR-GFCI-2P-20A',
+    name: 'GFCI Circuit Breaker 2-Pole 20A',
+    description: 'GFCI circuit breaker, 2-pole, 20A, 240V for outdoor equipment',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'breaker-gfci-2p-20a', description: 'GFCI Breaker, 2-pole, 20A, 240V, self-test', unit: 'EA', quantityPer: 1, category: 'Breakers', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'breaker-afci-1p-15a',
+    code: 'BKR-AFCI-1P-15A',
+    name: 'AFCI Circuit Breaker 1-Pole 15A',
+    description: 'AFCI circuit breaker, 1-pole, 15A for bedroom circuits per NEC 210.12',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'breaker-afci-1p-15a', description: 'AFCI Breaker, 1-pole, 15A, 120V, combination type', unit: 'EA', quantityPer: 1, category: 'Breakers', wasteFactor: 1.02 }
+    ]
+  },
+
+  // ============================================================================
+  // GROUNDING & BONDING
+  // ============================================================================
+  {
+    id: 'ground-rod-driven',
+    code: 'GROUND-ROD',
+    name: 'Ground Rod Assembly (Driven)',
+    description: '8 ft copper-clad ground rod, driven with clamp and wire',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'ground-rod-8ft', description: 'Ground Rod, 8 ft, 5/8" dia., copper-clad steel', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 },
+      { id: 'ground-rod-clamp', description: 'Ground Rod Clamp, bronze, 5/8" rod', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 },
+      { id: 'ground-wire-6cu', description: '#6 CU bare ground wire, 10 ft average', unit: 'FT', quantityPer: 10, category: 'Grounding', wasteFactor: 1.10 },
+      { id: 'pvc-conduit-3/4-5ft', description: 'PVC Conduit, 3/4", 5 ft for ground wire protection', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'ufer-ground-connection',
+    code: 'UFER-GROUND',
+    name: 'Ufer Ground Connection Assembly',
+    description: 'Concrete-encased electrode (Ufer) ground connection to rebar',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'ground-wire-4cu-bare', description: '#4 CU bare ground wire, 20 ft for rebar connection', unit: 'FT', quantityPer: 20, category: 'Grounding', wasteFactor: 1.10 },
+      { id: 'rebar-clamp', description: 'Rebar Ground Clamp, bronze, #4 rebar', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02, notes: 'Min 2 per NEC 250.52' },
+      { id: 'pvc-conduit-1in-10ft', description: 'PVC Conduit, 1", 10 ft for ground wire to panel', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+
+  // ============================================================================
+  // EMERGENCY POWER
+  // ============================================================================
+  {
+    id: 'generator-inlet-50a',
+    code: 'GEN-INLET-50A',
+    name: 'Generator Inlet Box 50A Assembly',
+    description: 'Generator inlet box, 50A, 125/250V, NEMA 14-50 twist-lock, NEMA 3R',
+    type: 'panel',
+    isActive: true,
+    items: [
+      { id: 'gen-inlet-50a', description: 'Generator Inlet Box, 50A, 125/250V, NEMA 14-50, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'Emergency Power', wasteFactor: 1.00 },
+      { id: 'inlet-receptacle-l14-50', description: 'Inlet Receptacle, L14-50R, flanged, 50A', unit: 'EA', quantityPer: 1, category: 'Emergency Power', wasteFactor: 1.02 },
+      { id: 'emt-connector-1.25in-comp', description: 'EMT Connector, 1-1/4", compression', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', description: 'Grounding Bushing, 1-1/4", insulated throat', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'transfer-switch-manual-30a',
+    code: 'XFER-SW-30A',
+    name: 'Manual Transfer Switch 30A Assembly',
+    description: 'Manual transfer switch, 30A, 10-circuit for generator backup',
+    type: 'panel',
+    isActive: true,
+    items: [
+      { id: 'transfer-switch-30a', description: 'Manual Transfer Switch, 30A, 10-circuit, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Emergency Power', wasteFactor: 1.00 },
+      { id: 'emt-connector-1in', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05, notes: 'Utility, generator, load' },
+      { id: 'grounding-bushing', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 3, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+
+  // ============================================================================
+  // SPECIAL ENCLOSURES
+  // ============================================================================
+  {
+    id: 'wiremold-surface-raceway',
+    code: 'WIREMOLD-2400',
+    name: 'Wiremold Surface Raceway Kit (per 10 ft)',
+    description: 'Surface raceway (Wiremold 2400 series) with fittings per 10 ft run',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'wiremold-2400-base', description: 'Wiremold 2400 Base, 10 ft section', unit: 'EA', quantityPer: 1, category: 'Raceways', wasteFactor: 1.05 },
+      { id: 'wiremold-2400-cover', description: 'Wiremold 2400 Cover, 10 ft section', unit: 'EA', quantityPer: 1, category: 'Raceways', wasteFactor: 1.05 },
+      { id: 'wiremold-2400-coupling', description: 'Wiremold 2400 Coupling', unit: 'EA', quantityPer: 1, category: 'Raceways', wasteFactor: 1.05 },
+      { id: 'wiremold-2400-elbow', description: 'Wiremold 2400 90° Flat Elbow', unit: 'EA', quantityPer: 2, category: 'Raceways', wasteFactor: 1.05, notes: 'Average 2 per run' },
+      { id: 'wiremold-2400-device-box', description: 'Wiremold 2400 Device Box', unit: 'EA', quantityPer: 1, category: 'Raceways', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'pvc-jbox-wp-4x4',
+    code: 'JBOX-PVC-4X4',
+    name: 'PVC Junction Box 4x4 NEMA 4X',
+    description: 'PVC junction box, NEMA 4X, for outdoor/wet locations',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'jbox-pvc-4x4', description: 'PVC Junction Box, 4"x4"x2", NEMA 4X, hinged cover', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'pvc-connector-3/4', description: 'PVC Conduit Connector, 3/4", compression', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'gasket-pvc', description: 'Gasket for PVC box, foam', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 }
+    ]
+  },
+
+  // ============================================================================
+  // HEALTHCARE SPECIFIC
+  // ============================================================================
+  {
+    id: 'hospital-grade-recep-ig',
+    code: 'RECEP-HOSP-IG',
+    name: 'Hospital Grade IG Receptacle Assembly',
+    description: 'Hospital grade isolated ground receptacle (green dot) for patient care areas',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-hosp-ig-20a', description: 'Hospital Grade IG Receptacle, 20A, 125V (green dot)', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'UL 1363, orange w/ green dot' },
+      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-wire-ig-12-insul', description: '#12 CU insulated green wire for IG', unit: 'FT', quantityPer: 15, category: 'Grounding', wasteFactor: 1.10 }
+    ]
+  },
+  {
+    id: 'patient-care-vicinity-recep',
+    code: 'RECEP-PATIENT-CARE',
+    name: 'Patient Care Vicinity Receptacle Assembly',
+    description: 'Patient care vicinity receptacle (red) on emergency circuit per NEC 517',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep (red for emergency)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-hosp-20a-red', description: 'Hospital Grade Receptacle, 20A, 125V, RED face', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'Emergency circuit per NEC 517' },
+      { id: 'plate-red-1g', description: 'Device Cover Plate, single-gang, RED', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4-red', description: 'EMT Connector, 3/4", steel (red conduit)', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'nurse-call-station',
+    code: 'NURSE-CALL',
+    name: 'Nurse Call Station Assembly',
+    description: 'Hospital nurse call station with emergency pull cord',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-2g-low-volt', description: 'Low-Voltage Mud Ring, two-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'nurse-call-station', description: 'Nurse Call Station, audio/visual with pull cord', unit: 'EA', quantityPer: 1, category: 'Healthcare', wasteFactor: 1.02 },
+      { id: 'plate-nurse-call', description: 'Nurse Call Plate, two-gang, white', unit: 'EA', quantityPer: 1, category: 'Healthcare', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+    ]
+  },
+
+  // ============================================================================
+  // SENSORS & ENERGY MANAGEMENT
+  // ============================================================================
+  {
+    id: 'occupancy-sensor-ceiling',
+    code: 'OCC-SENSOR-CEIL',
+    name: 'Ceiling Occupancy Sensor Assembly',
+    description: 'Ceiling-mount occupancy sensor, 360° coverage, for high-bay/warehouse',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, ceiling rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'occ-sensor-ceiling', description: 'Occupancy Sensor, ceiling mount, 360°, PIR/ultrasonic', unit: 'EA', quantityPer: 1, category: 'Controls', wasteFactor: 1.02 },
+      { id: 'mounting-plate-sensor', description: 'Sensor Mounting Plate for 4" box', unit: 'EA', quantityPer: 1, category: 'Controls', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'wirenuts-assorted', description: 'Wire Nuts for sensor', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'daylight-sensor',
+    code: 'DAYLIGHT-SENSOR',
+    name: 'Daylight Harvesting Sensor Assembly',
+    description: 'Photocell daylight sensor for dimming control and energy savings',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, ceiling/wall rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'daylight-sensor', description: 'Daylight Sensor, 0-10V dimming output', unit: 'EA', quantityPer: 1, category: 'Controls', wasteFactor: 1.02 },
+      { id: 'mounting-plate-sensor', description: 'Sensor Mounting Plate', unit: 'EA', quantityPer: 1, category: 'Controls', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+    ]
   }
 ];
