@@ -5,6 +5,7 @@ import { loadPdfFromBytes } from '@/lib/pdf';
 import PDFViewport from '@/components/PDFViewport';
 import TagManager from '@/components/TagManager';
 import { AssemblyPanel } from '@/components/AssemblyPanel';
+import { PricingPanel } from '@/components/PricingPanel';
 import { useStore } from '@/state/store';
 import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
 import { pathLength } from '@/utils/geometry';
@@ -77,6 +78,7 @@ export default function App() {
 
   /* ---------- Assembly Panel modal ---------- */
   const [assemblyPanelOpen, setAssemblyPanelOpen] = useState(false);
+  const [pricingPanelOpen, setPricingPanelOpen] = useState(false);
 
   /* ---------- File menu ---------- */
   const [fileMenuOpen, setFileMenuOpen] = useState(false);
@@ -750,6 +752,7 @@ export default function App() {
 
         <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
         <button className="btn" onClick={()=>setAssemblyPanelOpen(true)}>Assemblies</button>
+        <button className="btn" onClick={()=>setPricingPanelOpen(true)} style={{background:'#2e7d32', color:'#fff', fontWeight:'bold'}}>💰 Pricing & Bidding</button>
         <button className="btn" onClick={exportExcelFull}>Export Excel (Full BOM)</button>
         <button className="btn" onClick={exportFixturesOnly}>Export Lighting Fixtures</button>
 
@@ -953,6 +956,10 @@ export default function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {pricingPanelOpen && (
+        <PricingPanel pages={pages} onClose={() => setPricingPanelOpen(false)} />
       )}
     </div>
   );
