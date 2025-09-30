@@ -1,21 +1,22 @@
 // src/components/FileMenu.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown, FolderOpen, Save, Download } from 'lucide-react';
+import { ChevronDown, FolderOpen, Save, Download, BookOpen } from 'lucide-react';
 import { useToast } from '@/ui/Toast';
 import { openProjectFromFile } from '@/features/project/openProject';
-import { useAppStore } from '@/state/store';
+import { useStore } from '@/state/store';
 
 interface FileMenuProps {
-  onAction?: (action: string) => void; // optional if you already use this
+  onAction?: (action: string) => void;
+  onOpenGuide?: () => void;
 }
 
-export const FileMenu: React.FC<FileMenuProps> = ({ onAction }) => {
+export const FileMenu: React.FC<FileMenuProps> = ({ onAction, onOpenGuide }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
 
-  const currentProject = useAppStore(s => s.currentProject);
+  const currentProject = useStore(s => s.currentProject);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -108,6 +109,16 @@ export const FileMenu: React.FC<FileMenuProps> = ({ onAction }) => {
             title="Save (app-specific action)"
           >
             <Save size={16} /> Save
+          </button>
+
+          <div style={{ borderTop: '1px solid #334155', margin: '8px 0' }} />
+
+          <button
+            onClick={() => { onOpenGuide?.(); setIsOpen(false); }}
+            style={itemStyle}
+            title="Complete A to Z User Guide"
+          >
+            <BookOpen size={16} /> User Guide
           </button>
         </div>
       )}

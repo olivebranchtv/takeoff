@@ -6,6 +6,7 @@ import PDFViewport from '@/components/PDFViewport';
 import TagManager from '@/components/TagManager';
 import { AssemblyPanel } from '@/components/AssemblyPanel';
 import { PricingPanel } from '@/components/PricingPanel';
+import { UserGuide } from '@/components/UserGuide';
 import { useStore } from '@/state/store';
 import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
 import { pathLength } from '@/utils/geometry';
@@ -83,6 +84,7 @@ export default function App() {
   /* ---------- File menu ---------- */
   const [fileMenuOpen, setFileMenuOpen] = useState(false);
   const [lastSaveBase, setLastSaveBase] = useState<string | null>(null);
+  const [userGuideOpen, setUserGuideOpen] = useState(false);
 
   /* ---------- per-project "Project Tags" ---------- */
   const [projectTags, setProjectTags] = useState<TagLite[]>([]);
@@ -661,6 +663,8 @@ export default function App() {
               <MenuItem label="Print" onClick={()=>{setFileMenuOpen(false); doPrint();}} />
               <div style={{borderTop:'1px solid #eee'}} />
               <MenuItem label="Close Project" onClick={()=>{setFileMenuOpen(false); doCloseProject();}} />
+              <div style={{borderTop:'1px solid #eee'}} />
+              <MenuItem label="📘 User Guide" onClick={()=>{setFileMenuOpen(false); setUserGuideOpen(true);}} />
             </div>
           )}
         </div>
@@ -960,6 +964,10 @@ export default function App() {
 
       {pricingPanelOpen && (
         <PricingPanel pages={pages} onClose={() => setPricingPanelOpen(false)} />
+      )}
+
+      {userGuideOpen && (
+        <UserGuide onClose={() => setUserGuideOpen(false)} />
       )}
     </div>
   );
