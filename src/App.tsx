@@ -488,133 +488,27 @@ export default function App() {
     }
   }
 
-  /* Full BOM Excel with detailed measurements */
+  /* Full BOM Excel - Professional Industry-Standard Format */
   const exportExcelFull = async () => {
-    const XLSX = await ensureXLSX();
-    const { countByCode, measByCode } = aggregate();
+    try {
+      const { exportProfessionalBOM } = await import('@/utils/excelBOM');
+      const { tags, assemblies } = useStore.getState();
 
-    const rowsFor = (filterFn: (code: string) => boolean) =>
-      Array.from(countByCode.entries())
-        .filter(([code]) => filterFn(code))
-        .map(([code, count]) => ({ Code: code, Name: nameForCode(code), Count: count }))
-        .sort((a, b) => a.Code.localeCompare(b.Code));
+      const baseName =
+        useStore.getState().getProjectName()?.trim() ||
+        (pdfName || fileName || 'Electrical-BOM').replace(/\.[^.]+$/, '');
 
-    const assumptionsRows = [
-      { Assumption: 'Scope', Value: 'Electrical takeoff – quantities only; no material submittals included.' },
-      { Assumption: 'Drawings', Value: (pdfName || fileName) || '—' },
-      { Assumption: 'Units', Value: 'Linear feet (LF) measured from calibrated pages.' },
-      { Assumption: 'Exclusions', Value: 'Permits, taxes, engineering, as-built changes.' },
-      { Assumption: 'Notes', Value: 'Verify all quantities and device types in the field.' },
-    ];
-
-    const lightingRows = rowsFor(isLighting);
-    const controlsRows = rowsFor((code)=>catOf(code).includes('control'));
-    const receptRows  = rowsFor((code)=>catOf(code).includes('receptacle'));
-    const powerRows   = rowsFor((code)=>catOf(code).includes('power'));
-    const dataRows    = rowsFor((code)=>catOf(code).includes('data') || catOf(code).includes('comm'));
-    const fireRows    = rowsFor((code)=>catOf(code).includes('fire alarm'));
-    const specialRows = rowsFor((code)=>catOf(code).includes('special'));
-
-    const countAllRows = Array.from(countByCode.entries())
-      .map(([code, count]) => ({ Code: code, Name: nameForCode(code), Count: count }))
-      .sort((a, b) => a.Code.localeCompare(b.Code));
-
-    const summaryRows = [
-      { Metric: 'Total Tags', Value: bom.totalTags },
-      { Metric: 'Segment LF', Value: bom.segLF.toFixed(2) },
-      { Metric: 'Polyline LF', Value: bom.plLF.toFixed(2) },
-      { Metric: 'Freeform LF', Value: bom.ffLF.toFixed(2) },
-      { Metric: 'Total LF', Value: bom.totalLF.toFixed(2) },
-      { Metric: 'Calibrated Pages', Value: `${bom.calibratedCount}/${bom.totalPages}` },
-    ];
-
-    // Build itemized measurement rows with all raceway/conductor details
-    const itemRows = buildBOMRows(pages, 'itemized');
-    const detailedMeasRows = itemRows.map(r => {
-      const c = r.conductors ?? [];
-      const c1 = c[0] ?? { count: 0, size: '', insulation: '', material: '' };
-      const c2 = c[1] ?? { count: 0, size: '', insulation: '', material: '' };
-      const c3 = c[2] ?? { count: 0, size: '', insulation: '', material: '' };
-
-      // Format wire specification like "3 #12 THHN CU"
-      const formatWire = (cond: typeof c1) => {
-        if (!cond.count || !cond.size) return '';
-        const parts = [
-          cond.count.toString(),
-          cond.size,
-          cond.insulation || '',
-          cond.material || ''
-        ].filter(p => p);
-        return parts.join(' ');
-      };
-
-      const row: any = {
-        'Run ID': `${r.tagCode}${r.index ? '-' + r.index : ''}`,
-        'Tag Code': r.tagCode,
-        'Tag Name': r.tagName || '',
-        'Category': r.category || '',
-        'Shape': r.shape,
-        'Page': r.pageIndex + 1,
-      };
-
-      if (r.shape !== 'count') {
-        row['EMT Size'] = r.emtSize || '';
-        row['Points'] = r.points || 0;
-        row['Geometry LF'] = typeof r.lengthFt === 'number' ? +r.lengthFt.toFixed(2) : 0;
-        row['Raceway LF'] = typeof r.racewayLf === 'number' ? +r.racewayLf.toFixed(2) : 0;
-        row['Wire 1'] = formatWire(c1);
-        row['Wire 2'] = formatWire(c2);
-        row['Wire 3'] = formatWire(c3);
-        row['Conductor LF'] = typeof r.conductorLfTotal === 'number' ? +r.conductorLfTotal.toFixed(2) : 0;
-        row['Boxes'] = typeof r.boxes === 'number' ? r.boxes : 0;
-      } else {
-        row['Qty'] = r.qty;
-      }
-
-      if (r.note) {
-        row['Notes'] = r.note;
-      }
-
-      return row;
-    });
-
-    // Build summarized panels by tag code
-    const sumRows = buildBOMRows(pages, 'summarized');
-    const panelSummaryRows = sumRows
-      .filter(r => r.shape !== 'count')
-      .map(r => ({
-        'Tag Code': r.tagCode,
-        'Tag Name': r.tagName || '',
-        'Category': r.category || '',
-        'EMT Size': r.emtSize || '',
-        'Shape': r.shape,
-        'Qty': r.qty,
-        'Total Geometry LF': typeof r.lengthFt === 'number' ? +r.lengthFt.toFixed(2) : 0,
-        'Total Raceway LF': typeof r.racewayLf === 'number' ? +r.racewayLf.toFixed(2) : 0,
-        'Total Conductor LF': typeof r.conductorLfTotal === 'number' ? +r.conductorLfTotal.toFixed(2) : 0,
-        'Total Boxes': typeof r.boxes === 'number' ? r.boxes : 0,
-      }))
-      .sort((a, b) => a['Tag Code'].localeCompare(b['Tag Code']));
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(assumptionsRows), 'Assumptions');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), 'Summary');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailedMeasRows), 'Measurements (Itemized)');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(panelSummaryRows), 'Panels Summary');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(lightingRows), 'Lighting');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(controlsRows), 'Lighting Controls');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(receptRows), 'Receptacles');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(powerRows), 'Power');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataRows), 'Data-Comm');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(fireRows), 'Fire Alarm');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(specialRows), 'Special Systems');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(countAllRows), 'Counts (All)');
-
-    const baseName =
-      useStore.getState().getProjectName()?.trim() ||
-      (pdfName || fileName || 'BOM').replace(/\.[^.]+$/, '');
-
-    XLSX.writeFile(wb, `${baseName}.xlsx`);
+      await exportProfessionalBOM(
+        pages,
+        tags,
+        assemblies,
+        baseName,
+        pdfName || fileName || 'Drawing Set'
+      );
+    } catch (error) {
+      console.error('BOM export error:', error);
+      alert('Failed to export BOM. Check console for details.');
+    }
   };
 
   /* Existing fixtures-only Excel (kept) */
