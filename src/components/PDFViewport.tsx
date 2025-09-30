@@ -213,7 +213,7 @@ export default function PDFViewport({ pdf }: Props) {
     } else if (tool === 'segment') {
       drawingRef.current = { type: 'segment', pts: [posPage] };
     } else if (tool === 'polyline') {
-      if (drawingRef.current.type !== 'polyline' || drawingRef.current.pts.length === 0) {
+      if (drawingRef.current.type !== 'polyline') {
         // Show measure options dialog before starting polyline
         setPendingMeasureType('polyline');
         setMeasureDialogOpen(true);
@@ -222,16 +222,11 @@ export default function PDFViewport({ pdf }: Props) {
         drawingRef.current.pts.push(posPage);
       }
     } else if (tool === 'freeform') {
-      if (drawingRef.current.type !== 'freeform' || drawingRef.current.pts.length === 0) {
+      if (drawingRef.current.type !== 'freeform') {
         // Show measure options dialog before starting freeform
         setPendingMeasureType('freeform');
         setMeasureDialogOpen(true);
         return;
-      } else {
-        if (drawingRef.current.pts.length === 0) {
-          drawingRef.current.pts = [posPage];
-        }
-        freeformActive.current = true;
       }
     } else if (tool === 'calibrate') {
       const page = pages.find(p => p.pageIndex === activePage)!;
@@ -309,12 +304,12 @@ export default function PDFViewport({ pdf }: Props) {
     setMeasureOptions(options);
     
     // Start the measurement with the selected type
-    if (pendingMeasureType && cursorPageRef.current) {
-      drawingRef.current = { type: pendingMeasureType, pts: [cursorPageRef.current] };
+    if (pendingMeasureType) {
+      drawingRef.current = { type: pendingMeasureType, pts: [] };
       if (pendingMeasureType === 'freeform') {
-        freeformActive.current = false; // Will be activated on next mouse down
+        freeformActive.current = false;
       }
-      updateLiveLabel(info!);
+      if (info) updateLiveLabel(info);
       setPaintTick(t => t + 1);
     }
     
