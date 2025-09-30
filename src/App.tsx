@@ -61,9 +61,6 @@ async function resolvePageLabels(doc: any): Promise<string[]> {
   return Array.from({ length: count }, (_, i) => `Page ${i + 1}`);
 }
 
-/** Preferred category order for pickers (others follow alphabetically) */
-const MASTER_CATEGORY_ORDER = ['Lights', 'Receptacles'];
-
 export default function App() {
   /* ---------- refs ---------- */
   const pdfFileRef = useRef<HTMLInputElement>(null);
@@ -936,6 +933,49 @@ function SidebarBOM({ bom }:{
     calibratedCount: number; totalPages: number;
   }
 }) {
+  const { pages } = useStore();
+
+  // Build itemized rows: one row per measurement object (polyline, freeform, segment)
+  type ItemRow = {
+    id: string;
+    code: string;
+    index: number;        // sequence per-code (1..n)
+    shape: 'segment'|'polyline'|'freeform';
+    lengthFt: number;
+    pageIndex: number;
+  };
+
+  const itemized: ItemRow[] = React.useMemo(() => {
+    const rows: ItemRow[] = [];
+    const seq: Record<string, number> = {};
+    for (const p of pages) {
+      const ppf = p.pixelsPerFoot ?? 0;
+      for (const o of (p.objects || [])) {
+        if (o.type === 'segment' || o.type === 'polyline' || o.type === 'freeform') {
+          const code = String((o as any).code || '').toUpperCase();
+          if (!code) continue;
+          const idx = (seq[code] = (seq[code] || 0) + 1);
+          const verts = (o.vertices || []);
+          const pxLen = Array.isArray(verts) ? pathLength(verts) : 0;
+          const lenFt = typeof (o as any).lengthFt === 'number'
+            ? (o as any).lengthFt
+            : (ppf > 0 ? pxLen / ppf : 0);
+          rows.push({
+            id: o.id,
+            code,
+            index: idx,
+            shape: o.type,
+            lengthFt: lenFt,
+            pageIndex: p.pageIndex,
+          });
+        }
+      }
+    }
+    // sort by code then index
+    rows.sort((a,b)=> a.code === b.code ? a.index - b.index : a.code.localeCompare(b.code));
+    return rows;
+  }, [pages]);
+
   return (
     <div>
       <div style={{display:'flex', alignItems:'center', gap:8, padding:'8px 10px', position:'sticky', top:0, background:'#fff', zIndex:2, borderBottom:'1px solid #f2f2f2'}}>
@@ -978,6 +1018,34 @@ function SidebarBOM({ bom }:{
                   <td style={{padding:'6px 4px'}}>{r.lf.toFixed(2)}</td>
                 </tr>
               ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* NEW: Itemized Measurements */}
+        <div style={{padding:'0 0 20px 0'}}>
+          <div style={{marginBottom:8, fontWeight:600}}>Itemized Measurements</div>
+          <table style={{width:'100%', borderCollapse:'collapse', fontSize:14}}>
+            <thead>
+              <tr style={{borderBottom:'1px solid #eee'}}>
+                <th style={{textAlign:'left', padding:'6px 4px'}}>Run</th>
+                <th style={{textAlign:'left', padding:'6px 4px'}}>Shape</th>
+                <th style={{textAlign:'left', padding:'6px 4px'}}>LF</th>
+                <th style={{textAlign:'left', padding:'6px 4px'}}>Page</th>
+              </tr>
+            </thead>
+            <tbody>
+              {itemized.map(r => (
+                <tr key={r.id} style={{borderBottom:'1px solid #f3f3f3'}}>
+                  <td style={{padding:'6px 4px', fontWeight:600}}>{r.code}-{r.index}</td>
+                  <td style={{padding:'6px 4px'}}>{r.shape}</td>
+                  <td style={{padding:'6px 4px'}}>{r.lengthFt.toFixed(2)}</td>
+                  <td style={{padding:'6px 4px'}}>{r.pageIndex + 1}</td>
+                </tr>
+              ))}
+              {itemized.length === 0 && (
+                <tr><td colSpan={4} style={{padding:'10px', color:'#666'}}>No measurements yet.</td></tr>
+              )}
             </tbody>
           </table>
         </div>
