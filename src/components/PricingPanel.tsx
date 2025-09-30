@@ -606,7 +606,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
       {!pricesLoaded && !isLoading && (
         <div style={{ marginTop: '30px', padding: '15px', background: '#fff3cd', borderRadius: '6px', fontSize: '12px', color: '#856404' }}>
           <strong>Note:</strong> Material costs default to $0 until pricing database is loaded.
-          Click "📁 Upload Pricing Excel" above to load your material costs. Your pricing will be saved to the database and automatically load next time!
+          Click "📁 Upload Pricing Excel\" above to load your material costs. Your pricing will be saved to the database and automatically load next time!
         </div>
       )}
 
