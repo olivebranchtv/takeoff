@@ -984,58 +984,192 @@ function SidebarBOM({ bom, onToggle }:{
   };
   onToggle: () => void;
 }) {
-  const { pages } = useStore();
+  const { pages, tags: storeTags } = useStore();
+  const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(new Set(['Lights', 'Receptacles', 'Switches', 'Panels']));
 
   const itemized = React.useMemo(() => {
     const allRows = buildBOMRows(pages, 'itemized');
     return allRows.filter(r => r.shape !== 'count');
   }, [pages]);
 
+  // Group tags by category
+  const categorizedTags = React.useMemo(() => {
+    const groups = new Map<string, { code: string; tags: number; meas: number; lf: number; name: string }[]>();
+
+    bom.rows.forEach(row => {
+      const tag = storeTags.find(t => t.code === row.code);
+      const category = tag?.category || 'Other';
+
+      if (!groups.has(category)) {
+        groups.set(category, []);
+      }
+      groups.get(category)!.push({
+        code: row.code,
+        tags: row.tags,
+        meas: row.meas,
+        lf: row.lf,
+        name: tag?.name || row.code
+      });
+    });
+
+    // Sort categories and items within each category
+    const sortedCategories = Array.from(groups.entries()).sort((a, b) => {
+      const order = ['Lights', 'Receptacles', 'Switches', 'Panels', 'Data/Comm', 'Fire Alarm', 'Equipment', 'Other'];
+      const aIndex = order.indexOf(a[0]);
+      const bIndex = order.indexOf(b[0]);
+      if (aIndex === -1 && bIndex === -1) return a[0].localeCompare(b[0]);
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
+
+    return sortedCategories;
+  }, [bom.rows, storeTags]);
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const icons: Record<string, string> = {
+      'Lights': '💡',
+      'Receptacles': '🔌',
+      'Switches': '🔘',
+      'Panels': '⚡',
+      'Data/Comm': '📡',
+      'Fire Alarm': '🔥',
+      'Equipment': '⚙️',
+      'Other': '📦'
+    };
+    return icons[category] || '📦';
+  };
+
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      'Lights': '#F97316',
+      'Receptacles': '#3B82F6',
+      'Switches': '#60A5FA',
+      'Panels': '#2563EB',
+      'Data/Comm': '#8B5CF6',
+      'Fire Alarm': '#EF4444',
+      'Equipment': '#10B981',
+      'Other': '#6B7280'
+    };
+    return colors[category] || '#6B7280';
+  };
+
   return (
     <div>
-      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, padding:'8px 10px', position:'sticky', top:0, background:'#fff', zIndex:2, borderBottom:'1px solid #f2f2f2'}}>
-        <div className="label" style={{fontWeight:700}}>BOM Summary</div>
-        <button className="btn" onClick={onToggle} style={{fontSize:12, padding:'2px 8px'}} title="Hide sidebar">‹ Hide</button>
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, padding:'8px 10px', position:'sticky', top:0, background:'#0d3b66', zIndex:2, borderBottom:'2px solid #124a85', color:'#fff'}}>
+        <div style={{fontWeight:700, fontSize:14}}>📋 Live BOM Summary</div>
+        <button className="btn" onClick={onToggle} style={{fontSize:12, padding:'2px 8px', color:'#fff', borderColor:'#2d5c8f', background:'#124a85'}} title="Hide sidebar">‹ Hide</button>
       </div>
 
-      <div style={{padding:'10px'}}>
-        <div style={{padding:'0 0 12px 0', color:'#666', fontSize:13}}>
-          {bom.calibratedCount}/{bom.totalPages} page(s) calibrated.
+      <div style={{padding:'12px'}}>
+        {/* Calibration Status */}
+        <div style={{padding:'8px 10px', marginBottom:12, background: bom.calibratedCount === bom.totalPages ? '#d4edda' : '#fff3cd', border:'1px solid ' + (bom.calibratedCount === bom.totalPages ? '#c3e6cb' : '#ffc107'), borderRadius:6, fontSize:12}}>
+          <strong>Calibration:</strong> {bom.calibratedCount}/{bom.totalPages} pages
+          {bom.calibratedCount < bom.totalPages && <span style={{color:'#856404'}}> ⚠️ Calibrate remaining pages</span>}
+          {bom.calibratedCount === bom.totalPages && <span style={{color:'#155724'}}> ✓ All calibrated!</span>}
         </div>
 
-        <div style={{padding:'0 0 12px 0'}}>
-          <div style={{marginBottom:8, fontWeight:600}}>Totals</div>
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', rowGap:6}}>
-            <div>Total Tags:</div><div>{bom.totalTags}</div>
-            <div>Segment LF:</div><div>{bom.segLF.toFixed(2)}</div>
-            <div>Polyline LF:</div><div>{bom.plLF.toFixed(2)}</div>
-            <div>Freeform LF:</div><div>{bom.ffLF.toFixed(2)}</div>
-            <div style={{fontWeight:700}}>Total LF:</div><div style={{fontWeight:700}}>{bom.totalLF.toFixed(2)}</div>
+        {/* Quick Totals Card */}
+        <div style={{padding:'10px', marginBottom:16, background:'#f8f9fa', border:'1px solid #dee2e6', borderRadius:8}}>
+          <div style={{marginBottom:8, fontWeight:700, fontSize:13, color:'#495057'}}>Project Totals</div>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', rowGap:6, fontSize:13}}>
+            <div style={{color:'#6c757d'}}>Total Devices:</div><div style={{fontWeight:600}}>{bom.totalTags}</div>
+            <div style={{color:'#6c757d'}}>Total Conduit:</div><div style={{fontWeight:600}}>{bom.totalLF.toFixed(0)} LF</div>
           </div>
         </div>
 
-        <div style={{padding:'0 0 20px 0'}}>
-          <div style={{marginBottom:8, fontWeight:600}}>Counts by Code</div>
-          <table style={{width:'100%', borderCollapse:'collapse', fontSize:14}}>
-            <thead>
-              <tr style={{borderBottom:'1px solid #eee'}}>
-                <th style={{textAlign:'left', padding:'6px 4px'}}>Code</th>
-                <th style={{textAlign:'left', padding:'6px 4px'}}>Tags</th>
-                <th style={{textAlign:'left', padding:'6px 4px'}}>Meas</th>
-                <th style={{textAlign:'left', padding:'6px 4px'}}>LF</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bom.rows.map(r=>(
-                <tr key={r.code} style={{borderBottom:'1px solid #f3f3f3'}}>
-                  <td style={{padding:'6px 4px', fontWeight:600}}>{r.code}</td>
-                  <td style={{padding:'6px 4px'}}>{r.tags}</td>
-                  <td style={{padding:'6px 4px'}}>{r.meas}</td>
-                  <td style={{padding:'6px 4px'}}>{r.lf.toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Categorized Tags */}
+        <div style={{marginBottom:16}}>
+          <div style={{marginBottom:10, fontWeight:700, fontSize:14, color:'#212529'}}>Devices by Category</div>
+
+          {categorizedTags.length === 0 && (
+            <div style={{padding:'20px', textAlign:'center', color:'#6c757d', fontSize:13, background:'#f8f9fa', borderRadius:6}}>
+              No devices tagged yet. Start tagging to see your progress here!
+            </div>
+          )}
+
+          {categorizedTags.map(([category, items]) => {
+            const isExpanded = expandedCategories.has(category);
+            const categoryTotal = items.reduce((sum, item) => sum + item.tags, 0);
+            const color = getCategoryColor(category);
+
+            return (
+              <div key={category} style={{marginBottom:8, border:'1px solid #dee2e6', borderRadius:6, overflow:'hidden'}}>
+                {/* Category Header */}
+                <button
+                  onClick={() => toggleCategory(category)}
+                  style={{
+                    width:'100%',
+                    display:'flex',
+                    alignItems:'center',
+                    justifyContent:'space-between',
+                    padding:'8px 10px',
+                    background: isExpanded ? color : '#f8f9fa',
+                    color: isExpanded ? '#fff' : '#212529',
+                    border:'none',
+                    cursor:'pointer',
+                    fontSize:13,
+                    fontWeight:600,
+                    transition:'background 0.2s'
+                  }}
+                >
+                  <div style={{display:'flex', alignItems:'center', gap:6}}>
+                    <span>{isExpanded ? '▾' : '▸'}</span>
+                    <span>{getCategoryIcon(category)}</span>
+                    <span>{category}</span>
+                  </div>
+                  <div style={{
+                    padding:'2px 8px',
+                    background: isExpanded ? 'rgba(255,255,255,0.2)' : '#e9ecef',
+                    color: isExpanded ? '#fff' : '#495057',
+                    borderRadius:12,
+                    fontSize:12,
+                    fontWeight:700
+                  }}>
+                    {categoryTotal}
+                  </div>
+                </button>
+
+                {/* Category Items */}
+                {isExpanded && (
+                  <div style={{background:'#fff'}}>
+                    {items.map(item => (
+                      <div
+                        key={item.code}
+                        style={{
+                          display:'grid',
+                          gridTemplateColumns:'80px 1fr 50px',
+                          gap:8,
+                          padding:'6px 10px',
+                          borderTop:'1px solid #f1f3f5',
+                          fontSize:12,
+                          alignItems:'center'
+                        }}
+                      >
+                        <div style={{fontWeight:700, color}}>{item.code}</div>
+                        <div style={{color:'#6c757d', fontSize:11, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}} title={item.name}>
+                          {item.name}
+                        </div>
+                        <div style={{textAlign:'right', fontWeight:600, color:'#212529'}}>{item.tags}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* NEW: Itemized Measurements */}
