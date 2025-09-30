@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { useStore } from '@/state/store';
 import { PricingDatabase, calculateProjectCosts, type ProjectCosts } from '@/utils/pricing';
 import { loadMaterialPricingFromSupabase, saveMaterialPricingToSupabase, loadCompanySettings, saveCompanySettings, saveProjectEstimate, type MaterialPricing } from '@/utils/supabasePricing';
+import { loadDemoPricing } from '@/utils/demoPricing';
 import type { PageState } from '@/types';
 
 interface PricingPanelProps {
@@ -163,6 +164,13 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
     }
   };
 
+  const handleLoadDemoPricing = () => {
+    const loaded = loadDemoPricing(pricingDb);
+    setPricesLoaded(true);
+    setPriceCount(loaded);
+    alert(`Loaded ${loaded} demo material prices!\n\nNote: This is sample data for demonstration purposes.\nNot saved to database.`);
+  };
+
   // Calculate costs whenever inputs change
   useEffect(() => {
     try {
@@ -300,31 +308,48 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
           <div style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: pricesLoaded ? '#155724' : '#856404' }}>
             {pricesLoaded ? `✓ ${priceCount} Material Prices Loaded from Database` : '⚠ No Material Pricing Loaded'}
           </div>
-          <label
-            htmlFor="pricing-upload"
-            style={{
-              display: 'inline-block',
-              padding: '8px 12px',
-              background: '#2e7d32',
-              color: '#fff',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: '500'
-            }}
-          >
-            📁 Upload Pricing Excel
-          </label>
-          <input
-            id="pricing-upload"
-            type="file"
-            accept=".xlsx,.xls"
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) loadPricingFile(file);
-            }}
-          />
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <label
+              htmlFor="pricing-upload"
+              style={{
+                display: 'inline-block',
+                padding: '8px 12px',
+                background: '#2e7d32',
+                color: '#fff',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500'
+              }}
+            >
+              📁 Upload Pricing Excel
+            </label>
+            <input
+              id="pricing-upload"
+              type="file"
+              accept=".xlsx,.xls"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) loadPricingFile(file);
+              }}
+            />
+            <button
+              onClick={handleLoadDemoPricing}
+              style={{
+                padding: '8px 12px',
+                background: '#1976d2',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500'
+              }}
+            >
+              🎯 Load Demo Pricing
+            </button>
+          </div>
         </div>
       )}
 

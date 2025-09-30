@@ -8,6 +8,7 @@ import { AssemblyPanel } from '@/components/AssemblyPanel';
 import { PricingPanel } from '@/components/PricingPanel';
 import { UserGuide } from '@/components/UserGuide';
 import { AIAnalysisPanel } from '@/components/AIAnalysisPanel';
+import { SettingsPanel } from '@/components/SettingsPanel';
 import { analyzeDrawingsWithImages, getOpenAIApiKey, setOpenAIApiKey, type ProjectAnalysis } from '@/utils/openaiAnalysis';
 import { useStore } from '@/state/store';
 import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
@@ -85,6 +86,7 @@ export default function App() {
   const [aiAnalysisOpen, setAiAnalysisOpen] = useState(false);
   const [aiAnalysisResult, setAiAnalysisResult] = useState<ProjectAnalysis | null>(null);
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   /* ---------- File menu ---------- */
   const [fileMenuOpen, setFileMenuOpen] = useState(false);
@@ -874,6 +876,7 @@ export default function App() {
         <span style={{marginLeft:8, maxWidth:320, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}} title={pdfName || fileName}>
           {pdfName || fileName}
         </span>
+        <button className="btn" onClick={()=>setSettingsOpen(true)} style={{marginLeft:'auto'}}>⚙️ Settings</button>
       </div>
 
       {/* TOOLBAR (tools + zoom) */}
@@ -1134,6 +1137,10 @@ export default function App() {
           onClose={() => setAiAnalysisOpen(false)}
           onExport={exportAIAnalysis}
         />
+      )}
+
+      {settingsOpen && (
+        <SettingsPanel onClose={() => setSettingsOpen(false)} />
       )}
     </div>
   );
