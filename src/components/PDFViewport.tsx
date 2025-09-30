@@ -70,7 +70,12 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
         });
 
       } catch (error) {
-        console.error(`Error rendering PDF page ${pageIndex}:`, error);
+        // Handle PDF.js rendering cancellation as expected behavior
+        if (error instanceof Error && error.message.includes('Rendering cancelled')) {
+          console.warn(`PDF rendering cancelled for page ${pageIndex} (expected behavior)`);
+        } else {
+          console.error(`Error rendering PDF page ${pageIndex}:`, error);
+        }
         if (!cancelled) setInfo(null);
       }
     })();
