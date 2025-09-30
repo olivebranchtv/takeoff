@@ -1,24 +1,70 @@
 # Electrical Takeoff Application
 
-Professional electrical estimating and takeoff application with industry-standard assemblies.
+Professional electrical estimating and takeoff application with **46 industry-standard assemblies** for commercial, TI, and multi-use projects.
 
 ## Features
 
-### 1. **Assembly System**
-Industry-standard material kits automatically calculate all required materials for your takeoffs:
+### 1. **Comprehensive Assembly Library** (46 Assemblies)
 
-- **Standard Receptacle Assemblies** (15A, 20A)
-  - 4" square boxes, mud rings, devices, plates, connectors, ground pigtails
-  - 2% waste for devices, 5% for fittings
+#### **Receptacles** (7 assemblies)
+- Standard 15A & 20A receptacles (commercial/residential)
+- GFCI 20A (wet locations, kitchens, bathrooms)
+- Isolated Ground 20A (hospitals, data centers, AV)
+- Weather-Proof 20A GFCI (outdoor/wet per NEC 406.9)
+- Floor Receptacle 20A (open office, conference rooms)
+- USB Combo Receptacle (modern TI standard)
 
-- **Switch Assemblies** (Single-pole)
-  - Complete switch installation kits
+#### **Switches** (6 assemblies)
+- Single-Pole 20A (standard lighting control)
+- 3-Way & 4-Way (multi-location control)
+- LED Dimmer (600W, forward phase)
+- Occupancy Sensor (Title 24, ASHRAE 90.1 compliance)
+- Timer Switch (7-day programmable)
 
-- **Junction Boxes** (4" and 4-11/16")
-  - Boxes, covers, connectors, wire nuts
+#### **Lighting Fixtures** (6 assemblies)
+- 2x4 & 2x2 LED Troffers (drop ceiling)
+- LED High-Bay (warehouses, manufacturing 150-240W)
+- 6" LED Downlight (recessed)
+- LED Emergency Light (dual-head, battery backup)
+- LED Exit Sign (battery backup, NEC 700)
 
-- **Lighting Fixture Assemblies**
-  - Boxes, rings, mounting hardware
+#### **Junction Boxes & Pull Boxes** (4 assemblies)
+- 4" Square J-Box (standard splicing)
+- 4-11/16" Square J-Box (multi-circuit)
+- 8x8x4 Pull Box (feeder splices, NEC 314.28)
+- 12x12x6 Pull Box (service entrance, large conduits)
+
+#### **Data/Communications** (5 assemblies)
+- CAT6 Data Jack (1Gbps, structured cabling)
+- CAT6A Data Jack (10Gbps, hospitals, data centers)
+- Fiber Optic Jack (SC/LC, backbone)
+- AV Combo Plate (HDMI, CAT6, audio)
+- Coax Jack (RG6, cable TV, CCTV)
+
+#### **Panels & Distribution** (4 assemblies)
+- 42-Circuit 225A Panel (commercial/TI main distribution)
+- 24-Circuit 100A Subpanel (tenant spaces)
+- 60A Non-Fused Disconnect (NEMA 1 indoor)
+- 100A Fused Disconnect (Class J, NEMA 3R outdoor)
+
+#### **Fire Alarm / Life Safety** (3 assemblies)
+- Addressable Smoke Detector (photoelectric)
+- Manual Pull Station (addressable/conventional)
+- Horn/Strobe (24VDC, ADA compliant)
+
+#### **Security Systems** (4 assemblies)
+- IP Security Camera (dome/bullet, POE)
+- Card Reader (proximity, HID, access control)
+- Magnetic Door Lock (1200 lb, with power supply)
+- Door Contact (magnetic switch, NO/NC)
+
+**All assemblies include:**
+- 4" square boxes, mud rings, devices, plates
+- EMT connectors (appropriate size 1/2" - 1-1/4")
+- EMT couplings (0.1 per device = 1 per 10' stick)
+- Grounding components (pigtails, bushings)
+- Wire nuts, mounting hardware
+- Industry-standard waste factors (2% devices, 5% fittings, 0% panels)
 
 ### 2. **Using Assemblies**
 
