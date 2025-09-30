@@ -959,31 +959,46 @@ export default function App() {
           })}
         </div>
 
-        <div style={{position:'relative', marginLeft:'auto'}}>
-          <button className="btn" onClick={()=>setPickerOpen(v=>!v)}>Add from DB</button>
-          {pickerOpen && (
+        <button className="btn" onClick={()=>setPickerOpen(v=>!v)}>Add from DB</button>
+
+        {pickerOpen && (
+          <>
+            {/* Backdrop */}
+            <div
+              onClick={()=>setPickerOpen(false)}
+              style={{
+                position:'fixed',
+                top:0,
+                left:0,
+                right:0,
+                bottom:0,
+                background:'rgba(0,0,0,0.3)',
+                zIndex:998
+              }}
+            />
+            {/* Centered Modal */}
             <div
               style={{
-                position:'absolute',
-                top:'100%',
-                right:0,
-                marginTop:4,
+                position:'fixed',
+                top:'50%',
+                left:'50%',
+                transform:'translate(-50%, -50%)',
                 background:'#fff',
                 border:'1px solid #ddd',
-                borderRadius:6,
-                padding:8,
-                width:'max(360px, 25vw)',
-                maxWidth:'calc(100vw - 24px)',
+                borderRadius:8,
+                padding:20,
+                width:'min(500px, calc(100vw - 40px))',
                 zIndex:999,
-                boxShadow:'0 4px 12px rgba(0,0,0,0.15)'
+                boxShadow:'0 8px 32px rgba(0,0,0,0.2)'
               }}
             >
-              <div style={{display:'flex', gap:8, alignItems:'center'}}>
+              <div style={{marginBottom:12, fontSize:16, fontWeight:700, color:'#0d3b66'}}>Add Tag from Database</div>
+              <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
                 <select
                   className="btn"
                   value={pickerSel}
                   onChange={(e)=>setPickerSel(e.target.value)}
-                  style={{flex:1}}
+                  style={{flex:'1 1 200px', minWidth:200}}
                 >
                   <option value="">— Select tag —</option>
                   {pickerGroups.map(g => (
@@ -1005,15 +1020,18 @@ export default function App() {
                     setPickerSel('');
                     setPickerOpen(false);
                   }}
+                  style={{background:'#0d6efd', color:'#fff', fontWeight:600}}
                 >
                   Add
                 </button>
-                <button className="btn" title="Close" onClick={()=>setPickerOpen(false)}>×</button>
+                <button className="btn" title="Close" onClick={()=>setPickerOpen(false)}>Cancel</button>
               </div>
-              <div style={{marginTop:6, fontSize:12, color:'#666'}}>Tip: open "Tags" to load the master DB first.</div>
+              <div style={{marginTop:12, fontSize:12, color:'#666', padding:8, background:'#f8f9fa', borderRadius:4}}>
+                💡 Tip: Open "Tags" button to load the master database first.
+              </div>
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
 
       {/* MAIN AREA: Sidebar (BOM) + Viewer */}
