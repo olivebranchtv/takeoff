@@ -110,10 +110,14 @@ export default function PDFViewport({ pdf }: Props) {
   const [, setPaintTick] = useState(0);
   const liveLabelRef = useRef<{text:string;x:number;y:number}|null>(null);
 
+  // measure options dialog state
+  const [measureDialogOpen, setMeasureDialogOpen] = useState(false);
+  const [pendingMeasureType, setPendingMeasureType] = useState<'polyline' | 'freeform' | null>(null);
+
   const {
     pages, upsertPage, addObject, patchObject, tool, zoom,
     currentTag, setCalibration, selectedIds, selectOnly, clearSelection,
-    deleteSelected, undo, redo, activePage, tags
+    deleteSelected, undo, redo, activePage, tags, getMeasureOptions, setMeasureOptions
   } = useStore();
 
   useEffect(() => {
@@ -208,11 +212,24 @@ export default function PDFViewport({ pdf }: Props) {
     } else if (tool === 'segment') {
       drawingRef.current = { type: 'segment', pts: [posPage] };
     } else if (tool === 'polyline') {
-      if (!drawingRef.current.type) drawingRef.current = { type: 'polyline', pts: [posPage] };
-      else drawingRef.current.pts.push(posPage);
+      if (!drawingRef.current.type) {
+        // Show measure options dialog before starting polyline
+        setPendingMeasureType('polyline');
+        setMeasureDialogOpen(true);
+        return;
+      } else {
+        drawingRef.current.pts.push(posPage);
+      }
     } else if (tool === 'freeform') {
-      drawingRef.current = { type: 'freeform', pts: [posPage] };
-      freeformActive.current = true;
+      if (!drawingRef.current.type) {
+        // Show measure options dialog before starting freeform
+        setPendingMeasureType('freeform');
+        setMeasureDialogOpen(true);
+        return;
+      } else {
+        drawingRef.current = { type: 'freeform', pts: [posPage] };
+        freeformActive.current = true;
+      }
     } else if (tool === 'calibrate') {
       const page = pages.find(p => p.pageIndex === activePage)!;
       const next = (page as any).__calibPts ? [...(page as any).__calibPts, posPage] : [posPage];
@@ -284,6 +301,27 @@ export default function PDFViewport({ pdf }: Props) {
     liveLabelRef.current = null;
     setPaintTick(t => t + 1);
   }
+
+  const handleMeasureOptionsApply = (options: any) => {
+    setMeasureOptions(options);
+    
+    // Start the measurement with the selected type
+    if (pendingMeasureType && cursorPageRef.current) {
+      drawingRef.current = { type: pendingMeasureType, pts: [cursorPageRef.current] };
+      if (pendingMeasureType === 'freeform') {
+        freeformActive.current = true;
+      }
+      updateLiveLabel(info!);
+      setPaintTick(t => t + 1);
+    }
+    
+    setPendingMeasureType(null);
+  };
+
+  const handleMeasureOptionsCancel = () => {
+    setPendingMeasureType(null);
+    setMeasureDialogOpen(false);
+  };
 
   // transformer binding
   useEffect(() => {
@@ -379,6 +417,13 @@ export default function PDFViewport({ pdf }: Props) {
           </Stage>
         </div>
       </div>
+      
+      <MeasureOptionsDialog
+        open={measureDialogOpen}
+        onClose={handleMeasureOptionsCancel}
+        onApply={handleMeasureOptionsApply}
+        initialOptions={getMeasureOptions()}
+      />
     </div>
   );
 }

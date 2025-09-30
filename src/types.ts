@@ -48,6 +48,23 @@ export type AnyTakeoffObject =
   | PolylineObject
   | FreeformObject;
 
+// Measure options for raceway calculations
+export type MeasureOptions = {
+  extraFootagePerPoint: number;
+  conductor1Count: number;
+  conductor1Size: string;
+  conductor2Count: number;
+  conductor2Size: string;
+  conductor3Count: number;
+  conductor3Size: string;
+  extraConductorFootagePerPoint: number;
+  boxesPerPoint: number;
+  lineColor: string;
+  pointColor: string;
+  lineWeight: number;
+  opaquePoints: boolean;
+};
+
 // Project save/load (keep whatever else you already had, this is minimal)
 export type ProjectSave = {
   fileName?: string;
