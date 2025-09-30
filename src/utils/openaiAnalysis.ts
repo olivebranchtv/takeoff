@@ -17,7 +17,16 @@ export interface ProjectAnalysis {
     includedWork: string[];
     excludedWork: string[];
   };
+  drawingPages: DrawingPageAnalysis[];
   rawResponse: string;
+}
+
+export interface DrawingPageAnalysis {
+  pageNumber: number;
+  pageType: 'lighting_schedule' | 'panel_schedule' | 'floor_plan' | 'details' | 'notes' | 'cover' | 'unknown';
+  title?: string;
+  description: string;
+  findings: string[];
 }
 
 export interface LightingFixture {
@@ -189,6 +198,7 @@ Be thorough and extract all available information. If information is not found, 
           includedWork: [],
           excludedWork: []
         },
+        drawingPages: parsed.drawingPages || [],
         rawResponse: content
       };
     } catch (parseError) {
@@ -207,6 +217,7 @@ Be thorough and extract all available information. If information is not found, 
           includedWork: [],
           excludedWork: []
         },
+        drawingPages: [],
         rawResponse: content
       };
     }
@@ -232,36 +243,62 @@ export async function analyzeDrawingsWithImages(
 
   try {
     const prompt = `You are an expert electrical estimator analyzing construction drawings.
-Analyze these electrical drawings and extract the following information in a structured format:
+
+CRITICAL INSTRUCTIONS:
+- Analyze EVERY SINGLE PAGE provided
+- Find and extract the ACTUAL lighting schedule (not assumptions)
+- Find and extract the ACTUAL panel schedule (not assumptions)
+- Identify what the electrical contractor is responsible for (scope of work)
+- Describe what you see on each drawing page
+- DO NOT make industry standard assumptions
+- DO NOT guess or infer information not explicitly shown
+- ONLY report what is actually visible in the documents
+
+For each page, identify:
+1. Page type (lighting schedule, panel schedule, floor plan, details, notes, cover)
+2. What information is actually shown
+3. Key findings from that page
+
+Extract the following information:
 
 1. PROJECT ASSUMPTIONS:
-   - List all key assumptions mentioned in the drawings
-   - Include notes about existing conditions
-   - Any clarifications or questions noted
+   - ONLY list assumptions explicitly stated in the drawings
+   - Include notes about existing conditions if stated
+   - Any clarifications or questions noted in the documents
 
 2. FIXTURE RESPONSIBILITY:
-   - Which fixtures are OWNER PROVIDED (e.g., light fixtures by owner)
-   - Which fixtures are CONTRACTOR PROVIDED (e.g., wiring, boxes by contractor)
-   - Any specific notes about fixture responsibilities
+   - Which fixtures are explicitly marked as OWNER PROVIDED
+   - Which fixtures are explicitly marked as CONTRACTOR PROVIDED
+   - Specific notes about fixture responsibilities from the drawings
 
 3. LIGHTING SCHEDULE:
-   - Extract complete lighting fixture schedule
+   - Extract the ACTUAL lighting fixture schedule table from the drawings
    - Include: Type, Description, Manufacturer, Model, Quantity, Wattage, Voltage, Mounting
-   - Format as a structured list
+   - ONLY include fixtures actually listed in the schedule
+   - If no lighting schedule is found, return empty array
 
 4. PANEL SCHEDULE:
-   - Extract all panel information
+   - Extract the ACTUAL panel schedule from the drawings
    - Include: Panel ID, Location, Voltage, Phases, Main Breaker, Circuit Count, Fed From
-   - Format as a structured list
+   - ONLY include panels actually shown in the schedule
+   - If no panel schedule is found, return empty array
 
 5. KEY NOTES:
-   - Important general notes
-   - Code requirements
-   - Coordination notes
+   - Important general notes actually written on the drawings
+   - Code requirements stated in the drawings
+   - Coordination notes from the documents
 
 6. SCOPE OF WORK:
-   - What work IS included
-   - What work IS NOT included (exclusions)
+   - What work IS explicitly included in the contractor's scope
+   - What work IS explicitly excluded (exclusions stated in drawings)
+
+7. DRAWING PAGES:
+   - For each page, provide:
+     - Page number
+     - Page type
+     - Title (if visible)
+     - Description of what is shown
+     - Key findings from that page
 
 Provide the response in valid JSON format following this structure:
 {
@@ -296,7 +333,26 @@ Provide the response in valid JSON format following this structure:
   "scope": {
     "includedWork": ["item 1"],
     "excludedWork": ["item 1"]
-  }
+  },
+  "drawingPages": [{
+    "pageNumber": 1,
+    "pageType": "cover",
+    "title": "Electrical Plans",
+    "description": "Cover sheet showing project title and drawing index",
+    "findings": ["Project: ABC Building", "Contractor scope includes lighting and power"]
+  }, {
+    "pageNumber": 2,
+    "pageType": "lighting_schedule",
+    "title": "Lighting Fixture Schedule",
+    "description": "Table showing all lighting fixture types with specifications",
+    "findings": ["Type A: LED Troffer, Lithonia ABC123, 25 units", "Type B: Pendant Light, Philips XYZ456, 10 units"]
+  }, {
+    "pageNumber": 3,
+    "pageType": "floor_plan",
+    "title": "First Floor Lighting Plan",
+    "description": "Floor plan showing lighting fixture locations and circuiting",
+    "findings": ["Type A fixtures in main area", "Type B pendants over counter", "Wall switches near entrances"]
+  }]
 }`;
 
     // Prepare messages with images
@@ -368,6 +424,7 @@ Provide the response in valid JSON format following this structure:
         includedWork: [],
         excludedWork: []
       },
+      drawingPages: parsed.drawingPages || [],
       rawResponse: content
     };
 

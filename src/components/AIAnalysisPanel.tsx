@@ -13,10 +13,11 @@ interface AIAnalysisPanelProps {
 }
 
 export function AIAnalysisPanel({ analysis, onClose, onExport }: AIAnalysisPanelProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'lighting' | 'panels' | 'scope'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'lighting' | 'panels' | 'scope' | 'drawings'>('overview');
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📋' },
+    { id: 'drawings', label: 'Drawings', icon: '📄' },
     { id: 'lighting', label: 'Lighting', icon: '💡' },
     { id: 'panels', label: 'Panels', icon: '⚡' },
     { id: 'scope', label: 'Scope', icon: '📝' }
@@ -409,6 +410,109 @@ export function AIAnalysisPanel({ analysis, onClose, onExport }: AIAnalysisPanel
             </div>
           )}
 
+          {activeTab === 'drawings' && (
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px', color: '#333' }}>
+                📄 Drawing Page Analysis
+              </h3>
+              {analysis.drawingPages && analysis.drawingPages.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {analysis.drawingPages.map((page, idx) => (
+                    <div key={idx} style={{
+                      padding: '20px',
+                      background: '#fff',
+                      border: '2px solid #e0e0e0',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginBottom: '12px'
+                      }}>
+                        <div style={{
+                          padding: '6px 12px',
+                          background: '#2563eb',
+                          color: '#fff',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 700
+                        }}>
+                          Page {page.pageNumber}
+                        </div>
+                        <div style={{
+                          padding: '4px 10px',
+                          background: getPageTypeColor(page.pageType),
+                          color: '#fff',
+                          borderRadius: '12px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          textTransform: 'uppercase'
+                        }}>
+                          {page.pageType.replace('_', ' ')}
+                        </div>
+                        {page.title && (
+                          <h4 style={{
+                            margin: 0,
+                            fontSize: '16px',
+                            fontWeight: 600,
+                            color: '#333'
+                          }}>
+                            {page.title}
+                          </h4>
+                        )}
+                      </div>
+                      <p style={{
+                        margin: '0 0 12px 0',
+                        fontSize: '14px',
+                        color: '#666',
+                        lineHeight: '1.5'
+                      }}>
+                        {page.description}
+                      </p>
+                      {page.findings && page.findings.length > 0 && (
+                        <div>
+                          <h5 style={{
+                            margin: '0 0 8px 0',
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            color: '#444'
+                          }}>
+                            Key Findings:
+                          </h5>
+                          <ul style={{
+                            margin: 0,
+                            paddingLeft: '20px',
+                            fontSize: '13px',
+                            color: '#555'
+                          }}>
+                            {page.findings.map((finding, findingIdx) => (
+                              <li key={findingIdx} style={{ marginBottom: '4px' }}>
+                                {finding}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  padding: '48px',
+                  textAlign: 'center',
+                  background: '#f9f9f9',
+                  borderRadius: '8px',
+                  color: '#666'
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📄</div>
+                  <p style={{ margin: 0, fontSize: '14px' }}>No drawing analysis available</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'scope' && (
             <div>
               <div style={{ marginBottom: '32px' }}>
@@ -460,4 +564,17 @@ export function AIAnalysisPanel({ analysis, onClose, onExport }: AIAnalysisPanel
       </div>
     </div>
   );
+}
+
+function getPageTypeColor(pageType: string): string {
+  const colors: Record<string, string> = {
+    'lighting_schedule': '#f97316',
+    'panel_schedule': '#2563eb',
+    'floor_plan': '#16a34a',
+    'details': '#ca8a04',
+    'notes': '#9333ea',
+    'cover': '#6b7280',
+    'unknown': '#94a3b8'
+  };
+  return colors[pageType] || colors.unknown;
 }
