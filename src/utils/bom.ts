@@ -180,7 +180,7 @@ export function buildBOMRows(pages: PageState[], mode: BomMode = 'itemized'): Bo
         }
       }
 
-      rows.push({
+      const row = {
         id: (obj as any).id || crypto.randomUUID(),
         tagCode,
         shape,
@@ -198,7 +198,13 @@ export function buildBOMRows(pages: PageState[], mode: BomMode = 'itemized'): Bo
         conductorLfTotal: shape === 'count' ? undefined : conductorLfTotal,
         boxes: shape === 'count' ? undefined : boxes,
         conductors,
-      });
+      };
+
+      if (shape !== 'count' && conductors && conductors.length > 0) {
+        console.log(`📋 BOM Row [${tagCode}]: EMT=${emtSize}, racewayLf=${racewayLf}, conductors=`, conductors);
+      }
+
+      rows.push(row);
     }
   }
 

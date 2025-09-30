@@ -112,6 +112,7 @@ export function calculateAssemblyMaterials(
       // Format to match database exactly: "3/4"EMT Conduit" (no space after closing quote)
       const emtDesc = `${row.emtSize}EMT Conduit`;
       const matKey = `EMT CONDUIT::${emtDesc}::EA`;
+      console.log(`📦 Generated EMT material: category="EMT CONDUIT", desc="${emtDesc}", qty=${row.racewayLf}LF`);
       const existing = materialAcc.get(matKey);
 
       if (existing) {
@@ -147,6 +148,7 @@ export function calculateAssemblyMaterials(
         const wireType = 'Str'; // Use stranded by default (industry standard for branch circuits)
         const wireDesc = `${cond.size} THHN Copper Wire,${wireType}`;
         const matKey = `wire::${wireDesc}::EA`;
+        console.log(`📦 Generated WIRE material: category="wire", desc="${wireDesc}", qty=${totalCondLf}LF`);
         const existing = materialAcc.get(matKey);
 
         if (existing) {

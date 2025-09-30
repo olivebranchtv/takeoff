@@ -127,6 +127,8 @@ export default function MeasureDialog({
       material: (g.count ?? 0) > 0 ? (g.material || 'CU') : 'CU',
     })) as [ConductorSpec, ConductorSpec, ConductorSpec];
 
+    console.log('💾 MeasureDialog saving conductors:', conductors);
+
     const clean: MeasureOptions = {
       emtSize: form.emtSize ?? '',
       extraRacewayPerPoint: clampNonNeg(form.extraRacewayPerPoint),
