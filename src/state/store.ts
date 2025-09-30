@@ -1,19 +1,39 @@
+// src/state/store.ts
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Tool, ProjectSave, PageState, AnyTakeoffObject, Tag, MeasureOptions } from '@/types';
+import type {
+  Tool,
+  ProjectSave,
+  PageState,
+  AnyTakeoffObject,
+  Tag,
+  MeasureOptions,
+} from '@/types';
 
 type HistoryEntry = { pageIndex: number; objects: AnyTakeoffObject[] };
 
 /** ====== Raceway/Conductor Measure Options defaults (persisted) ====== */
+const DEFAULT_CONDUCTOR = {
+  count: 0,
+  size: '' as MeasureOptions['conductors'][number]['size'], // '' allowed
+  insulation: 'THHN/THWN-2' as MeasureOptions['conductors'][number]['insulation'],
+  material: 'CU' as MeasureOptions['conductors'][number]['material'],
+};
+
 const DEFAULT_MEASURE_OPTIONS: MeasureOptions = {
+  // raceway
+  emtSize: '',                   // user sets per run
   extraRacewayPerPoint: 0,
-  conductors: [
-    { count: 0, size: '' },
-    { count: 0, size: '' },
-    { count: 0, size: '' },
-  ],
+
+  // conductors (3 groups)
+  conductors: [ { ...DEFAULT_CONDUCTOR }, { ...DEFAULT_CONDUCTOR }, { ...DEFAULT_CONDUCTOR } ],
+
+  // per-point extras for each conductor, j-box density, and waste
   extraConductorPerPoint: 0,
   boxesPerPoint: 0,
+  wasteFactor: 1.05,             // 5% waste default
+
+  // display
   lineColor: '#000000',
   pointColor: '#000000',
   lineWeight: 1,
@@ -93,7 +113,7 @@ type State = {
   /** Manual color overrides by tag CODE (case-insensitive). */
   colorOverrides: Record<string, string>;
 
-  /** ===== NEW: last-used measure dialog options (persisted) ===== */
+  /** Last-used measure dialog options (persisted) */
   lastMeasureOptions: MeasureOptions;
 
   // setters & actions
@@ -134,7 +154,7 @@ type State = {
   colorForCode: (code: string) => string;
   tagByCode: (code: string) => Tag | undefined;
 
-  // explicit override controls (optional external use)
+  // explicit override controls
   setTagColorOverride: (code: string, color: string) => void;
   clearTagColorOverride: (code: string) => void;
 
@@ -151,7 +171,7 @@ type State = {
   toProject: () => ProjectSave;
   fromProject: (data: ProjectSave | any) => void;
 
-  /** ===== NEW: setters/getters for measure options ===== */
+  // measure options helpers
   setLastMeasureOptions: (opts: Partial<MeasureOptions>) => void;
   resetLastMeasureOptions: () => void;
   getLastMeasureOptions: () => MeasureOptions;
@@ -181,7 +201,7 @@ export const useStore = create<State>()(
       // key: overrides persist manual color choices for any code
       colorOverrides: {},
 
-      /** ===== NEW: initialize last used measure options ===== */
+      // initialize last used measure options
       lastMeasureOptions: DEFAULT_MEASURE_OPTIONS,
 
       setFileName: (n) => set({ fileName: n, projectName: get().projectName || baseNameNoExt(n) }),
@@ -278,7 +298,7 @@ export const useStore = create<State>()(
         const page = s.pages.find((p) => p.pageIndex === pageIndex); if (!page) return {};
         const current: HistoryEntry = { pageIndex, objects: asArray(page.objects) };
         const pages = s.pages.map((p) => (p.pageIndex === pageIndex ? ({ ...p, objects: entry.objects }) : p));
-        return { pages, history: { ...s.history, [pageIndex]: { undo: [...newUndo], redo: [...stack.redo, current] } } };
+        return { pages, history: { ...s.history, [pageIndex]: { undo: newUndo, redo: [...stack.redo, current] } } };
       }),
 
       redo: (pageIndex) => set((s) => {
@@ -458,7 +478,7 @@ export const useStore = create<State>()(
         });
       },
 
-      /** ===== NEW: measure options helpers ===== */
+      /** ===== Measure options helpers ===== */
       setLastMeasureOptions: (opts) => set((s) => ({
         lastMeasureOptions: {
           ...s.lastMeasureOptions,
