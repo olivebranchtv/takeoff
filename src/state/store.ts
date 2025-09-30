@@ -11,6 +11,7 @@ import type {
   Assembly,
 } from '@/types';
 import { STANDARD_ASSEMBLIES } from '@/constants/assemblies';
+import { autoAssignAssembly } from '@/utils/tagAssemblyMapping';
 
 type HistoryEntry = { pageIndex: number; objects: AnyTakeoffObject[] };
 
@@ -71,11 +72,11 @@ const DEFAULT_MEASURE_OPTIONS: MeasureOptions = {
 /** ================================================================ */
 
 const DEFAULT_TAGS: Tag[] = [
-  { id: crypto.randomUUID(), code: 'A',   name: 'Fixture A',      category: 'Lights',      color: '#FF9900' },
-  { id: crypto.randomUUID(), code: 'A1',  name: 'Fixture A1',     category: 'Lights',      color: '#FF9900' },
-  { id: crypto.randomUUID(), code: 'EM',  name: 'Emergency',      category: 'Emergency',   color: '#CC0000' },
-  { id: crypto.randomUUID(), code: 'SP',  name: 'Switch',         category: 'Switches',    color: '#0066FF' },
-  { id: crypto.randomUUID(), code: 'GFCI',name: 'GFCI Recept.',   category: 'Receptacles', color: '#2E8B57' },
+  { id: crypto.randomUUID(), code: 'A',   name: 'Fixture A',      category: 'Lights',      color: '#FF9900', assemblyId: 'light-troffer-2x4-led' },
+  { id: crypto.randomUUID(), code: 'A1',  name: 'Fixture A1',     category: 'Lights',      color: '#FF9900', assemblyId: 'light-troffer-2x2-led' },
+  { id: crypto.randomUUID(), code: 'EM',  name: 'Emergency',      category: 'Emergency',   color: '#CC0000', assemblyId: 'light-emergency-led' },
+  { id: crypto.randomUUID(), code: 'SP',  name: 'Switch',         category: 'Switches',    color: '#0066FF', assemblyId: 'switch-sp-20a' },
+  { id: crypto.randomUUID(), code: 'GFCI',name: 'GFCI Recept.',   category: 'Receptacles', color: '#2E8B57', assemblyId: 'recep-gfci-20a' },
   { id: crypto.randomUUID(), code: 'HW',  name: 'Hard Wire',      category: 'Wiring',      color: '#8B00FF' },
 ];
 
@@ -352,11 +353,18 @@ export const useStore = create<State>()(
         const incomingColor = t.color || ORANGE;
         const incomingCat = (t.category || '').trim();
 
+        // Auto-assign assembly if not already set
+        const tagWithAssembly = autoAssignAssembly({
+          code: codeKey,
+          category: incomingCat,
+          assemblyId: t.assemblyId
+        });
+
         const tags = [...s.tags];
         if (idx >= 0) {
-          tags[idx] = { ...tags[idx], code: codeKey, name: t.name || '', category: incomingCat, color: incomingColor };
+          tags[idx] = { ...tags[idx], code: codeKey, name: t.name || '', category: incomingCat, color: incomingColor, assemblyId: tagWithAssembly.assemblyId };
         } else {
-          tags.push({ id: nextId(), code: codeKey, name: t.name || '', category: incomingCat, color: incomingColor });
+          tags.push({ id: nextId(), code: codeKey, name: t.name || '', category: incomingCat, color: incomingColor, assemblyId: tagWithAssembly.assemblyId });
         }
 
         const overrides = { ...s.colorOverrides };
@@ -412,12 +420,20 @@ export const useStore = create<State>()(
         const overrides = { ...s.colorOverrides };
 
         for (const raw of incoming) {
+          // Auto-assign assembly if not already set
+          const tagWithAssembly = autoAssignAssembly({
+            code: (raw as any).code,
+            category: (raw as any).category || '',
+            assemblyId: (raw as any).assemblyId
+          });
+
           const t = {
             id: (raw as Tag).id || nextId(),
             code: (raw as any).code,
             name: (raw as any).name || '',
             category: (raw as any).category || '',
             color: (raw as any).color || ORANGE,
+            assemblyId: tagWithAssembly.assemblyId,
           } as Tag;
 
           const key = norm(t.code);
@@ -491,7 +507,17 @@ export const useStore = create<State>()(
 
       fromProject: (data) => {
         const d: any = data || {};
-        const tags = asArray<Tag>(d.tags).length ? asArray<Tag>(d.tags) : get().tags;
+        const rawTags = asArray<Tag>(d.tags).length ? asArray<Tag>(d.tags) : get().tags;
+
+        // Auto-assign assemblies to all tags when loading project
+        const tags = rawTags.map(tag => {
+          const tagWithAssembly = autoAssignAssembly({
+            code: tag.code,
+            category: tag.category,
+            assemblyId: tag.assemblyId
+          });
+          return { ...tag, assemblyId: tagWithAssembly.assemblyId };
+        });
 
         const rawPages = asArray<any>(d.pages);
         const pages: PageState[] = rawPages
