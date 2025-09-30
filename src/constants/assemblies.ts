@@ -540,6 +540,124 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
       { id: 'panel-800a', description: '800 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 }
     ]
   },
+
+  // ============================================================================
+  // DIMMERS - From Master Database
+  // ============================================================================
+  {
+    id: 'dim-600w-sp',
+    code: 'DIM',
+    name: 'Dimmer 600W Single-Pole',
+    description: '600W dimmer switch from master database',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'dim-600w-sp', description: 'Dimmer Switch, Single-Pole, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
+    ]
+  },
+  {
+    id: 'dim-600w-3w',
+    code: 'DIM-3W',
+    name: 'Dimmer 600W 3-Way',
+    description: '600W 3-way dimmer switch from master database',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'dim-600w-3w', description: 'Dimmer Switch, Three-Way, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
+    ]
+  },
+  {
+    id: 'dim-1000w-sp',
+    code: 'DIM-1000W',
+    name: 'Dimmer 1000W Single-Pole',
+    description: '1000W dimmer switch from master database',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'dim-1000w', description: '1000 Watt Dimmer,Decora', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
+    ]
+  },
+  {
+    id: 'dim-1500w-sp',
+    code: 'DIM-1500W',
+    name: 'Dimmer 1500W Single-Pole',
+    description: '1500W dimmer switch from master database',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'dim-1500w', description: '1500 Watt Dimmer,Decora', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
+    ]
+  },
+  {
+    id: 'dim-2000w-sp',
+    code: 'DIM-2000W',
+    name: 'Dimmer 2000W Single-Pole',
+    description: '2000W dimmer switch from master database',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'dim-2000w', description: '2000 Watt Dimmer,Decora', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
+    ]
+  },
+  {
+    id: 'dim-wall-control',
+    code: 'DIM-WC',
+    name: 'Dimming Wall Control Station',
+    description: 'Dimming wall control 0-10V or DALI from master database',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'dim-wc', description: 'Dimming Wall Control Station, 0-10V or DALI', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
+    ]
+  },
+  {
+    id: 'dim-ml-master',
+    code: 'DIM-ML',
+    name: 'Multi-Location Master Dimmer 600W',
+    description: 'Multi-location master dimmer from master database',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'dim-ml', description: 'Multi-Location Master Dimmer, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
+    ]
+  },
+
+  // ============================================================================
+  // DISCONNECTS - From Master Database
+  // ============================================================================
+  {
+    id: 'disc-30a-3p',
+    code: '30/3',
+    name: 'Disconnect 30A 3-Pole',
+    description: '30A 3-phase disconnect from master database',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'disc-30-3p', description: '30A/240V/3PH/F/N3/DISC.', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 }
+    ]
+  },
+  {
+    id: 'disc-60a-3p',
+    code: '60/3',
+    name: 'Disconnect 60A 3-Pole',
+    description: '60A 3-phase disconnect from master database',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'disc-60-3p', description: '60A/240V/3PH/F/N3/DISC.', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 }
+    ]
+  },
+  {
+    id: 'disc-100a-3p',
+    code: '100/3',
+    name: 'Disconnect 100A 3-Pole',
+    description: '100A 3-phase disconnect from master database',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'disc-100-3p', description: '100A/240V/3PH/F/N3/DISC.', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 }
+    ]
+  },
   {
     id: 'disconnect-60a-nf',
     code: 'DISC-60A-NF',
