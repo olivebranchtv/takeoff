@@ -1,26 +1,6 @@
 // src/types.ts
 export type XY = { x: number; y: number };
 
-export type Tool = 'hand' | 'count' | 'segment' | 'polyline' | 'freeform' | 'calibrate';
-
-export type Tag = {
-  id: string;
-  code: string;
-  name: string;
-  color: string;
-  category?: string;
-};
-
-export type PageState = {
-  pageIndex: number;
-  canvasWidth?: number;
-  canvasHeight?: number;
-  pixelsPerFoot?: number;
-  unit?: 'ft';
-  calibrated: boolean;
-  objects: AnyTakeoffObject[];
-};
-
 export type CountObject = {
   id: string;
   type: 'count';
@@ -48,23 +28,6 @@ export type AnyTakeoffObject =
   | PolylineObject
   | FreeformObject;
 
-// Measure options for raceway calculations
-export type MeasureOptions = {
-  extraFootagePerPoint: number;
-  conductor1Count: number;
-  conductor1Size: string;
-  conductor2Count: number;
-  conductor2Size: string;
-  conductor3Count: number;
-  conductor3Size: string;
-  extraConductorFootagePerPoint: number;
-  boxesPerPoint: number;
-  lineColor: string;
-  pointColor: string;
-  lineWeight: number;
-  opaquePoints: boolean;
-};
-
 // Project save/load (keep whatever else you already had, this is minimal)
 export type ProjectSave = {
   fileName?: string;
@@ -74,5 +37,5 @@ export type ProjectSave = {
     unit?: 'ft';
     objects: AnyTakeoffObject[];
   }>;
-  tags: Tag[];
+  tags: Array<{ id: string; code: string; name: string; color: string; category?: string }>;
 };

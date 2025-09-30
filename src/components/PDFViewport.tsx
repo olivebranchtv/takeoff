@@ -5,7 +5,6 @@ import { Stage, Layer, Group, Line, Text as KText, Transformer, Rect, Circle } f
 import Konva from 'konva';
 import { pathLength, simplifyRDP } from '@/utils/geometry';
 import type { AnyTakeoffObject } from '@/types';
-import MeasureOptionsDialog from './MeasureOptionsDialog';
 
 type Props = { pdf: PDFDoc | null };
 
@@ -80,10 +79,6 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
         });
 
       } catch (error) {
-        // Don't log cancellation errors as they are expected behavior
-        if (error && typeof error === 'object' && 'name' in error && error.name === 'RenderingCancelledException') {
-          return;
-        }
         console.error(`Error rendering PDF page ${pageIndex}:`, error);
         if (!cancelled) setInfo(null);
       }
@@ -111,21 +106,17 @@ export default function PDFViewport({ pdf }: Props) {
   const [, setPaintTick] = useState(0);
   const liveLabelRef = useRef<{text:string;x:number;y:number}|null>(null);
 
-  // measure options dialog state
-  const [measureDialogOpen, setMeasureDialogOpen] = useState(false);
-  const [pendingMeasureType, setPendingMeasureType] = useState<'polyline' | 'freeform' | null>(null);
-
   const {
     pages, upsertPage, addObject, patchObject, tool, zoom,
     currentTag, setCalibration, selectedIds, selectOnly, clearSelection,
-    deleteSelected, undo, redo, activePage, tags, getMeasureOptions, setMeasureOptions
+    deleteSelected, undo, redo, activePage, tags
   } = useStore();
 
   useEffect(() => {
     if (!pdf) return;
     if (pages.length === 0) {
       Array.from({length: pdf.numPages}).forEach((_, idx) =>
-        upsertPage({ pageIndex: idx, objects: [], pixelsPerFoot: undefined, unit: 'ft', calibrated: false })
+        upsertPage({ pageIndex: idx, objects: [], pixelsPerFoot: undefined, unit: 'ft' })
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -177,8 +168,6 @@ export default function PDFViewport({ pdf }: Props) {
   function onMouseDown(e: any) {
     if (!info) return;
 
-    console.log('Mouse down - tool:', tool, 'drawing state:', drawingRef.current);
-
     // Right-click: delete object under cursor
     if (isRight(e)) {
       if (e.target?.attrs?.name?.startsWith('obj-')) {
@@ -215,28 +204,11 @@ export default function PDFViewport({ pdf }: Props) {
     } else if (tool === 'segment') {
       drawingRef.current = { type: 'segment', pts: [posPage] };
     } else if (tool === 'polyline') {
-      if (drawingRef.current.type !== 'polyline') {
-        // Show measure options dialog before starting polyline
-        console.log('Showing polyline dialog');
-        setPendingMeasureType('polyline');
-        setMeasureDialogOpen(true);
-        return;
-      } else {
-        drawingRef.current.pts.push(posPage);
-      }
+      if (!drawingRef.current.type) drawingRef.current = { type: 'polyline', pts: [posPage] };
+      else drawingRef.current.pts.push(posPage);
     } else if (tool === 'freeform') {
-      if (drawingRef.current.type !== 'freeform') {
-        // Show measure options dialog before starting freeform
-        console.log('Showing freeform dialog');
-        setPendingMeasureType('freeform');
-        setMeasureDialogOpen(true);
-        return;
-      } else {
-        // Start freeform drawing
-        console.log('Starting freeform drawing at:', posPage);
-        freeformActive.current = true;
-        drawingRef.current.pts = [posPage];
-      }
+      drawingRef.current = { type: 'freeform', pts: [posPage] };
+      freeformActive.current = true;
     } else if (tool === 'calibrate') {
       const page = pages.find(p => p.pageIndex === activePage)!;
       const next = (page as any).__calibPts ? [...(page as any).__calibPts, posPage] : [posPage];
@@ -245,10 +217,7 @@ export default function PDFViewport({ pdf }: Props) {
         const px = pathLength(next);
         const input = prompt('Enter real length between points (feet):', '10');
         const feet = input ? parseFloat(input) : NaN;
-        if (!isNaN(feet) && feet > 0) {
-          // Use setCalibration which should preserve objects
-          setCalibration(activePage, px / feet, 'ft');
-        }
+        if (!isNaN(feet) && feet > 0) setCalibration(activePage, px / feet, 'ft');
         (page as any).__calibPts = [];
       }
     }
@@ -311,28 +280,6 @@ export default function PDFViewport({ pdf }: Props) {
     liveLabelRef.current = null;
     setPaintTick(t => t + 1);
   }
-
-  const handleMeasureOptionsApply = (options: any) => {
-    console.log('Applying measure options for:', pendingMeasureType, options);
-    setMeasureOptions(options);
-    
-    // Start the measurement with the selected type
-    if (pendingMeasureType) {
-      drawingRef.current = { type: pendingMeasureType, pts: [] };
-      console.log('Set drawing state to:', drawingRef.current);
-      if (info) updateLiveLabel(info);
-      setPaintTick(t => t + 1);
-    }
-    
-    setMeasureDialogOpen(false);
-    setPendingMeasureType(null);
-  };
-
-  const handleMeasureOptionsCancel = () => {
-    drawingRef.current = { type: null, pts: [] };
-    setPendingMeasureType(null);
-    setMeasureDialogOpen(false);
-  };
 
   // transformer binding
   useEffect(() => {
@@ -428,13 +375,6 @@ export default function PDFViewport({ pdf }: Props) {
           </Stage>
         </div>
       </div>
-      
-      <MeasureOptionsDialog
-        open={measureDialogOpen}
-        onClose={handleMeasureOptionsCancel}
-        onApply={handleMeasureOptionsApply}
-        initialOptions={getMeasureOptions()}
-      />
     </div>
   );
 }
@@ -469,7 +409,7 @@ function halfPoint(pts: {x:number;y:number}[]) {
 /* --------- Renderers --------- */
 
 function renderObject(
-  obj: any,
+  obj: AnyTakeoffObject,
   selected: boolean,
   s: number,
   pageIndex: number,

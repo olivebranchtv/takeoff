@@ -8,27 +8,25 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) }
   },
+  // Optimize dependencies and prevent external requests
+  optimizeDeps: {
+    include: ['pdfjs-dist/build/pdf.mjs'],
+    exclude: ['pdfjs-dist/build/pdf.worker.min.js']
+  },
+  // Prevent preload warnings
   build: {
-    target: 'es2020',
-    sourcemap: false,
     rollupOptions: {
-      external: [],
       output: {
         manualChunks: {
-          'pdf-lib': ['pdfjs-dist'],
-          'vendor': ['react', 'react-dom'],
-          'ui': ['konva', 'react-konva']
+          'pdf-lib': ['pdfjs-dist']
         }
       }
     }
   },
-  optimizeDeps: {
-    include: ['pdfjs-dist', 'konva', 'react-konva']
-  },
+  // Development server configuration
   server: {
     hmr: {
       overlay: false // Reduce HMR error overlay noise
     }
   }
-}
-)
+});

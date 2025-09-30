@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Tool, ProjectSave, PageState, AnyTakeoffObject, Tag, MeasureOptions } from '@/types';
+import type { Tool, ProjectSave, PageState, AnyTakeoffObject, Tag } from '@/types';
 
 type HistoryEntry = { pageIndex: number; objects: AnyTakeoffObject[] };
 
@@ -20,22 +20,6 @@ const PALETTE = [
   '#0000FF','#4169E1','#4B0082','#8B00FF','#FF00FF',
   '#C71585','#FF1493','#8B4513','#D2691E','#A0522D',
 ];
-
-const DEFAULT_MEASURE_OPTIONS: MeasureOptions = {
-  extraFootagePerPoint: 0,
-  conductor1Count: 0,
-  conductor1Size: '½″',
-  conductor2Count: 0,
-  conductor2Size: '½″',
-  conductor3Count: 0,
-  conductor3Size: '½″',
-  extraConductorFootagePerPoint: 0,
-  boxesPerPoint: 0,
-  lineColor: '#0000FF',
-  pointColor: '#FF0000',
-  lineWeight: 1,
-  opaquePoints: false,
-};
 
 type HistoryStacks = { undo: HistoryEntry[]; redo: HistoryEntry[] };
 
@@ -92,9 +76,6 @@ type State = {
   /** Manual color overrides by tag CODE (case-insensitive). */
   colorOverrides: Record<string, string>;
 
-  // Measure options for raceway calculations
-  measureOptions: MeasureOptions;
-
   // setters & actions
   setFileName: (n: string) => void;
   setProjectName: (n: string) => void;
@@ -146,10 +127,6 @@ type State = {
   getProjectTags: () => Tag[];
 
   getProjectName: () => string;
-  
-  // measure options
-  setMeasureOptions: (options: MeasureOptions) => void;
-  getMeasureOptions: () => MeasureOptions;
 
   toProject: () => ProjectSave;
   fromProject: (data: ProjectSave | any) => void;
@@ -178,8 +155,6 @@ export const useStore = create<State>()(
 
       // key: overrides persist manual color choices for any code
       colorOverrides: {},
-      
-      measureOptions: DEFAULT_MEASURE_OPTIONS,
 
       setFileName: (n) => set({ fileName: n, projectName: get().projectName || baseNameNoExt(n) }),
       setProjectName: (n) => set({ projectName: n || 'Untitled Project' }),
@@ -198,22 +173,14 @@ export const useStore = create<State>()(
 
       upsertPage: (page) => set((s) => {
         const idx = s.pages.findIndex((p) => p.pageIndex === page.pageIndex);
-        if (idx >= 0) { 
-          const copy = s.pages.slice(); 
-          copy[idx] = { ...page, objects: safeObjects(page.objects) }; 
-          return { pages: copy }; 
-        }
+        if (idx >= 0) { const copy = s.pages.slice(); copy[idx] = page; return { pages: copy }; }
         return { pages: [...s.pages, page].sort((a,b)=>a.pageIndex-b.pageIndex) };
       }),
 
       addObject: (pageIndex, obj) => {
         const { pushHistory } = get(); pushHistory(pageIndex);
         set((s) => {
-          const pages = s.pages.map((p) => 
-            p.pageIndex === pageIndex 
-              ? ({ ...p, objects: [...safeObjects(p.objects), obj as AnyTakeoffObject] }) 
-              : p 
-          );
+          const pages = s.pages.map((p) => p.pageIndex === pageIndex ? ({ ...p, objects: [...asArray(p.objects), obj] }) : p );
           return { pages };
         });
       },
@@ -261,11 +228,7 @@ export const useStore = create<State>()(
       },
 
       setCalibration: (pageIndex, ppf, unit) => set((s) => {
-        const pages = s.pages.map((p) => 
-          p.pageIndex === pageIndex 
-            ? ({ ...p, pixelsPerFoot: ppf, unit, calibrated: true }) 
-            : p
-        );
+        const pages = s.pages.map((p) => (p.pageIndex === pageIndex ? ({ ...p, pixelsPerFoot: ppf, unit }) : p));
         return { pages };
       }),
 
@@ -435,9 +398,6 @@ export const useStore = create<State>()(
         const { projectName, fileName } = get();
         return projectName?.trim() ? projectName : baseNameNoExt(fileName);
       },
-      
-      setMeasureOptions: (options) => set({ measureOptions: options }),
-      getMeasureOptions: () => get().measureOptions,
 
       toProject: () => {
         const { fileName, pages, tags, projectName } = get();
@@ -479,6 +439,3 @@ export const useStore = create<State>()(
     }
   )
 );
-
-// Export useAppStore as an alias for useStore for compatibility
-export const useAppStore = useStore;

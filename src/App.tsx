@@ -5,9 +5,8 @@ import { loadPdfFromBytes } from '@/lib/pdf';
 import PDFViewport from '@/components/PDFViewport';
 import TagManager from '@/components/TagManager';
 import { useStore } from '@/state/store';
-import type { AnyTakeoffObject, ProjectSave, Tag, PageState } from '@/types';
+import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
 import { pathLength } from '@/utils/geometry';
-import { buildCategorizedOverview } from '@/utils/bom';
 
 /* Tag shape used by the DB + project bar */
 type TagLite = { id: string; code: string; name: string; color: string; category?: string };
@@ -306,7 +305,7 @@ export default function App() {
           byCode.set(code, box);
           continue;
         }
-        const verts = obj.type !== 'count' ? (obj as any).vertices ?? [] : [];
+        const verts = (obj as AnyTakeoffObject).vertices ?? [];
         const lenPx = pathLength(verts);
         const lf = ppf > 0 ? lenPx / ppf : 0;
 
@@ -481,8 +480,8 @@ export default function App() {
         if (obj.type === 'count') {
           countByCode.set(code, (countByCode.get(code) || 0) + 1);
         } else {
-          const verts = (obj as any).vertices ?? [];
-          const lenPx = pathLength(verts || []);
+          const verts = (obj as AnyTakeoffObject).vertices ?? [];
+          const lenPx = pathLength(verts);
           const lf = ppf > 0 ? lenPx / ppf : 0;
           const box = measByCode.get(code) ?? { meas: 0, lf: 0 };
           box.meas += 1;
@@ -812,7 +811,7 @@ export default function App() {
         )}
 
         <aside className="sidebar" style={{ borderRight:'1px solid #eee', overflow:'auto', opacity: leftOpen ? 1 : 0, pointerEvents: leftOpen ? 'auto' : 'none' }}>
-          <SidebarOverview pages={pages} />
+          <SidebarBOM bom={bom} />
         </aside>
 
         <div
@@ -859,53 +858,58 @@ export default function App() {
   );
 }
 
-function SidebarOverview({ pages }: { pages: PageState[] }) {
-  const ov = useMemo(() => buildCategorizedOverview(pages || []), [pages]);
-
+function SidebarBOM({ bom }:{
+  bom: {
+    totalTags: number; segLF: number; plLF: number; ffLF: number; totalLF: number;
+    rows: { code:string; tags:number; meas:number; lf:number }[];
+    calibratedCount: number; totalPages: number;
+  }
+}) {
   return (
     <div>
       <div style={{display:'flex', alignItems:'center', gap:8, padding:'8px 10px', position:'sticky', top:0, background:'#fff', zIndex:2, borderBottom:'1px solid #f2f2f2'}}>
-        <div className="label" style={{fontWeight:700}}>Overview</div>
+        <div className="label" style={{fontWeight:700}}>BOM Summary</div>
       </div>
 
       <div style={{padding:'10px'}}>
         <div style={{padding:'0 0 12px 0', color:'#666', fontSize:13}}>
-          Total LF: <b>{ov.grandTotals.lf.toFixed(2)}</b>
+          {bom.calibratedCount}/{bom.totalPages} page(s) calibrated.
         </div>
 
-        {ov.sections.map(sec => (
-          sec.items.length > 0 && (
-            <div key={sec.key} style={{ marginBottom: 14 }}>
-              <div style={{ fontWeight:700, padding:'6px 0', borderTop:'1px solid #eee' }}>{sec.title}</div>
-              <table style={{width:'100%', borderCollapse:'collapse', fontSize:14}}>
-                <thead>
-                  <tr style={{borderBottom:'1px solid #eee'}}>
-                    <th style={{textAlign:'left', padding:'6px 4px'}}>Code / Name</th>
-                    <th style={{textAlign:'right', padding:'6px 4px'}}>Count</th>
-                    <th style={{textAlign:'right', padding:'6px 4px'}}>LF</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sec.items.map(it => (
-                    <tr key={sec.key + it.code} style={{borderBottom:'1px solid #f5f5f5'}}>
-                      <td style={{padding:'6px 4px'}}>
-                        <span style={{ fontWeight:600 }}>{it.code}</span>
-                        {it.name ? <span style={{ color:'#555' }}> — {it.name}</span> : null}
-                      </td>
-                      <td style={{textAlign:'right', padding:'6px 4px'}}>{it.count || ''}</td>
-                      <td style={{textAlign:'right', padding:'6px 4px'}}>{it.lf ? it.lf.toFixed(2) : ''}</td>
-                    </tr>
-                  ))}
-                  <tr>
-                    <td style={{padding:'6px 4px', fontWeight:700}}>Subtotal</td>
-                    <td style={{textAlign:'right', padding:'6px 4px', fontWeight:700}}>{sec.totals.count}</td>
-                    <td style={{textAlign:'right', padding:'6px 4px', fontWeight:700}}>{sec.totals.lf.toFixed(2)}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )
-        ))}
+        <div style={{padding:'0 0 12px 0'}}>
+          <div style={{marginBottom:8, fontWeight:600}}>Totals</div>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', rowGap:6}}>
+            <div>Total Tags:</div><div>{bom.totalTags}</div>
+            <div>Segment LF:</div><div>{bom.segLF.toFixed(2)}</div>
+            <div>Polyline LF:</div><div>{bom.plLF.toFixed(2)}</div>
+            <div>Freeform LF:</div><div>{bom.ffLF.toFixed(2)}</div>
+            <div style={{fontWeight:700}}>Total LF:</div><div style={{fontWeight:700}}>{bom.totalLF.toFixed(2)}</div>
+          </div>
+        </div>
+
+        <div style={{padding:'0 0 20px 0'}}>
+          <div style={{marginBottom:8, fontWeight:600}}>Counts by Code</div>
+          <table style={{width:'100%', borderCollapse:'collapse', fontSize:14}}>
+            <thead>
+              <tr style={{borderBottom:'1px solid #eee'}}>
+                <th style={{textAlign:'left', padding:'6px 4px'}}>Code</th>
+                <th style={{textAlign:'left', padding:'6px 4px'}}>Tags</th>
+                <th style={{textAlign:'left', padding:'6px 4px'}}>Meas</th>
+                <th style={{textAlign:'left', padding:'6px 4px'}}>LF</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bom.rows.map(r=>(
+                <tr key={r.code} style={{borderBottom:'1px solid #f3f3f3'}}>
+                  <td style={{padding:'6px 4px', fontWeight:600}}>{r.code}</td>
+                  <td style={{padding:'6px 4px'}}>{r.tags}</td>
+                  <td style={{padding:'6px 4px'}}>{r.meas}</td>
+                  <td style={{padding:'6px 4px'}}>{r.lf.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

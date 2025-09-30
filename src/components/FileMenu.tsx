@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDown, FolderOpen, Save, Download } from 'lucide-react';
 import { useToast } from '@/ui/Toast';
 import { openProjectFromFile } from '@/features/project/openProject';
-import { useStore } from '@/state/store';
+import { useAppStore } from '@/state/store';
 
 interface FileMenuProps {
   onAction?: (action: string) => void; // optional if you already use this
@@ -15,7 +15,7 @@ export const FileMenu: React.FC<FileMenuProps> = ({ onAction }) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
 
-  const toProject = useStore(s => s.toProject);
+  const currentProject = useAppStore(s => s.currentProject);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -40,15 +40,14 @@ export const FileMenu: React.FC<FileMenuProps> = ({ onAction }) => {
   };
 
   const downloadCurrent = () => {
-    const currentProject = toProject();
-    if (!currentProject || !currentProject.pages?.length) {
+    if (!currentProject) {
       addToast('No open project to download', 'error');
       return;
     }
     const blob = new Blob([JSON.stringify(currentProject, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const fn = `${(currentProject as any).name || 'project'}.skdproj`;
+    const fn = `${currentProject.name || 'project'}.skdproj`;
     a.href = url; a.download = fn; a.click();
     URL.revokeObjectURL(url);
     setIsOpen(false);
