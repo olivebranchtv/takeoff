@@ -309,7 +309,7 @@ export default function App() {
           byCode.set(code, box);
           continue;
         }
-        const verts = (obj as AnyTakeoffObject).vertices ?? [];
+        const verts = obj.vertices ?? [];
         const lenPx = pathLength(verts);
         const lf = ppf > 0 ? lenPx / ppf : 0;
 
@@ -461,7 +461,7 @@ export default function App() {
         if (obj.type === 'count') {
           countByCode.set(code, (countByCode.get(code) || 0) + 1);
         } else {
-          const verts = (obj as AnyTakeoffObject).vertices ?? [];
+          const verts = obj.vertices ?? [];
           const lenPx = pathLength(verts);
           const lf = ppf > 0 ? lenPx / ppf : 0;
           const box = measByCode.get(code) ?? { meas: 0, lf: 0 };
@@ -484,7 +484,7 @@ export default function App() {
     }
   }
 
-  /* Existing “Full BOM” Excel (kept as-is) */
+  /* Full BOM Excel with detailed measurements */
   const exportExcelFull = async () => {
     const XLSX = await ensureXLSX();
     const { countByCode, measByCode } = aggregate();
@@ -511,15 +511,6 @@ export default function App() {
     const fireRows    = rowsFor((code)=>catOf(code).includes('fire alarm'));
     const specialRows = rowsFor((code)=>catOf(code).includes('special'));
 
-    const measRows = Array.from(measByCode.entries())
-      .map(([code, v]) => ({
-        Code: code,
-        Name: nameForCode(code),
-        'Meas Count': v.meas,
-        'LF (ft)': +v.lf.toFixed(2),
-      }))
-      .sort((a, b) => a.Code.localeCompare(b.Code));
-
     const countAllRows = Array.from(countByCode.entries())
       .map(([code, count]) => ({ Code: code, Name: nameForCode(code), Count: count }))
       .sort((a, b) => a.Code.localeCompare(b.Code));
@@ -533,18 +524,76 @@ export default function App() {
       { Metric: 'Calibrated Pages', Value: `${bom.calibratedCount}/${bom.totalPages}` },
     ];
 
+    // Build itemized measurement rows with all raceway/conductor details
+    const itemRows = buildBOMRows(pages, 'itemized');
+    const detailedMeasRows = itemRows.map(r => {
+      const c = r.conductors ?? [];
+      const c1 = c[0] ?? { count: 0, size: '', insulation: '', material: '' };
+      const c2 = c[1] ?? { count: 0, size: '', insulation: '', material: '' };
+      const c3 = c[2] ?? { count: 0, size: '', insulation: '', material: '' };
+
+      const row: any = {
+        'Run ID': `${r.tagCode}${r.index ? '-' + r.index : ''}`,
+        'Tag Code': r.tagCode,
+        'Tag Name': r.tagName || '',
+        'Category': r.category || '',
+        'Shape': r.shape,
+        'Page': r.pageIndex + 1,
+      };
+
+      if (r.shape !== 'count') {
+        row['Points'] = r.points || 0;
+        row['Geometry LF'] = typeof r.lengthFt === 'number' ? +r.lengthFt.toFixed(2) : 0;
+        row['Raceway LF'] = typeof r.racewayLf === 'number' ? +r.racewayLf.toFixed(2) : 0;
+        row['Conductor LF'] = typeof r.conductorLfTotal === 'number' ? +r.conductorLfTotal.toFixed(2) : 0;
+        row['Boxes'] = typeof r.boxes === 'number' ? r.boxes : 0;
+        row['Conductor 1 Count'] = c1.count || '';
+        row['Conductor 1 Size'] = c1.size || '';
+        row['Conductor 2 Count'] = c2.count || '';
+        row['Conductor 2 Size'] = c2.size || '';
+        row['Conductor 3 Count'] = c3.count || '';
+        row['Conductor 3 Size'] = c3.size || '';
+      } else {
+        row['Qty'] = r.qty;
+      }
+
+      if (r.note) {
+        row['Notes'] = r.note;
+      }
+
+      return row;
+    });
+
+    // Build summarized panels by tag code
+    const sumRows = buildBOMRows(pages, 'summarized');
+    const panelSummaryRows = sumRows
+      .filter(r => r.shape !== 'count')
+      .map(r => ({
+        'Tag Code': r.tagCode,
+        'Tag Name': r.tagName || '',
+        'Category': r.category || '',
+        'Shape': r.shape,
+        'Qty': r.qty,
+        'Total Geometry LF': typeof r.lengthFt === 'number' ? +r.lengthFt.toFixed(2) : 0,
+        'Total Raceway LF': typeof r.racewayLf === 'number' ? +r.racewayLf.toFixed(2) : 0,
+        'Total Conductor LF': typeof r.conductorLfTotal === 'number' ? +r.conductorLfTotal.toFixed(2) : 0,
+        'Total Boxes': typeof r.boxes === 'number' ? r.boxes : 0,
+      }))
+      .sort((a, b) => a['Tag Code'].localeCompare(b['Tag Code']));
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(assumptionsRows), 'Assumptions');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(lightingRows),   'Lighting');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(controlsRows),   'Lighting Controls');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(receptRows),     'Receptacles');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(powerRows),      'Power');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataRows),       'Data-Comm');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(fireRows),       'Fire Alarm');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(specialRows),    'Special Systems');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(measRows),       'Measurements');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(countAllRows),   'Counts (All)');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows),    'Summary');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), 'Summary');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailedMeasRows), 'Measurements (Itemized)');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(panelSummaryRows), 'Panels Summary');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(lightingRows), 'Lighting');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(controlsRows), 'Lighting Controls');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(receptRows), 'Receptacles');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(powerRows), 'Power');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataRows), 'Data-Comm');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(fireRows), 'Fire Alarm');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(specialRows), 'Special Systems');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(countAllRows), 'Counts (All)');
 
     const baseName =
       useStore.getState().getProjectName()?.trim() ||
