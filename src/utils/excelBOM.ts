@@ -128,9 +128,13 @@ export async function exportProfessionalBOM(
   if (pricingData && pricingData.length > 0) {
     pricingData.forEach(p => {
       const key = `${p.category}::${p.description}`;
+      // Convert to number explicitly (Postgres may return as string)
+      const cost = typeof p.material_cost === 'string' ? parseFloat(p.material_cost) : (p.material_cost || 0);
+      const laborHours = typeof p.labor_hours === 'string' ? parseFloat(p.labor_hours) : (p.labor_hours || 0);
+
       const priceInfo = {
-        cost: p.material_cost || 0,
-        laborHours: p.labor_hours || 0
+        cost: isNaN(cost) ? 0 : cost,
+        laborHours: isNaN(laborHours) ? 0 : laborHours
       };
       priceMap.set(key, priceInfo);
 
@@ -138,18 +142,23 @@ export async function exportProfessionalBOM(
       pricingArray.push({
         category: p.category,
         description: p.description,
-        cost: p.material_cost || 0,
-        laborHours: p.labor_hours || 0
+        cost: priceInfo.cost,
+        laborHours: priceInfo.laborHours
       });
     });
   }
+
+  console.log(`Loaded ${pricingData?.length || 0} pricing records from database`);
 
   // Fuzzy matcher - finds closest match in database
   function findPrice(category: string, description: string): { cost: number; laborHours: number } {
     // Try exact match first
     const exactKey = `${category}::${description}`;
     const exact = priceMap.get(exactKey);
-    if (exact && (exact.cost > 0 || exact.laborHours > 0)) return exact;
+    if (exact && (exact.cost > 0 || exact.laborHours > 0)) {
+      console.log(`✓ Exact match for ${category}::${description} = $${exact.cost}`);
+      return exact;
+    }
 
     // Normalize for fuzzy matching
     const normDesc = description.toLowerCase()
@@ -170,7 +179,13 @@ export async function exportProfessionalBOM(
 
     // Return first match with pricing
     const match = candidates.find(c => c.cost > 0 || c.laborHours > 0);
-    return match ? { cost: match.cost, laborHours: match.laborHours } : { cost: 0, laborHours: 0 };
+    if (match) {
+      console.log(`✓ Fuzzy match for ${description} → ${match.description} = $${match.cost}`);
+      return { cost: match.cost, laborHours: match.laborHours };
+    }
+
+    console.log(`✗ No match for ${category}::${description}`);
+    return { cost: 0, laborHours: 0 };
   }
 
   // Get all data
