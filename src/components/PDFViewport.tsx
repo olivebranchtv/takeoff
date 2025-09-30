@@ -1,10 +1,12 @@
+// src/components/PDFViewport.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import type { PDFDoc } from '@/lib/pdf';
 import { useStore } from '@/state/store';
 import { Stage, Layer, Group, Line, Text as KText, Transformer, Rect, Circle } from 'react-konva';
 import Konva from 'konva';
 import { pathLength, simplifyRDP } from '@/utils/geometry';
-import type { AnyTakeoffObject } from '@/types';
+import type { AnyTakeoffObject, MeasureOptions } from '@/types';
+import MeasureDialog from '@/components/MeasureDialog';
 
 type Props = { pdf: PDFDoc | null };
 
@@ -70,14 +72,9 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
         });
 
       } catch (error: any) {
-        const msg = String(error?.message || error);
-        const isCancel = msg.includes('Rendering cancelled') || error?.name === 'RenderingCancelledException';
-        if (isCancel) {
-          // Normal when a render is superseded; KEEP the previous bitmap.
-          console.warn(`PDF render cancelled for page ${pageIndex} (ignored)`);
-        } else {
+        if (!cancelled) setInfo(null);
+        if (!/Rendering cancelled/i.test(error?.message || '')) {
           console.error(`Error rendering PDF page ${pageIndex}:`, error);
-          // Keep previous bitmap instead of blanking the screen.
         }
       }
     })();
@@ -86,6 +83,56 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
   }, [pdf, zoom, pageIndex]);
 
   return info;
+}
+
+// ---- measurement math (object-level); supports wastePct or wasteFactor, and optional conductor extras ----
+function computeResult(
+  ppf: number | undefined,
+  verts: {x:number;y:number}[],
+  opts?: MeasureOptions
+) {
+  const points = verts.length;
+  const px = pathLength(verts);
+  const baseLengthFt = ppf && ppf > 0 ? (px / ppf) : 0;
+
+  const racewayExtra = (opts?.extraRacewayPerPoint ?? 0) * points;
+  const conductorExtraEach = (opts?.extraConductorPerPoint ?? 0) * points;
+
+  // waste multiplier; accept either wasteFactor (e.g. 1.05) or wastePct (0..1)
+  const wasteFactor =
+    typeof (opts as any)?.wasteFactor === 'number'
+      ? Math.max(1, (opts as any).wasteFactor)
+      : 1 + Math.max(0, Math.min(1, (opts as any)?.wastePct ?? 0));
+
+  const racewayLen = (baseLengthFt + racewayExtra) * wasteFactor;
+
+  // Conductor groups (count × (base + extras)) × waste
+  const conductors = (opts?.conductors ?? []).slice(0, 3).map((g: any) => {
+    const count = Math.max(0, Math.floor(g?.count ?? 0));
+    const lengthFt = count > 0 ? count * (baseLengthFt + conductorExtraEach) * wasteFactor : 0;
+    return {
+      count,
+      size: g?.size ?? '',
+      insulation: g?.insulation ?? 'THHN/THWN-2',
+      material: g?.material ?? 'CU',
+      lengthFt,
+    };
+  });
+
+  const boxes = (opts?.boxesPerPoint ?? 0) * points;
+
+  return {
+    points,
+    baseLengthFt,
+    raceway: {
+      emtSize: (opts as any)?.emtSize ?? '',
+      extraFt: racewayExtra * wasteFactor,
+      lengthFt: racewayLen,
+    },
+    conductors,
+    boxes,
+    calculatedAt: new Date().toISOString(),
+  };
 }
 
 export default function PDFViewport({ pdf }: Props) {
@@ -105,11 +152,25 @@ export default function PDFViewport({ pdf }: Props) {
   const [, setPaintTick] = useState(0);
   const liveLabelRef = useRef<{text:string;x:number;y:number}|null>(null);
 
+  // measure-dialog integration
+  const [measureOpen, setMeasureOpen] = useState(false);
+  const measureRef = useRef<MeasureOptions | undefined>(undefined);
+  const armedToolRef = useRef<'polyline'|'freeform'|null>(null); // which tool asked for options
+
   const {
-    pages, upsertPage, addObject, patchObject, tool, zoom,
+    pages, upsertPage, addObject, patchObject, tool, setTool, zoom,
     currentTag, setCalibration, selectedIds, selectOnly, clearSelection,
-    deleteSelected, undo, redo, activePage, tags
+    deleteSelected, undo, redo, activePage, tags, getLastMeasureOptions
   } = useStore();
+
+  // If user switches to polyline/freeform, open dialog first (unless already drawing)
+  useEffect(() => {
+    if ((tool === 'polyline' || tool === 'freeform') && !drawingRef.current.type) {
+      armedToolRef.current = tool;
+      setMeasureOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tool]);
 
   useEffect(() => {
     if (!pdf) return;
@@ -121,19 +182,9 @@ export default function PDFViewport({ pdf }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdf]);
 
-  // If user switches away from Calibrate, wipe overlay (prevents stale state)
-  useEffect(() => {
-    if (tool !== 'calibrate') {
-      calibPtsRef.current = [];
-      calibLiveRef.current = null;
-      setPaintTick(t => t + 1);
-    }
-  }, [tool]);
-
   const info = usePageBitmap(pdf, zoom, activePage);
   const pageScale = (i: PageRenderInfo) => i.width / i.baseWidth;
 
-  const toStage = (i: PageRenderInfo, p:{x:number;y:number}) => ({ x: p.x * pageScale(i), y: p.y * pageScale(i) });
   const toPage  = (i: PageRenderInfo, spt:{x:number;y:number}) => ({ x: spt.x / pageScale(i), y: spt.y / pageScale(i) });
 
   function colorForCode(code?: string) {
@@ -147,7 +198,6 @@ export default function PDFViewport({ pdf }: Props) {
     const posStage = stage?.getPointerPosition();
     if (!posStage) { liveLabelRef.current = null; return; }
 
-    // Calibrate: show live distance readout between first point and cursor
     if (tool === 'calibrate' && calibPtsRef.current.length === 1) {
       const a = calibPtsRef.current[0];
       const b = toPage(i, posStage);
@@ -164,9 +214,7 @@ export default function PDFViewport({ pdf }: Props) {
     let vertsPage = drawingRef.current.pts.slice();
     if (drawingRef.current.type === 'segment') {
       if (vertsPage.length === 1) vertsPage = [vertsPage[0], toPage(i, posStage)];
-    } else if (drawingRef.current.type === 'polyline') {
-      vertsPage = [...vertsPage, toPage(i, posStage)];
-    } else if (drawingRef.current.type === 'freeform') {
+    } else if (drawingRef.current.type === 'polyline' || drawingRef.current.type === 'freeform') {
       vertsPage = [...vertsPage, toPage(i, posStage)];
     }
     const page = pages.find(p => p.pageIndex === activePage);
@@ -177,12 +225,20 @@ export default function PDFViewport({ pdf }: Props) {
   }
 
   function commitObject(type:'segment'|'polyline'|'freeform', vertsPage:{x:number;y:number}[]) {
+    const page = pages.find(p => p.pageIndex === activePage);
+    const result = computeResult(page?.pixelsPerFoot, vertsPage, measureRef.current);
+
     addObject(activePage, {
       id: crypto.randomUUID(),
       type,
       pageIndex: activePage,
       vertices: vertsPage,
       code: currentTag || undefined,
+      // helpful for BOM fallbacks & exports
+      lengthFt: result.raceway.lengthFt,
+      // store the inputs & computed outputs
+      measure: measureRef.current,
+      result,
     } as AnyTakeoffObject);
   }
 
@@ -208,7 +264,7 @@ export default function PDFViewport({ pdf }: Props) {
     const posPage = toPage(info, posStage);
     cursorPageRef.current = posPage;
 
-    // If we clicked an object (except when calibrating), select it
+    // select if clicked on object (except when calibrating)
     if (tool !== 'calibrate' && e.target?.attrs?.name?.startsWith('obj-')) {
       const id = e.target.attrs.name.substring(4);
       selectOnly(id);
@@ -226,7 +282,17 @@ export default function PDFViewport({ pdf }: Props) {
         code: currentTag,
         pageIndex: activePage, x: posPage.x, y: posPage.y, rotation: 0
       } as any);
-    } else if (tool === 'segment') {
+      return;
+    }
+
+    // If drawing a line-like type but options were not confirmed, ask now
+    if ((tool === 'polyline' || tool === 'freeform') && !measureRef.current) {
+      armedToolRef.current = tool;
+      setMeasureOpen(true);
+      return; // wait for dialog
+    }
+
+    if (tool === 'segment') {
       drawingRef.current = { type: 'segment', pts: [posPage] };
     } else if (tool === 'polyline') {
       if (!drawingRef.current.type) drawingRef.current = { type: 'polyline', pts: [posPage] };
@@ -285,7 +351,6 @@ export default function PDFViewport({ pdf }: Props) {
 
   function onMouseUp() {
     if (!info) return;
-
     if (!drawingRef.current.type) return;
 
     const stage = stageRef.current!;
@@ -377,6 +442,24 @@ export default function PDFViewport({ pdf }: Props) {
 
   return (
     <div className="content" onContextMenu={(e)=>e.preventDefault()}>
+      {/* Measurement options dialog */}
+      <MeasureDialog
+        open={measureOpen}
+        initial={getLastMeasureOptions?.()}
+        onCancel={() => {
+          setMeasureOpen(false);
+          // if user had selected a drawing tool, revert back to hand so nothing starts accidentally
+          if (armedToolRef.current) setTool('hand');
+          armedToolRef.current = null;
+        }}
+        onSubmit={(opts) => {
+          measureRef.current = opts; // keep for subsequent runs
+          setMeasureOpen(false);
+          // leave the chosen tool armed so the user can start drawing immediately
+        }}
+        title={armedToolRef.current ? `Set Options for ${armedToolRef.current === 'polyline' ? 'Polyline' : 'Freeform'} Run` : 'Measurement Options'}
+      />
+
       <div className="pageBox" style={{ width: w, height: h }}>
         <div style={{position:'absolute', inset:0}}>
           {/* bitmap */}
@@ -414,9 +497,9 @@ export default function PDFViewport({ pdf }: Props) {
               )}
 
               {/* LIVE PREVIEW + TOOLTIP */}
-              {renderLive(drawingRef.current, s, cursorPageRef.current)}
+              {renderLive(drawingRef.current, s, cursorPageRef.current, measureRef.current)}
 
-              {/* CALIBRATION OVERLAY (local; two red dots and a yellow guide) */}
+              {/* CALIBRATION OVERLAY */}
               {renderCalibration(calibPtsRef.current, calibLiveRef.current, s)}
 
               {liveLabelRef.current && (
@@ -436,7 +519,7 @@ function halfPoint(pts: {x:number;y:number}[]) {
   if (pts.length === 0) return { x: 0, y: 0 };
   if (pts.length === 1) return { x: pts[0].x, y: pts[0].y };
   if (pts.length === 2) {
-    return { x: (pts[0].x + pts[1].x)/2, y: (pts[0].y + pts[1].y)/2 };
+    return { x: (pts[0].x + pts[1].x)/2, y: (pts[0].y + pts[1].y) / 2 };
   }
   let total = 0;
   for (let i=1;i<pts.length;i++) {
@@ -519,15 +602,17 @@ function renderObject(
   const SIZE = 20;
   const code = (obj as any).code || '';
   const fill = colorForCode(code);
+  const stroke = obj.measure?.lineColor || 'blue';
+  const strokeWidth = Math.max(1, obj.measure?.lineWeight ?? 2);
 
   if (obj.type === 'segment') {
     const verts = obj.vertices.map(v => ({ x: v.x * s, y: v.y * s }));
     const mid = halfPoint(verts);
     return (
       <Group key={obj.id} name={`obj-${obj.id}`} onContextMenu={onCtxDelete}>
-        <Circle x={verts[0].x} y={verts[0].y} radius={4} fill="red"/>
-        <Circle x={verts[1].x} y={verts[1].y} radius={4} fill="red"/>
-        <Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/>
+        <Circle x={verts[0].x} y={verts[0].y} radius={4} fill={obj.measure?.pointColor || 'red'}/>
+        <Circle x={verts[1].x} y={verts[1].y} radius={4} fill={obj.measure?.pointColor || 'red'}/>
+        <Line points={verts.flatMap(v=>[v.x,v.y])} stroke={stroke} strokeWidth={strokeWidth}/>
         <Group x={mid.x} y={mid.y}>
           <Rect width={SIZE} height={SIZE} offsetX={SIZE/2} offsetY={SIZE/2} fill={fill} stroke="#222" cornerRadius={4} />
           <KText text={String(code)} width={SIZE} height={SIZE} offsetX={SIZE/2} offsetY={SIZE/2} align="center" verticalAlign="middle" fontStyle="bold" fontSize={12} fill="#fff" />
@@ -542,9 +627,9 @@ function renderObject(
     const mid = halfPoint(verts);
     return (
       <Group key={obj.id} name={`obj-${obj.id}`} onContextMenu={onCtxDelete}>
-        <Circle x={verts[0].x} y={verts[0].y} radius={4} fill="red"/>
-        <Circle x={verts[verts.length-1].x} y={verts[verts.length-1].y} radius={4} fill="red"/>
-        <Line points={pts} stroke="blue" strokeWidth={2}/>
+        <Circle x={verts[0].x} y={verts[0].y} radius={4} fill={obj.measure?.pointColor || 'red'}/>
+        <Circle x={verts[verts.length-1].x} y={verts[verts.length-1].y} radius={4} fill={obj.measure?.pointColor || 'red'}/>
+        <Line points={pts} stroke={stroke} strokeWidth={strokeWidth}/>
         <Group x={mid.x} y={mid.y}>
           <Rect width={SIZE} height={SIZE} offsetX={SIZE/2} offsetY={SIZE/2} fill={fill} stroke="#222" cornerRadius={4} />
           <KText text={String(code)} width={SIZE} height={SIZE} offsetX={SIZE/2} offsetY={SIZE/2} align="center" verticalAlign="middle" fontStyle="bold" fontSize={12} fill="#fff" />
@@ -559,7 +644,7 @@ function renderObject(
     const mid = halfPoint(verts);
     return (
       <Group key={obj.id} name={`obj-${obj.id}`} onContextMenu={onCtxDelete}>
-        <Line points={pts} stroke="blue" strokeWidth={2}/>
+        <Line points={pts} stroke={stroke} strokeWidth={strokeWidth}/>
         {code ? (
           <Group x={mid.x} y={mid.y}>
             <Rect width={SIZE} height={SIZE} offsetX={SIZE/2} offsetY={SIZE/2} fill={fill} stroke="#222" cornerRadius={4} />
@@ -575,27 +660,27 @@ function renderObject(
 function renderLive(
   dr: {type:'segment'|'polyline'|'freeform'|null; pts:{x:number;y:number}[]},
   s: number,
-  cursorPage: {x:number;y:number} | null
+  cursorPage: {x:number;y:number} | null,
+  opts?: MeasureOptions
 ) {
   if (!dr.type) return null;
+  const stroke = opts?.lineColor || 'blue';
+  const strokeWidth = Math.max(1, opts?.lineWeight ?? 2);
 
   if (dr.type === 'segment' && dr.pts.length === 1 && cursorPage) {
     const a = { x: dr.pts[0].x * s, y: dr.pts[0].y * s };
     const b = { x: cursorPage.x * s, y: cursorPage.y * s };
     return (
       <Group>
-        <Circle x={a.x} y={a.y} radius={4} fill="red"/>
-        <Line points={[a.x, a.y, b.x, b.y]} stroke="blue" strokeWidth={2}/>
+        <Circle x={a.x} y={a.y} radius={4} fill={opts?.pointColor || 'red'}/>
+        <Line points={[a.x, a.y, b.x, b.y]} stroke={stroke} strokeWidth={strokeWidth}/>
       </Group>
     );
   }
 
   const verts = dr.pts.map(p => ({ x: p.x * s, y: p.y * s }));
-  if (dr.type === 'polyline' && verts.length >= 1) {
-    return <Group><Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/></Group>;
-  }
-  if (dr.type === 'freeform' && verts.length >= 1) {
-    return <Group><Line points={verts.flatMap(v=>[v.x,v.y])} stroke="blue" strokeWidth={2}/></Group>;
+  if ((dr.type === 'polyline' || dr.type === 'freeform') && verts.length >= 1) {
+    return <Group><Line points={verts.flatMap(v=>[v.x,v.y])} stroke={stroke} strokeWidth={strokeWidth}/></Group>;
   }
   return null;
 }
@@ -605,7 +690,6 @@ function renderCalibration(calibPts: {x:number;y:number}[], live: {x:number;y:nu
   const A = calibPts[0];
   const B = calibPts.length === 2 ? calibPts[1] : live;
   const items: React.ReactNode[] = [];
-  // first point
   items.push(<Circle key="a" x={A.x*s} y={A.y*s} radius={5} fill="#ff0000" stroke="#222" strokeWidth={1} />);
   if (B) {
     items.push(
