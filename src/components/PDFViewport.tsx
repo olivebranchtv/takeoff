@@ -21,12 +21,17 @@ type PageRenderInfo = {
 
 function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
   const [info, setInfo] = useState<PageRenderInfo | null>(null);
+  const lastGoodRef = useRef<PageRenderInfo | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     let cleanup: (() => void) | null = null;
 
-    if (!pdf || pageIndex < 0) { setInfo(null); return; }
+    if (!pdf || pageIndex < 0) {
+      setInfo(null);
+      lastGoodRef.current = null;
+      return;
+    }
 
     const DPR = Math.max(1, window.devicePixelRatio || 1);
 
@@ -62,19 +67,27 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
         await renderTask.promise;
         if (cancelled) return;
 
-        setInfo({
+        const next: PageRenderInfo = {
           pageIndex,
           baseWidth: baseVp.width,
           baseHeight: baseVp.height,
           width: vp.width,
           height: vp.height,
           canvas
-        });
+        };
 
+        lastGoodRef.current = next;
+        setInfo(next);
       } catch (error: any) {
-        if (!cancelled) setInfo(null);
-        if (!/Rendering cancelled/i.test(error?.message || '')) {
+        const msg = String(error?.message || '');
+        // PDF.js throws "Rendering cancelled" on effect re-runs. That's expected.
+        if (/Rendering cancelled/i.test(msg)) {
+          // Keep displaying the last good bitmap; don't clear the screen.
+          if (!cancelled) setInfo(lastGoodRef.current);
+        } else {
           console.error(`Error rendering PDF page ${pageIndex}:`, error);
+          // Do NOT clear info on fatal errors either; retain last good to avoid “job closed” feel.
+          if (!cancelled) setInfo(lastGoodRef.current);
         }
       }
     })();
