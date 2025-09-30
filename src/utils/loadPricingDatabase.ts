@@ -44,35 +44,41 @@ export async function loadSKDPricingDatabase(filePath: string): Promise<Material
 
     // Parse each row
     for (const row of rows) {
-      // Try to find columns by various names
+      // SKD Database uses: name, category, unit_cost, labor_unit_s..., supplier, description
+      const name = row['name'] || row['Name'] || '';
       const category =
-        row['Category'] || row['category'] || row['Division'] ||
+        row['category'] || row['Category'] || row['Division'] ||
         row['Type'] || row['GROUP'] || '';
 
       const description =
-        row['Description'] || row['description'] || row['Item'] ||
-        row['Material'] || row['DESCRIPTION'] || '';
+        row['description'] || row['Description'] || row['name'] || row['Name'] ||
+        row['Item'] || row['Material'] || row['DESCRIPTION'] || '';
 
       const unit =
-        row['Unit'] || row['unit'] || row['UOM'] || row['U/M'] || 'EA';
+        row['unit'] || row['Unit'] || row['UOM'] || row['U/M'] || 'EA';
 
+      // SKD uses 'unit_cost' column
       const cost =
-        parseFloat(row['Cost'] || row['cost'] || row['Price'] ||
-        row['Unit Cost'] || row['COST'] || row['Material Cost'] || row['$'] || '0');
+        parseFloat(row['unit_cost'] || row['unit cost'] || row['Unit Cost'] ||
+        row['Cost'] || row['cost'] || row['Price'] ||
+        row['COST'] || row['Material Cost'] || row['$'] || '0');
 
+      // SKD uses 'labor_unit_s...' column (might be truncated)
       const laborHours =
-        parseFloat(row['Labor Hours'] || row['Labor Hrs'] || row['Hours'] ||
+        parseFloat(row['labor_unit_s'] || row['labor_unit_supply'] || row['labor_unit_supplier'] ||
+        row['Labor Hours'] || row['Labor Hrs'] || row['Hours'] ||
         row['Install Hours'] || row['Installation Time'] || row['Hrs'] || '0');
 
       const vendor =
-        row['Vendor'] || row['vendor'] || row['Supplier'] || '';
+        row['supplier'] || row['Supplier'] || row['Vendor'] || row['vendor'] || '';
 
       const partNumber =
         row['Part Number'] || row['Part #'] || row['SKU'] || row['Item #'] || '';
 
       // Skip header rows and empty rows
       if (!description || description.toLowerCase().includes('description') ||
-          description.toLowerCase().includes('item')) {
+          description.toLowerCase().includes('item') ||
+          description.toLowerCase().includes('name')) {
         continue;
       }
 
@@ -129,34 +135,41 @@ export function parseSKDWorkbook(workbook: any): MaterialPrice[] {
 
   // Parse each row
   for (const row of rows) {
+    // SKD Database uses: name, category, unit_cost, labor_unit_s..., supplier, description
+    const name = row['name'] || row['Name'] || '';
     const category =
-      row['Category'] || row['category'] || row['Division'] ||
+      row['category'] || row['Category'] || row['Division'] ||
       row['Type'] || row['GROUP'] || '';
 
     const description =
-      row['Description'] || row['description'] || row['Item'] ||
-      row['Material'] || row['DESCRIPTION'] || '';
+      row['description'] || row['Description'] || row['name'] || row['Name'] ||
+      row['Item'] || row['Material'] || row['DESCRIPTION'] || '';
 
     const unit =
-      row['Unit'] || row['unit'] || row['UOM'] || row['U/M'] || 'EA';
+      row['unit'] || row['Unit'] || row['UOM'] || row['U/M'] || 'EA';
 
+    // SKD uses 'unit_cost' column
     const cost =
-      parseFloat(row['Cost'] || row['cost'] || row['Price'] ||
-      row['Unit Cost'] || row['COST'] || row['Material Cost'] || row['$'] || '0');
+      parseFloat(row['unit_cost'] || row['unit cost'] || row['Unit Cost'] ||
+      row['Cost'] || row['cost'] || row['Price'] ||
+      row['COST'] || row['Material Cost'] || row['$'] || '0');
 
+    // SKD uses 'labor_unit_s...' column (might be truncated like labor_unit_s...)
     const laborHours =
-      parseFloat(row['Labor Hours'] || row['Labor Hrs'] || row['Hours'] ||
+      parseFloat(row['labor_unit_s'] || row['labor_unit_supply'] || row['labor_unit_supplier'] ||
+      row['Labor Hours'] || row['Labor Hrs'] || row['Hours'] ||
       row['Install Hours'] || row['Installation Time'] || row['Hrs'] || '0');
 
     const vendor =
-      row['Vendor'] || row['vendor'] || row['Supplier'] || '';
+      row['supplier'] || row['Supplier'] || row['Vendor'] || row['vendor'] || '';
 
     const partNumber =
       row['Part Number'] || row['Part #'] || row['SKU'] || row['Item #'] || '';
 
     // Skip header rows and empty rows
     if (!description || description.toLowerCase().includes('description') ||
-        description.toLowerCase().includes('item')) {
+        description.toLowerCase().includes('item') ||
+        description.toLowerCase().includes('name')) {
       continue;
     }
 
