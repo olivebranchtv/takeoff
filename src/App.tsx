@@ -24,7 +24,6 @@ type SKDBundle = {
    helpers for base64 <-> ArrayBuffer
    ========================================================================================= */
 
-/** Normalize base64 of all common variants */
 function normalizeBase64(input: string): string {
   let src = (input || '').trim();
   const comma = src.indexOf(',');
@@ -43,27 +42,18 @@ function b64ToAb(b64: string): ArrayBuffer {
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out.buffer;
 }
-/** quick sanity check that bytes look like a PDF ("%PDF") near the start */
 function looksLikePdf(bytes: Uint8Array): boolean {
   const searchLen = Math.min(bytes.length, 64);
   for (let i = 0; i <= searchLen - 5; i++) {
-    if (
-      bytes[i] === 0x25 && // %
-      bytes[i + 1] === 0x50 && // P
-      bytes[i + 2] === 0x44 && // D
-      bytes[i + 3] === 0x46 && // F
-      bytes[i + 4] === 0x2d // -
-    ) return true;
+    if (bytes[i]===0x25 && bytes[i+1]===0x50 && bytes[i+2]===0x44 && bytes[i+3]===0x46 && bytes[i+4]===0x2d) return true;
   }
   return false;
 }
-/** Simple labels to avoid fragile pdf.js APIs. */
 async function resolvePageLabels(doc: any): Promise<string[]> {
   const count = (doc?.numPages ?? 0) | 0;
   return Array.from({ length: count }, (_, i) => `Page ${i + 1}`);
 }
 
-/** Preferred category order for pickers (others follow alphabetically) */
 const MASTER_CATEGORY_ORDER = ['Lights', 'Receptacles'];
 
 export default function App() {
@@ -71,7 +61,7 @@ export default function App() {
   const pdfFileRef = useRef<HTMLInputElement>(null);
   const projFileRef = useRef<HTMLInputElement>(null);
 
-  /* ---------- NEW: viewer scroll/pan refs ---------- */
+  /* ---------- viewer scroll/pan + box-zoom refs ---------- */
   const viewerScrollRef = useRef<HTMLDivElement>(null);
   const panStateRef = useRef<{
     active: boolean;
@@ -80,7 +70,15 @@ export default function App() {
     startLeft: number;
     startTop: number;
     byMouseButton: 0 | 1 | 2;
-  }>({ active: false, startX: 0, startY: 0, startLeft: 0, startTop: 0, byMouseButton: 0 });
+    mode: 'pan' | 'box';
+    boxX: number;
+    boxY: number;
+    boxW: number;
+    boxH: number;
+  }>({ active:false, startX:0, startY:0, startLeft:0, startTop:0, byMouseButton:0, mode:'pan', boxX:0, boxY:0, boxW:0, boxH:0 });
+
+  /* overlay state for the blue selection rectangle */
+  const [boxRect, setBoxRect] = useState<{x:number,y:number,w:number,h:number}|null>(null);
 
   /* ---------- viewer/pdf ---------- */
   const [pdf, setPdf] = useState<PDFDoc | null>(null);
@@ -171,7 +169,6 @@ export default function App() {
     setLastSaveBase(null);
   }
 
-  /** open .skdproj and auto-restore embedded PDF */
   async function doOpenProject(file: File) {
     let text = '';
     try {
@@ -182,11 +179,8 @@ export default function App() {
           ? parsed
           : { kind: 'skdproj', version: 1, core: parsed as ProjectSave, projectTags: [], pdf: undefined };
 
-      // Load the store portion (restore pages/objects/tags BEFORE loading PDF)
       try {
         const state = useStore.getState();
-
-        // Restore pages with objects (your tag placements & measurements)
         if (bundle.core.pages && Array.isArray(bundle.core.pages)) {
           state.setPages(bundle.core.pages.map(page => ({
             pageIndex: page.pageIndex,
@@ -196,21 +190,12 @@ export default function App() {
             objects: page.objects || []
           })));
         }
-
-        // Restore tags
-        if (bundle.core.tags && Array.isArray(bundle.core.tags)) {
-          state.importTags(bundle.core.tags);
-        }
-
-        // Set filename
-        if (bundle.core.fileName) {
-          state.setFileName(bundle.core.fileName);
-        }
+        if (bundle.core.tags && Array.isArray(bundle.core.tags)) state.importTags(bundle.core.tags);
+        if (bundle.core.fileName) state.setFileName(bundle.core.fileName);
       } catch (err: any) {
         console.warn('[Open Project] fromProject warning:', err?.message || err);
       }
 
-      // Derive a friendly project display name:
       const coreAny: any = bundle.core ?? {};
       const baseFromPdf = (bundle.pdf?.name || '').replace(/\.pdf$/i, '');
       const baseFromFile = file.name.replace(/\.(skdproj|json)$/i, '');
@@ -219,27 +204,19 @@ export default function App() {
         (typeof coreAny.projectName === 'string' && coreAny.projectName.trim()) ||
         (baseFromPdf && baseFromPdf.trim()) ||
         baseFromFile;
-
       setProjectName(openedName);
-
-      // restore project tags (project-level tag list)
       setProjectTags(Array.isArray(bundle.projectTags) ? bundle.projectTags : []);
 
-      // restore PDF if present — DO NOT CLEAR PAGES after loading (keep restored objects!)
       if (bundle.pdf && typeof bundle.pdf.bytesBase64 === 'string' && bundle.pdf.bytesBase64.length > 0) {
         try {
           const ab = b64ToAb(bundle.pdf.bytesBase64);
           const u8 = new Uint8Array(ab);
           if (!looksLikePdf(u8)) throw new Error('Embedded bytes are not a PDF (missing %PDF- header)');
-
           const doc = await loadPdfFromBytes(u8);
-
           setPdf(doc);
           setPdfName(bundle.pdf.name || 'document.pdf');
           setFileName(bundle.pdf.name || 'document.pdf');
           setPdfBytesBase64(bundle.pdf.bytesBase64);
-
-          // Keep existing restored pages; just refresh doc metadata
           setPageCount(doc.numPages);
           setPageLabels(await resolvePageLabels(doc));
           setActivePage(0);
@@ -253,8 +230,6 @@ export default function App() {
         setPdf(null);
         setFileName('');
       }
-
-      // Remember the base name for subsequent "Save"
       setLastSaveBase(baseFromFile);
     } catch (e: any) {
       console.error('[Open Project] Invalid .skdproj:', e?.message || e, { filePreview: text.slice(0, 200) });
@@ -269,19 +244,16 @@ export default function App() {
     if (!name) return;
     const base = name.replace(/\.(skdproj|json)$/i, '');
     downloadBundle(base);
-    // reflect in header
     setProjectName(base);
   }
   function doPrint() { window.print(); }
   function doCloseProject() { doNewProject(); }
 
   /* =========================================================================================
-     OPEN PDF (embed bytes into project state)
+     OPEN PDF
      ========================================================================================= */
   const openPdf = useCallback(async (file: File) => {
     const buf = await file.arrayBuffer();
-
-    // Store as base64 in the project bundle
     let b64 = '';
     {
       const v = new Uint8Array(buf);
@@ -289,15 +261,11 @@ export default function App() {
       for (let i = 0; i < v.length; i++) s += String.fromCharCode(v[i]);
       b64 = btoa(s);
     }
-
     setPdfBytesBase64(b64);
     setPdfName(file.name);
-
-    // Always feed pdf.js a Uint8Array
     const doc = await loadPdfFromBytes(new Uint8Array(buf));
     setPdf(doc);
     setFileName(file.name);
-    // For standalone PDF open, start fresh pages
     setPages([]);
     setPageCount(doc.numPages);
     setPageLabels(await resolvePageLabels(doc));
@@ -325,7 +293,7 @@ export default function App() {
           continue;
         }
         const verts = (obj as AnyTakeoffObject).vertices ?? [];
-        const lenPx = pathLength(verts);
+               const lenPx = pathLength(verts);
         const lf = ppf > 0 ? lenPx / ppf : 0;
 
         if (obj.type === 'segment') segLF += lf;
@@ -355,7 +323,7 @@ export default function App() {
   }, [pages]);
 
   /* =========================================================================================
-     ADD-FROM-DB PICKER (grouped by category, Lights/Receptacles first)
+     ADD-FROM-DB PICKER
      ========================================================================================= */
   const PICKER_TOP_CATS = ['Lights', 'Receptacles'] as const;
 
@@ -370,9 +338,7 @@ export default function App() {
       arr.push(t);
       byCat.set(cat, arr);
     }
-    for (const arr of byCat.values()) {
-      arr.sort((a, b) => (a.code || '').localeCompare(b.code || ''));
-    }
+    for (const arr of byCat.values()) arr.sort((a, b) => (a.code || '').localeCompare(b.code || ''));
     const cats = Array.from(byCat.keys());
     const ordered = [
       ...PICKER_TOP_CATS.filter(c => byCat.has(c as unknown as string)) as unknown as string[],
@@ -388,55 +354,109 @@ export default function App() {
     [pickerGroups]
   );
 
-  // Header label always prefers store's project name
   const headerProjectLabel = useStore(s => s.getProjectName());
 
   /* =========================================================================================
-     NEW: Hand-tool / middle/right button panning for the viewer scroll container
+     Hand tool: pan + SHIFT-box-zoom
      ========================================================================================= */
   const beginPan = (e: React.MouseEvent) => {
     const container = viewerScrollRef.current;
     if (!container) return;
 
-    // Left-drag only if Hand tool; middle/right always allowed
     const button = e.button as 0 | 1 | 2;
-    const allow =
-      (button === 0 && tool === 'hand') || button === 1 || button === 2;
-    if (!allow) return;
+    const allowPan = (button === 0 && tool === 'hand' && !e.shiftKey) || button === 1 || button === 2;
+    const allowBox = (button === 0 && tool === 'hand' && e.shiftKey);
+
+    if (!allowPan && !allowBox) return;
 
     e.preventDefault();
-    const { clientX, clientY } = e;
-    panStateRef.current = {
-      active: true,
-      startX: clientX,
-      startY: clientY,
-      startLeft: container.scrollLeft,
-      startTop: container.scrollTop,
-      byMouseButton: button,
-    };
-    // Prevent text/image selection while dragging
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'grabbing';
+    const r = container.getBoundingClientRect();
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+
+    panStateRef.current.active = true;
+    panStateRef.current.byMouseButton = button;
+    panStateRef.current.startX = clientX;
+    panStateRef.current.startY = clientY;
+    panStateRef.current.startLeft = container.scrollLeft;
+    panStateRef.current.startTop = container.scrollTop;
+
+    if (allowBox) {
+      panStateRef.current.mode = 'box';
+      const x = clientX - r.left + container.scrollLeft;
+      const y = clientY - r.top + container.scrollTop;
+      panStateRef.current.boxX = x;
+      panStateRef.current.boxY = y;
+      panStateRef.current.boxW = 0;
+      panStateRef.current.boxH = 0;
+      setBoxRect({ x, y, w: 0, h: 0 });
+      document.body.style.cursor = 'crosshair';
+    } else {
+      panStateRef.current.mode = 'pan';
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'grabbing';
+    }
   };
 
   const movePan = (e: React.MouseEvent) => {
     const st = panStateRef.current;
     const container = viewerScrollRef.current;
     if (!st.active || !container) return;
-    e.preventDefault();
 
-    const dx = e.clientX - st.startX;
-    const dy = e.clientY - st.startY;
-
-    container.scrollLeft = st.startLeft - dx;
-    container.scrollTop = st.startTop - dy;
+    if (st.mode === 'pan') {
+      e.preventDefault();
+      const dx = e.clientX - st.startX;
+      const dy = e.clientY - st.startY;
+      container.scrollLeft = st.startLeft - dx;
+      container.scrollTop = st.startTop - dy;
+    } else if (st.mode === 'box') {
+      const r = container.getBoundingClientRect();
+      const curX = e.clientX - r.left + container.scrollLeft;
+      const curY = e.clientY - r.top + container.scrollTop;
+      const x = Math.min(st.boxX, curX);
+      const y = Math.min(st.boxY, curY);
+      const w = Math.max(4, Math.abs(curX - st.boxX));
+      const h = Math.max(4, Math.abs(curY - st.boxY));
+      st.boxW = w; st.boxH = h;
+      setBoxRect({ x, y, w, h });
+    }
   };
 
   const endPan = () => {
-    if (!panStateRef.current.active) return;
-    panStateRef.current.active = false;
+    const st = panStateRef.current;
+    const container = viewerScrollRef.current;
+    if (!st.active) return;
+
+    st.active = false;
     document.body.style.userSelect = '';
     document.body.style.cursor = '';
+
+    if (st.mode === 'box' && container && st.boxW > 6 && st.boxH > 6) {
+      // Fit the box into the container (compute new zoom relative to current)
+      const cw = container.clientWidth;
+      const ch = container.clientHeight;
+
+      const scale = Math.min(cw / st.boxW, ch / st.boxH);
+      const newZoom = Math.max(0.05, Math.min(zoom * scale, 40)); // clamp a bit
+
+      // Center the selected box after zoom. Because PDFViewport scales with "zoom",
+      // positions scale linearly as well.
+      const centerX = st.boxX + st.boxW / 2;
+      const centerY = st.boxY + st.boxH / 2;
+      // Where should the container scroll to so that center lands in the middle:
+      const newCenterX = centerX * scale;
+      const newCenterY = centerY * scale;
+
+      // Apply zoom first, then scroll on next frame (lets PDF render at new size)
+      setZoom(newZoom);
+      requestAnimationFrame(() => {
+        if (!viewerScrollRef.current) return;
+        viewerScrollRef.current.scrollLeft = Math.max(0, newCenterX - viewerScrollRef.current.clientWidth / 2);
+        viewerScrollRef.current.scrollTop = Math.max(0, newCenterY - viewerScrollRef.current.clientHeight / 2);
+      });
+    }
+    setBoxRect(null);
+    st.mode = 'pan';
   };
 
   /* =========================================================================================
@@ -469,7 +489,7 @@ export default function App() {
           )}
         </div>
 
-        {/* Company + Project Name (click to rename) */}
+        {/* Company + Project Name */}
         <div style={{display:'flex', alignItems:'center', gap:8}}>
           <div style={{fontSize:16, fontWeight:700}}>SKD Services</div>
           <div style={{opacity:.7}}>·</div>
@@ -506,7 +526,7 @@ export default function App() {
 
         <div style={{flex:1}} />
 
-        {/* quick open PDF right from the menu bar */}
+        {/* quick open PDF */}
         <input
           ref={pdfFileRef}
           type="file"
@@ -520,7 +540,7 @@ export default function App() {
         </span>
       </div>
 
-      {/* TOOLBAR (tools + zoom) */}
+      {/* TOOLBAR */}
       <div className="toolbar" style={{display:'flex', alignItems:'center', gap:8, padding:'8px 12px', borderBottom:'1px solid #e6e6e6', position:'sticky', top:48, background:'#fff', zIndex:40}}>
         {pageCount > 0 && (
           <div style={{display:'flex', alignItems:'center', gap:6}}>
@@ -555,7 +575,6 @@ export default function App() {
         <div style={{flex:1}} />
 
         <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
-        {/* Removed: Save(Local) / Load(Local) / Export JSON / Import JSON */}
       </div>
 
       {/* PROJECT TAGS BAR */}
@@ -658,22 +677,40 @@ export default function App() {
           <SidebarBOM bom={bom} />
         </aside>
 
-        {/* NEW: attach pan handlers to this scroll container */}
+        {/* Scroll container + handlers */}
         <div
           ref={viewerScrollRef}
           style={{
             position:'relative',
             overflow:'auto',
-            cursor: panStateRef.current.active ? 'grabbing' : (tool === 'hand' ? 'grab' : 'default')
+            cursor: panStateRef.current.active
+              ? (panStateRef.current.mode === 'box' ? 'crosshair' : 'grabbing')
+              : (tool === 'hand' ? 'grab' : 'default')
           }}
           onMouseDown={beginPan}
           onMouseMove={movePan}
           onMouseUp={endPan}
           onMouseLeave={endPan}
-          onContextMenu={(e)=>{ // allow right-drag pan without the menu popping
-            if (tool === 'hand' || panStateRef.current.active) e.preventDefault();
-          }}
+          onContextMenu={(e)=>{ if (tool === 'hand' || panStateRef.current.active) e.preventDefault(); }}
         >
+          {/* blue box overlay while SHIFT-dragging */}
+          {boxRect && (
+            <div
+              style={{
+                position:'absolute',
+                left: boxRect.x,
+                top: boxRect.y,
+                width: boxRect.w,
+                height: boxRect.h,
+                border:'2px solid #2a7fff',
+                borderRadius:10,
+                background:'rgba(42,127,255,0.08)',
+                pointerEvents:'none',
+                boxShadow:'0 0 0 1px rgba(42,127,255,0.15) inset'
+              }}
+            />
+          )}
+
           {!pdf && (
             <div style={{padding:'2rem'}}>
               <div className="drop" style={{border:'2px dashed #bbb', borderRadius:8, padding:'2rem', color:'#666', textAlign:'center'}}>
