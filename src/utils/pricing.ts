@@ -387,19 +387,22 @@ export function calculateProjectCosts(
   // Add labor hours from individual materials (wire, conduit, etc.)
   for (const mat of materials) {
     const laborPerUnit = pricingDb.getMaterialLaborHours(mat.category, mat.description);
+    const price = pricingDb.getMaterialPrice(mat.category, mat.description) || 0;
+    const matCost = mat.totalQty * price;
+
     if (laborPerUnit > 0) {
       const materialLaborHours = laborPerUnit * mat.totalQty;
       laborHoursTotal += materialLaborHours;
       console.log(`⚙️ Material labor: ${mat.category}::${mat.description} = ${mat.totalQty} × ${laborPerUnit} hrs = ${materialLaborHours} hrs`);
+      console.log(`💰 Material cost: ${mat.category}::${mat.description} = ${mat.totalQty} × $${price} = $${matCost}`);
 
       // Track by division
       const division = mat.category || 'General';
       const existing = divisionMap.get(division);
       if (existing) {
+        existing.materialCost += matCost;
         existing.laborHours += materialLaborHours;
       } else {
-        const price = pricingDb.getMaterialPrice(mat.category, mat.description) || 0;
-        const matCost = mat.totalQty * price;
         divisionMap.set(division, {
           division,
           materialCost: matCost,
