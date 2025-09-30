@@ -21,35 +21,16 @@ type PageRenderInfo = {
 
 function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
   const [info, setInfo] = useState<PageRenderInfo | null>(null);
-  const lastGoodRef = useRef<PageRenderInfo | null>(null);
-  const isRenderingRef = useRef<boolean>(false);
 
   useEffect(() => {
     let cancelled = false;
     let cleanup: (() => void) | null = null;
-
-    if (!pdf || pageIndex < 0) {
-      setInfo(null);
-      lastGoodRef.current = null;
-      isRenderingRef.current = false;
-      return;
-    }
-
-    // If already rendering the same content, don't start a new render
-    if (isRenderingRef.current && lastGoodRef.current?.pageIndex === pageIndex) {
-      return;
-    }
+    if (!pdf || pageIndex < 0) { setInfo(null); return; }
 
     const DPR = Math.max(1, window.devicePixelRatio || 1);
-
     (async () => {
       try {
-        isRenderingRef.current = true;
-        
-        if (pageIndex >= pdf.numPages) {
-          throw new Error(`Page index ${pageIndex} out of range (0-${pdf.numPages - 1})`);
-        }
-
+        if (pageIndex >= pdf.numPages) throw new Error(`Page index ${pageIndex} out of range`);
         const page = await pdf.getPage(pageIndex + 1);
         if (cancelled) return;
 
@@ -68,52 +49,35 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
         const renderTask = page.render({
           canvasContext: ctx,
           viewport: page.getViewport({ scale: zoom * DPR }),
-          intent: 'display'
+          intent: 'display',
         });
-
         cleanup = () => { try { renderTask.cancel(); } catch {} };
-
         await renderTask.promise;
         if (cancelled) return;
 
-        const next: PageRenderInfo = {
+        setInfo({
           pageIndex,
           baseWidth: baseVp.width,
           baseHeight: baseVp.height,
           width: vp.width,
           height: vp.height,
-          canvas
-        };
-
-        lastGoodRef.current = next;
-        setInfo(next);
+          canvas,
+        });
       } catch (error: any) {
-        const msg = String(error?.message || '');
-        // PDF.js throws "Rendering cancelled" on effect re-runs. That's expected.
-        if (/Rendering cancelled/i.test(msg)) {
-          // Keep displaying the last good bitmap during cancellation
-          return;
-        } else {
+        if (!cancelled) setInfo(null);
+        if (!/Rendering cancelled/i.test(error?.message || '')) {
           console.error(`Error rendering PDF page ${pageIndex}:`, error);
-          // Keep last good render on errors too
-          return;
         }
-      } finally {
-        isRenderingRef.current = false;
       }
     })();
 
-    return () => { 
-      cancelled = true; 
-      cleanup?.(); 
-      isRenderingRef.current = false;
-    };
+    return () => { cancelled = true; cleanup?.(); };
   }, [pdf, zoom, pageIndex]);
 
   return info;
 }
 
-// ---- measurement math (object-level); supports wastePct or wasteFactor, and optional conductor extras ----
+// ---- measure math for object result (supports wastePct / conductor extras) ----
 function computeResult(
   ppf: number | undefined,
   verts: {x:number;y:number}[],
@@ -126,7 +90,6 @@ function computeResult(
   const racewayExtra = (opts?.extraRacewayPerPoint ?? 0) * points;
   const conductorExtraEach = (opts?.extraConductorPerPoint ?? 0) * points;
 
-  // waste multiplier; accept either wasteFactor (e.g. 1.05) or wastePct (0..1)
   const wasteFactor =
     typeof (opts as any)?.wasteFactor === 'number'
       ? Math.max(1, (opts as any).wasteFactor)
@@ -134,13 +97,12 @@ function computeResult(
 
   const racewayLen = (baseLengthFt + racewayExtra) * wasteFactor;
 
-  // Conductor groups (count × (base + extras)) × waste
   const conductors = (opts?.conductors ?? []).slice(0, 3).map((g: any) => {
     const count = Math.max(0, Math.floor(g?.count ?? 0));
     const lengthFt = count > 0 ? count * (baseLengthFt + conductorExtraEach) * wasteFactor : 0;
     return {
       count,
-      size: g?.size ?? '',
+      size: g?.gauge ?? g?.size ?? '',                   // tolerate legacy `size`
       insulation: g?.insulation ?? 'THHN/THWN-2',
       material: g?.material ?? 'CU',
       lengthFt,
@@ -180,10 +142,15 @@ export default function PDFViewport({ pdf }: Props) {
   const [, setPaintTick] = useState(0);
   const liveLabelRef = useRef<{text:string;x:number;y:number}|null>(null);
 
-  // measure-dialog integration
+  // measurement dialog
   const [measureOpen, setMeasureOpen] = useState(false);
   const measureRef = useRef<MeasureOptions | undefined>(undefined);
-  const armedToolRef = useRef<'polyline'|'freeform'|null>(null); // which tool asked for options
+  const armedToolRef = useRef<'polyline'|'freeform'|null>(null);
+
+  // calibration dialog
+  const [calibOpen, setCalibOpen] = useState(false);
+  const [calibPxLen, setCalibPxLen] = useState<number>(0);
+  const [calibFeetInput, setCalibFeetInput] = useState<string>('10');
 
   const {
     pages, upsertPage, addObject, patchObject, tool, setTool, zoom,
@@ -191,7 +158,7 @@ export default function PDFViewport({ pdf }: Props) {
     deleteSelected, undo, redo, activePage, tags, getLastMeasureOptions
   } = useStore();
 
-  // If user switches to polyline/freeform, open dialog first (unless already drawing)
+  // open measurement dialog when tool is armed and not currently drawing
   useEffect(() => {
     if ((tool === 'polyline' || tool === 'freeform') && !drawingRef.current.type) {
       armedToolRef.current = tool;
@@ -200,6 +167,7 @@ export default function PDFViewport({ pdf }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tool]);
 
+  // initial page scaffolding
   useEffect(() => {
     if (!pdf) return;
     if (pages.length === 0) {
@@ -213,6 +181,7 @@ export default function PDFViewport({ pdf }: Props) {
   const info = usePageBitmap(pdf, zoom, activePage);
   const pageScale = (i: PageRenderInfo) => i.width / i.baseWidth;
 
+  const toStage = (i: PageRenderInfo, p:{x:number;y:number}) => ({ x: p.x * pageScale(i), y: p.y * pageScale(i) });
   const toPage  = (i: PageRenderInfo, spt:{x:number;y:number}) => ({ x: spt.x / pageScale(i), y: spt.y / pageScale(i) });
 
   function colorForCode(code?: string) {
@@ -262,9 +231,7 @@ export default function PDFViewport({ pdf }: Props) {
       pageIndex: activePage,
       vertices: vertsPage,
       code: currentTag || undefined,
-      // helpful for BOM fallbacks & exports
-      lengthFt: result.raceway.lengthFt,
-      // store the inputs & computed outputs
+      lengthFt: result.raceway.lengthFt, // visual length fallback
       measure: measureRef.current,
       result,
     } as AnyTakeoffObject);
@@ -276,7 +243,7 @@ export default function PDFViewport({ pdf }: Props) {
   function onMouseDown(e: any) {
     if (!info) return;
 
-    // Right-click: delete object under cursor
+    // right-click delete
     if (isRight(e)) {
       if (e.target?.attrs?.name?.startsWith('obj-')) {
         const id = e.target.attrs.name.substring(4);
@@ -292,7 +259,7 @@ export default function PDFViewport({ pdf }: Props) {
     const posPage = toPage(info, posStage);
     cursorPageRef.current = posPage;
 
-    // select if clicked on object (except when calibrating)
+    // select existing (not during calibrate)
     if (tool !== 'calibrate' && e.target?.attrs?.name?.startsWith('obj-')) {
       const id = e.target.attrs.name.substring(4);
       selectOnly(id);
@@ -313,11 +280,11 @@ export default function PDFViewport({ pdf }: Props) {
       return;
     }
 
-    // If drawing a line-like type but options were not confirmed, ask now
+    // require options for line-like types
     if ((tool === 'polyline' || tool === 'freeform') && !measureRef.current) {
       armedToolRef.current = tool;
       setMeasureOpen(true);
-      return; // wait for dialog
+      return;
     }
 
     if (tool === 'segment') {
@@ -329,7 +296,7 @@ export default function PDFViewport({ pdf }: Props) {
       drawingRef.current = { type: 'freeform', pts: [posPage] };
       freeformActive.current = true;
     } else if (tool === 'calibrate') {
-      // Local-only: collect 2 points, then prompt and commit scale
+      // collect 2 points, then open a small dialog (no window.prompt)
       if (calibPtsRef.current.length === 0) {
         calibPtsRef.current = [posPage];
         calibLiveRef.current = posPage;
@@ -337,18 +304,14 @@ export default function PDFViewport({ pdf }: Props) {
         calibPtsRef.current = [calibPtsRef.current[0], posPage];
         calibLiveRef.current = posPage;
 
-        try {
-          const px = pathLength(calibPtsRef.current);
-          const input = prompt('Enter real length between points (feet):', '10');
-          const feet = input ? parseFloat(input) : NaN;
-          if (!isNaN(feet) && feet > 0) {
-            setCalibration(activePage, px / feet, 'ft');
-          }
-        } finally {
-          // Clear local calibration state regardless
-          calibPtsRef.current = [];
-          calibLiveRef.current = null;
-        }
+        const px = pathLength(calibPtsRef.current);
+        setCalibPxLen(px);
+        setCalibFeetInput('10');
+        setCalibOpen(true);
+
+        // keep local markers but stop live drawing
+        calibPtsRef.current = [];
+        calibLiveRef.current = null;
       }
     }
     updateLiveLabel(info);
@@ -476,17 +439,55 @@ export default function PDFViewport({ pdf }: Props) {
         initial={getLastMeasureOptions?.()}
         onCancel={() => {
           setMeasureOpen(false);
-          // if user had selected a drawing tool, revert back to hand so nothing starts accidentally
           if (armedToolRef.current) setTool('hand');
           armedToolRef.current = null;
         }}
         onSubmit={(opts) => {
-          measureRef.current = opts; // keep for subsequent runs
+          measureRef.current = opts;
           setMeasureOpen(false);
-          // leave the chosen tool armed so the user can start drawing immediately
         }}
         title={armedToolRef.current ? `Set Options for ${armedToolRef.current === 'polyline' ? 'Polyline' : 'Freeform'} Run` : 'Measurement Options'}
       />
+
+      {/* Calibration dialog (no window.prompt -> no page reset) */}
+      {calibOpen && (
+        <div style={backdropStyle} onMouseDown={(e)=>{ if (e.target===e.currentTarget) setCalibOpen(false); }}>
+          <div style={panelStyle} onMouseDown={(e)=>e.stopPropagation()}>
+            <div style={headerStyle}>
+              <div style={{fontWeight:700}}>Calibrate Page</div>
+              <button className="btn" onClick={()=>setCalibOpen(false)}>×</button>
+            </div>
+            <div style={{padding:14}}>
+              <div style={{marginBottom:8, color:'#555'}}>Pixel distance between picked points: <b>{calibPxLen.toFixed(1)} px</b></div>
+              <label style={{display:'block', marginBottom:6}}>Real length (feet)</label>
+              <input
+                type="number"
+                min={0.0001}
+                step={0.1}
+                value={calibFeetInput}
+                onChange={(e)=>setCalibFeetInput(e.target.value)}
+                style={{width:'100%', padding:'6px 8px', border:'1px solid #ccc', borderRadius:6}}
+              />
+            </div>
+            <div style={footerStyle}>
+              <button className="btn" onClick={()=>setCalibOpen(false)}>Cancel</button>
+              <button
+                className="btn primary"
+                onClick={()=>{
+                  const feet = parseFloat(calibFeetInput);
+                  if (Number.isFinite(feet) && feet > 0) {
+                    const ppf = calibPxLen / feet;
+                    setCalibration(activePage, ppf, 'ft');
+                  }
+                  setCalibOpen(false);
+                }}
+              >
+                Set Scale
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="pageBox" style={{ width: w, height: h }}>
         <div style={{position:'absolute', inset:0}}>
@@ -527,7 +528,7 @@ export default function PDFViewport({ pdf }: Props) {
               {/* LIVE PREVIEW + TOOLTIP */}
               {renderLive(drawingRef.current, s, cursorPageRef.current, measureRef.current)}
 
-              {/* CALIBRATION OVERLAY */}
+              {/* CALIBRATION preview (first point + live cursor) */}
               {renderCalibration(calibPtsRef.current, calibLiveRef.current, s)}
 
               {liveLabelRef.current && (
@@ -546,9 +547,7 @@ export default function PDFViewport({ pdf }: Props) {
 function halfPoint(pts: {x:number;y:number}[]) {
   if (pts.length === 0) return { x: 0, y: 0 };
   if (pts.length === 1) return { x: pts[0].x, y: pts[0].y };
-  if (pts.length === 2) {
-    return { x: (pts[0].x + pts[1].x)/2, y: (pts[0].y + pts[1].y) / 2 };
-  }
+  if (pts.length === 2) return { x: (pts[0].x + pts[1].x)/2, y: (pts[0].y + pts[1].y) / 2 };
   let total = 0;
   for (let i=1;i<pts.length;i++) {
     const dx = pts[i].x - pts[i-1].x, dy = pts[i].y - pts[i-1].y;
@@ -729,3 +728,20 @@ function renderCalibration(calibPts: {x:number;y:number}[], live: {x:number;y:nu
   }
   return <Group>{items}</Group>;
 }
+
+/* --- tiny dialog styles (shared with MeasureDialog look) --- */
+const backdropStyle: React.CSSProperties = {
+  position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000,
+};
+const panelStyle: React.CSSProperties = {
+  width: 420, maxWidth: '96vw', background: '#fff', borderRadius: 10,
+  border: '1px solid #ddd', boxShadow: '0 12px 40px rgba(0,0,0,.25)', overflow: 'hidden'
+};
+const headerStyle: React.CSSProperties = {
+  display:'flex', alignItems:'center', justifyContent:'space-between',
+  padding:'12px 14px', borderBottom:'1px solid #eee'
+};
+const footerStyle: React.CSSProperties = {
+  display:'flex', alignItems:'center', gap:10, padding:'12px 14px', borderTop:'1px solid #eee'
+};
