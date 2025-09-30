@@ -307,7 +307,7 @@ export default function App() {
           continue;
         }
         const verts = (obj as AnyTakeoffObject).vertices ?? [];
-        const lenPx = pathLength(verts || []);
+        const lenPx = pathLength(verts);
         const lf = ppf > 0 ? lenPx / ppf : 0;
 
         if (obj.type === 'segment') segLF += lf;
@@ -482,7 +482,7 @@ export default function App() {
           countByCode.set(code, (countByCode.get(code) || 0) + 1);
         } else {
           const verts = (obj as any).vertices ?? [];
-          const lenPx = pathLength(verts);
+          const lenPx = pathLength(verts || []);
           const lf = ppf > 0 ? lenPx / ppf : 0;
           const box = measByCode.get(code) ?? { meas: 0, lf: 0 };
           box.meas += 1;

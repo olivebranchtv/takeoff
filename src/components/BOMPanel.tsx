@@ -32,7 +32,7 @@ export default function BomPanel({ open, onToggle }: Props) {
           const c = (obj as any).code || '';
           counts.set(c, (counts.get(c) ?? 0) + 1);
         } else {
-          const verts = (obj as any).vertices ?? [];
+          const verts = 'vertices' in obj ? (obj as any).vertices ?? [] : [];
           const lenPx = pathLength(verts);
           const lf = ppf && ppf > 0 ? lenPx / ppf : 0;
           if (obj.type === 'segment') segLF += lf;

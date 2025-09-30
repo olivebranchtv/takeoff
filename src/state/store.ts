@@ -173,14 +173,22 @@ export const useStore = create<State>()(
 
       upsertPage: (page) => set((s) => {
         const idx = s.pages.findIndex((p) => p.pageIndex === page.pageIndex);
-        if (idx >= 0) { const copy = s.pages.slice(); copy[idx] = page; return { pages: copy }; }
+        if (idx >= 0) { 
+          const copy = s.pages.slice(); 
+          copy[idx] = { ...page, objects: safeObjects(page.objects) }; 
+          return { pages: copy }; 
+        }
         return { pages: [...s.pages, page].sort((a,b)=>a.pageIndex-b.pageIndex) };
       }),
 
       addObject: (pageIndex, obj) => {
         const { pushHistory } = get(); pushHistory(pageIndex);
         set((s) => {
-          const pages = s.pages.map((p) => p.pageIndex === pageIndex ? ({ ...p, objects: [...asArray(p.objects), obj] }) : p );
+          const pages = s.pages.map((p) => 
+            p.pageIndex === pageIndex 
+              ? ({ ...p, objects: [...safeObjects(p.objects), obj] }) 
+              : p 
+          );
           return { pages };
         });
       },

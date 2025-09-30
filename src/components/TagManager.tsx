@@ -260,11 +260,11 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   function addToProject(tag: Tag) {
     const exists =
       (tags as Tag[]).some(
-        t => t.id === tag.id || (t.code || '').toUpperCase() === (tag.code || '').toUpperCase()
+        t => t.id === tag.id || (t.code || '').toUpperCase() === ((tag.code || '') as string).toUpperCase()
       );
     if (!exists) {
       addTag({
-        code: (tag.code || '').toUpperCase(),
+        code: ((tag.code || '') as string).toUpperCase(),
         name: tag.name || '',
         category: tag.category || '',
         color: tag.color || '#FFA500'

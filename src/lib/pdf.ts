@@ -60,7 +60,7 @@ export async function loadPdfFromBytes(
       throw new Error('Invalid PDF file: missing PDF header');
     }
 
-    console.log(`Loading PDF: ${u8.length} bytes, version detected: ${version}`);
+    console.log(`Loading PDF: ${u8.length} bytes`);
 
     const task = pdfjsLib.getDocument({ 
       data: u8, 

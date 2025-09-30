@@ -1,11 +1,11 @@
 // src/components/Header.tsx
 import React, { useState } from 'react';
-import { useAppStore } from '@/state/store';
+import { useStore } from '@/state/store';
 import { Pencil } from 'lucide-react';
 
 export const Header: React.FC = () => {
-  const name = useAppStore(s => s.currentProjectName);
-  const rename = useAppStore(s => s.renameCurrentProject);
+  const name = useStore(s => s.projectName);
+  const setProjectName = useStore(s => s.setProjectName);
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(name ?? '');
@@ -17,7 +17,7 @@ export const Header: React.FC = () => {
 
   const commit = () => {
     const n = draft.trim();
-    if (n) rename(n);
+    if (n) setProjectName(n);
     setEditing(false);
   };
 

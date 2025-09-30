@@ -120,7 +120,7 @@ export default function PDFViewport({ pdf }: Props) {
     if (!pdf) return;
     if (pages.length === 0) {
       Array.from({length: pdf.numPages}).forEach((_, idx) =>
-        upsertPage({ pageIndex: idx, objects: [], pixelsPerFoot: undefined, unit: 'ft' })
+        upsertPage({ pageIndex: idx, objects: [], pixelsPerFoot: undefined, unit: 'ft', calibrated: false })
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
