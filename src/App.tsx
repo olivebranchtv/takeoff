@@ -634,6 +634,7 @@ export default function App() {
           style={{
             position:'relative',
             overflow:'auto',
+            whiteSpace:'nowrap',  // ← ensures horizontal overflow so we can pan left/right
             cursor: panStateRef.current.active ? 'grabbing' : (tool === 'hand' ? 'grab' : 'default')
           }}
           onMouseDown={beginPan}
@@ -649,7 +650,11 @@ export default function App() {
               </div>
             </div>
           )}
-          {pdf && <PDFViewport pdf={pdf} />}
+          {pdf && (
+            <div style={{ display: 'inline-block', width: 'max-content' }}>
+              <PDFViewport pdf={pdf} />
+            </div>
+          )}
         </div>
       </div>
 
