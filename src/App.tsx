@@ -931,7 +931,7 @@ export default function App() {
       </div>
 
       {/* PROJECT TAGS BAR */}
-      <div className="quickbar" style={{display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderBottom:'1px solid #eee', position:'sticky', top:96, background:'#fff', zIndex:30}}>
+      <div className="quickbar" style={{display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderBottom:'1px solid #eee', position:'sticky', top:96, background:'#fff', zIndex:30, overflow:'visible'}}>
         <div className="label" style={{minWidth:110, fontWeight:700}}>Project Tags</div>
 
         <div style={{display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', flex:1}}>
@@ -959,21 +959,23 @@ export default function App() {
           })}
         </div>
 
-        <div style={{position:'relative'}}>
+        <div style={{position:'relative', marginLeft:'auto'}}>
           <button className="btn" onClick={()=>setPickerOpen(v=>!v)}>Add from DB</button>
           {pickerOpen && (
             <div
               style={{
-                position:'fixed',
-                top:140,
-                right:12,
+                position:'absolute',
+                top:'100%',
+                right:0,
+                marginTop:4,
                 background:'#fff',
                 border:'1px solid #ddd',
                 borderRadius:6,
                 padding:8,
-                width:'min(360px, calc(100vw - 24px))',
-                maxWidth:360,
-                zIndex:999
+                width:'max(360px, 25vw)',
+                maxWidth:'calc(100vw - 24px)',
+                zIndex:999,
+                boxShadow:'0 4px 12px rgba(0,0,0,0.15)'
               }}
             >
               <div style={{display:'flex', gap:8, alignItems:'center'}}>
