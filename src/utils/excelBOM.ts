@@ -109,8 +109,9 @@ export function calculateAssemblyMaterials(
   for (const row of racewayRows) {
     // Add conduit/raceway if EMT size specified
     if (row.emtSize && row.racewayLf && row.racewayLf > 0) {
+      // Format to match database: "3/4"EMT Conduit" (note: space before EMT, no space after ")
       const emtDesc = `${row.emtSize}EMT Conduit`;
-      const matKey = `EMT CONDUIT::${emtDesc}::FT`;
+      const matKey = `EMT CONDUIT::${emtDesc}::EA`;
       const existing = materialAcc.get(matKey);
 
       if (existing) {
@@ -120,7 +121,7 @@ export function calculateAssemblyMaterials(
         materialAcc.set(matKey, {
           category: 'EMT CONDUIT',
           description: emtDesc,
-          unit: 'FT',
+          unit: 'EA',
           quantity: row.racewayLf,
           wasteFactor: 1.05,
           totalQty: row.racewayLf * 1.05,
