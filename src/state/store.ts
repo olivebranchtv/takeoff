@@ -1,29 +1,10 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Tool, ProjectSave, PageState, AnyTakeoffObject, Tag } from '@/types';
+import type { Tool, ProjectSave, PageState, AnyTakeoffObject, Tag, MeasureOptions } from '@/types';
 
 type HistoryEntry = { pageIndex: number; objects: AnyTakeoffObject[] };
 
-/** ====== NEW: Raceway/Conductor Measure Options (persisted) ====== */
-export type EMTSize =
-  | '1/2"' | '3/4"' | '1"' | '1-1/4"' | '1-1/2"' | '2"'
-  | '2-1/2"' | '3"' | '3-1/2"' | '4"';
-
-export type MeasureOptions = {
-  // raceway extras
-  extraRacewayPerPoint: number;          // feet added per vertex/point for the raceway
-  // conductors (up to 3 groups e.g., #12 THHN phase set + #12 N + #10 G)
-  conductors: Array<{ count: number; size: EMTSize | '' }>; // fixed length 3
-  extraConductorPerPoint: number;        // feet added per point for each conductor
-  boxesPerPoint: number;                 // quantity of boxes per point (for J-box takeoff)
-
-  // display
-  lineColor: string;
-  pointColor: string;
-  lineWeight: number;
-  opaquePoints: boolean;
-};
-
+/** ====== Raceway/Conductor Measure Options defaults (persisted) ====== */
 const DEFAULT_MEASURE_OPTIONS: MeasureOptions = {
   extraRacewayPerPoint: 0,
   conductors: [
