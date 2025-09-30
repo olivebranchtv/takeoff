@@ -486,6 +486,39 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     ]
   },
   {
+    id: 'panel-100a',
+    code: '100/MLO/3 Pole',
+    name: 'Panel 100A Assembly',
+    description: '100A panel from master database',
+    type: 'panel',
+    isActive: true,
+    items: [
+      { id: 'panel-100a', description: '100 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 }
+    ]
+  },
+  {
+    id: 'panel-200a',
+    code: '200/MLO/3 Pole',
+    name: 'Panel 200A Assembly',
+    description: '200A panel from master database',
+    type: 'panel',
+    isActive: true,
+    items: [
+      { id: 'panel-200a', description: '200 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 }
+    ]
+  },
+  {
+    id: 'panel-400a',
+    code: '400/MLO/3 Pole',
+    name: 'Panel 400A Assembly',
+    description: '400A panel from master database',
+    type: 'panel',
+    isActive: true,
+    items: [
+      { id: 'panel-400a', description: '400 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 }
+    ]
+  },
+  {
     id: 'panel-600a-mlo-3p',
     code: '600/MLO/3 Pole',
     name: 'Panel 600A MLO 3-Pole Assembly',
@@ -493,12 +526,18 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'panel-600a-mlo-3p', description: 'Panel, 600A MLO, 3-phase, 42-circuit, 120/208V or 277/480V, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00, notes: 'Ordered exact' },
-      { id: 'panel-trim-600a', description: 'Panel Trim/Cover, 600A rated, surface mount, painted steel', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 },
-      { id: 'breaker-blank', description: 'Breaker Blanks/Filler Plates', unit: 'SET', quantityPer: 1, category: 'Panels', wasteFactor: 1.02 },
-      { id: 'panel-label-kit', description: 'Panel Directory Label Kit, self-adhesive', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 },
-      { id: 'grounding-bar-addon', description: 'Additional Grounding Bar, 12-lug, copper', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.00, notes: 'Large panel requires 2 bars' },
-      { id: 'lug-set-600a', description: 'Main Lug Set, 600A, 3-phase, copper', unit: 'SET', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 }
+      { id: 'panel-600a', description: '600 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00, notes: 'From master pricing database' }
+    ]
+  },
+  {
+    id: 'panel-800a',
+    code: '800/3MLO/3 Pole',
+    name: 'Panel 800A Assembly',
+    description: '800A panel from master database',
+    type: 'panel',
+    isActive: true,
+    items: [
+      { id: 'panel-800a', description: '800 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 }
     ]
   },
   {
