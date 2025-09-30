@@ -101,6 +101,70 @@ export function calculateAssemblyMaterials(
     assemblyUsage.push(usage);
   }
 
+  // ============================================================================
+  // ADD RACEWAY AND WIRE MATERIALS FROM HOME RUNS
+  // ============================================================================
+  const racewayRows = buildBOMRows(pages, 'summarized').filter(r => r.shape !== 'count');
+
+  for (const row of racewayRows) {
+    // Add conduit/raceway if EMT size specified
+    if (row.emtSize && row.racewayLf && row.racewayLf > 0) {
+      const emtDesc = `${row.emtSize}EMT Conduit`;
+      const matKey = `EMT CONDUIT::${emtDesc}::FT`;
+      const existing = materialAcc.get(matKey);
+
+      if (existing) {
+        existing.quantity += row.racewayLf;
+        existing.totalQty += row.racewayLf * existing.wasteFactor;
+      } else {
+        materialAcc.set(matKey, {
+          category: 'EMT CONDUIT',
+          description: emtDesc,
+          unit: 'FT',
+          quantity: row.racewayLf,
+          wasteFactor: 1.05,
+          totalQty: row.racewayLf * 1.05,
+          assemblyCode: 'RACEWAY',
+          assemblyName: 'Conduit Run'
+        });
+      }
+    }
+
+    // Add wire/conductors
+    if (row.conductors && Array.isArray(row.conductors)) {
+      for (const cond of row.conductors) {
+        if (!cond.count || !cond.size || cond.count === 0) continue;
+
+        // Calculate conductor length for this group
+        const condLf = row.racewayLf || 0;
+        const totalCondLf = cond.count * condLf;
+
+        if (totalCondLf <= 0) continue;
+
+        // Format wire description to match database
+        const wireDesc = `${cond.size} THHN Copper Wire,Sol`;
+        const matKey = `wire::${wireDesc}::EA`;
+        const existing = materialAcc.get(matKey);
+
+        if (existing) {
+          existing.quantity += totalCondLf;
+          existing.totalQty += totalCondLf * existing.wasteFactor;
+        } else {
+          materialAcc.set(matKey, {
+            category: 'wire',
+            description: wireDesc,
+            unit: 'EA',
+            quantity: totalCondLf,
+            wasteFactor: 1.10,
+            totalQty: totalCondLf * 1.10,
+            assemblyCode: 'WIRE',
+            assemblyName: 'Conductor Pull'
+          });
+        }
+      }
+    }
+  }
+
   return {
     materials: Array.from(materialAcc.values()),
     assemblyUsage
