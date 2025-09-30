@@ -79,6 +79,10 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
         });
 
       } catch (error) {
+        // Don't log cancellation errors as they are expected behavior
+        if (error && typeof error === 'object' && 'name' in error && error.name === 'RenderingCancelledException') {
+          return;
+        }
         console.error(`Error rendering PDF page ${pageIndex}:`, error);
         if (!cancelled) setInfo(null);
       }
