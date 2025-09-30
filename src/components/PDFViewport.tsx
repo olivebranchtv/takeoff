@@ -213,7 +213,7 @@ export default function PDFViewport({ pdf }: Props) {
     } else if (tool === 'segment') {
       drawingRef.current = { type: 'segment', pts: [posPage] };
     } else if (tool === 'polyline') {
-      if (drawingRef.current.type !== 'polyline') {
+      if (drawingRef.current.type !== 'polyline' || drawingRef.current.pts.length === 0) {
         // Show measure options dialog before starting polyline
         setPendingMeasureType('polyline');
         setMeasureDialogOpen(true);
@@ -222,7 +222,7 @@ export default function PDFViewport({ pdf }: Props) {
         drawingRef.current.pts.push(posPage);
       }
     } else if (tool === 'freeform') {
-      if (!drawingRef.current.type || drawingRef.current.type !== 'freeform') {
+      if (drawingRef.current.type !== 'freeform' || drawingRef.current.pts.length === 0) {
         // Show measure options dialog before starting freeform
         setPendingMeasureType('freeform');
         setMeasureDialogOpen(true);
