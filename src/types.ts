@@ -15,22 +15,40 @@ export type Tag = {
   category?: string;
 };
 
-/* ===== Measure options for raceways (persisted + stored per object) ===== */
+/* ===== Raceway & Conductor vocab ===== */
+
 /** EMT nominal sizes we support ('' = unset). */
 export type EMTSize =
   | '1/2"' | '3/4"' | '1"' | '1-1/4"' | '1-1/2"' | '2"'
   | '2-1/2"' | '3"' | '3-1/2"' | '4"' | '';
 
-/** User-configurable inputs captured when starting a Polyline/Freeform run. */
+/** Common conductor sizes (AWG / kcmil). '' = unset. */
+export type WireSize =
+  | '#18' | '#16' | '#14' | '#12' | '#10' | '#8' | '#6' | '#4' | '#3' | '#2' | '#1'
+  | '1/0' | '2/0' | '3/0' | '4/0'
+  | '250' | '300' | '350' | '400' | '500' | '600' | '750' | '1000'
+  | '';
+
+export type WireMaterial = 'CU' | 'AL';
+export type WireInsulation = 'THHN/THWN-2' | 'XHHW-2' | 'MTW' | 'RW90' | 'USE-2' | 'Other';
+
+export type ConductorSpec = {
+  count: number;              // number of conductors in the group
+  size: WireSize;             // AWG/kcmil
+  insulation: WireInsulation; // insulation type
+  material: WireMaterial;     // copper or aluminum
+};
+
+/* ===== Measure options captured per run (persisted + stored on object) ===== */
 export type MeasureOptions = {
-  /** EMT size for the raceway being measured (optional until set by user). */
+  /** EMT size for the raceway being measured (optional until set). */
   emtSize?: EMTSize;
 
   /** Extra feet added to raceway length for each vertex/point. */
   extraRacewayPerPoint: number;
 
   /** Up to 3 conductor groups (e.g., phase set, neutral, ground). */
-  conductors: Array<{ count: number; size: EMTSize }>; // length 3
+  conductors: [ConductorSpec, ConductorSpec, ConductorSpec];
 
   /** Extra feet per point added for each conductor. */
   extraConductorPerPoint: number;
@@ -38,8 +56,8 @@ export type MeasureOptions = {
   /** Junction boxes per point along the run. */
   boxesPerPoint: number;
 
-  /** Optional linear waste factor (0–1 = 0%–100%). */
-  wastePct?: number;
+  /** Multiplicative waste factor (e.g., 1.05 = 5% waste). */
+  wasteFactor: number;
 
   /** Display options for drawing. */
   lineColor: string;
@@ -56,22 +74,20 @@ export type MeasureResult = {
   /** Geometric path length (feet) from vertices at current calibration. */
   baseLengthFt: number;
 
-  /** Raceways */
+  /** Raceway totals */
   raceway: {
-    /** EMT size applied to this object. */
     emtSize: EMTSize;
-    /** Extra LF added by rules (per-point, waste, etc). */
-    extraFt: number;
-    /** Final LF used for raceway (baseLengthFt + extras). */
-    lengthFt: number;
+    extraFt: number;       // added LF from rules (per-point, etc.)
+    lengthFt: number;      // (base + extras) * waste
   };
 
   /** Conductors (each group total LF already multiplied by count). */
   conductors: Array<{
-    size: EMTSize;
+    size: WireSize;
+    insulation: WireInsulation;
+    material: WireMaterial;
     count: number;
-    /** Total LF for this group (count × (base + extras)). */
-    lengthFt: number;
+    lengthFt: number;      // qty * (base + extras) * waste
   }>;
 
   /** Boxes total for this object. */
@@ -107,7 +123,7 @@ type LineLikeBase = {
   /** Per-object inputs (what the user picked in the popup). */
   measure?: MeasureOptions;
 
-  /** Per-object computed outputs (what we feed into the BOM). */
+  /** Per-object computed outputs (what feeds the BOM). */
   result?: MeasureResult;
 
   /** Optional freeform note/comment. */
