@@ -5,6 +5,7 @@
 
 import type { PageState, Tag, Assembly } from '@/types';
 import { buildBOMRows, type BomRow } from './bom';
+import { loadMaterialPricingFromSupabase } from './supabasePricing';
 
 export interface MaterialLine {
   category: string;
@@ -119,6 +120,20 @@ export async function exportProfessionalBOM(
   const XLSX = await import('xlsx');
   const wb = XLSX.utils.book_new();
 
+  // Load pricing from Supabase
+  const pricingData = await loadMaterialPricingFromSupabase();
+  const priceMap = new Map<string, { cost: number; laborHours: number }>();
+
+  if (pricingData && pricingData.length > 0) {
+    pricingData.forEach(p => {
+      const key = `${p.category}::${p.description}`;
+      priceMap.set(key, {
+        cost: p.material_cost || 0,
+        laborHours: p.labor_hours || 0
+      });
+    });
+  }
+
   // Get all data
   const itemizedRows = buildBOMRows(pages, 'itemized');
   const summarizedRows = buildBOMRows(pages, 'summarized');
@@ -210,24 +225,70 @@ export async function exportProfessionalBOM(
   // ============================================================================
   // SHEET 3: BILL OF MATERIALS (Consolidated by material)
   // ============================================================================
+  let totalMaterialCost = 0;
+  let totalLaborHours = 0;
+
   const bomRows = materials
     .sort((a, b) => {
       // Sort by category, then description
       if (a.category !== b.category) return a.category.localeCompare(b.category);
       return a.description.localeCompare(b.description);
     })
-    .map(mat => ({
-      'Category': mat.category,
-      'Description': mat.description,
-      'Unit': mat.unit,
-      'Base Qty': +mat.quantity.toFixed(2),
-      'Waste Factor': mat.wasteFactor,
-      'Total Qty': +mat.totalQty.toFixed(2),
-      'Notes': mat.notes || ''
-    }));
+    .map(mat => {
+      const priceKey = `${mat.category}::${mat.description}`;
+      const pricing = priceMap.get(priceKey) || { cost: 0, laborHours: 0 };
+      const unitCost = pricing.cost;
+      const laborPerUnit = pricing.laborHours;
+      const extendedCost = unitCost * mat.totalQty;
+      const extendedLabor = laborPerUnit * mat.totalQty;
+
+      totalMaterialCost += extendedCost;
+      totalLaborHours += extendedLabor;
+
+      return {
+        'Category': mat.category,
+        'Description': mat.description,
+        'Unit': mat.unit,
+        'Base Qty': +mat.quantity.toFixed(2),
+        'Waste Factor': mat.wasteFactor,
+        'Total Qty': +mat.totalQty.toFixed(2),
+        'Unit Cost': unitCost > 0 ? +unitCost.toFixed(2) : 0,
+        'Extended Cost': extendedCost > 0 ? +extendedCost.toFixed(2) : 0,
+        'Labor Hrs': laborPerUnit > 0 ? +laborPerUnit.toFixed(2) : 0,
+        'Total Labor': extendedLabor > 0 ? +extendedLabor.toFixed(2) : 0,
+        'Notes': mat.notes || ''
+      };
+    });
+
+  // Add total row
+  bomRows.push({
+    'Category': 'TOTALS',
+    'Description': '',
+    'Unit': '',
+    'Base Qty': '' as any,
+    'Waste Factor': '' as any,
+    'Total Qty': '' as any,
+    'Unit Cost': '' as any,
+    'Extended Cost': +totalMaterialCost.toFixed(2) as any,
+    'Labor Hrs': '' as any,
+    'Total Labor': +totalLaborHours.toFixed(2) as any,
+    'Notes': `Material: $${totalMaterialCost.toFixed(2)} | Labor: ${totalLaborHours.toFixed(1)}hrs`
+  });
 
   const bomSheet = XLSX.utils.json_to_sheet(bomRows);
-  bomSheet['!cols'] = [{ wch: 20 }, { wch: 50 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 30 }];
+  bomSheet['!cols'] = [
+    { wch: 20 },  // Category
+    { wch: 50 },  // Description
+    { wch: 8 },   // Unit
+    { wch: 10 },  // Base Qty
+    { wch: 10 },  // Waste Factor
+    { wch: 10 },  // Total Qty
+    { wch: 12 },  // Unit Cost
+    { wch: 14 },  // Extended Cost
+    { wch: 10 },  // Labor Hrs
+    { wch: 12 },  // Total Labor
+    { wch: 30 }   // Notes
+  ];
   XLSX.utils.book_append_sheet(wb, bomSheet, 'Bill of Materials');
 
   // ============================================================================
