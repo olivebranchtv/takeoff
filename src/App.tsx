@@ -296,6 +296,15 @@ export default function App() {
     setPageLabels(await resolvePageLabels(doc));
     setActivePage(0);
     useStore.getState().setSelectedIds([]);
+
+    // Prompt for project name when loading PDF
+    const suggestedName = file.name.replace(/\.pdf$/i, '').trim();
+    const projectName = prompt('Enter project name:', suggestedName);
+    if (projectName && projectName.trim()) {
+      setProjectName(projectName.trim());
+    } else {
+      setProjectName('Untitled Project');
+    }
   }, [setFileName, setPages, setPageCount, setPageLabels, setActivePage, setSelectedIds]);
 
   /* =========================================================================================
