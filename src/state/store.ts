@@ -4,6 +4,42 @@ import type { Tool, ProjectSave, PageState, AnyTakeoffObject, Tag } from '@/type
 
 type HistoryEntry = { pageIndex: number; objects: AnyTakeoffObject[] };
 
+/** ====== NEW: Raceway/Conductor Measure Options (persisted) ====== */
+export type EMTSize =
+  | '1/2"' | '3/4"' | '1"' | '1-1/4"' | '1-1/2"' | '2"'
+  | '2-1/2"' | '3"' | '3-1/2"' | '4"';
+
+export type MeasureOptions = {
+  // raceway extras
+  extraRacewayPerPoint: number;          // feet added per vertex/point for the raceway
+  // conductors (up to 3 groups e.g., #12 THHN phase set + #12 N + #10 G)
+  conductors: Array<{ count: number; size: EMTSize | '' }>; // fixed length 3
+  extraConductorPerPoint: number;        // feet added per point for each conductor
+  boxesPerPoint: number;                 // quantity of boxes per point (for J-box takeoff)
+
+  // display
+  lineColor: string;
+  pointColor: string;
+  lineWeight: number;
+  opaquePoints: boolean;
+};
+
+const DEFAULT_MEASURE_OPTIONS: MeasureOptions = {
+  extraRacewayPerPoint: 0,
+  conductors: [
+    { count: 0, size: '' },
+    { count: 0, size: '' },
+    { count: 0, size: '' },
+  ],
+  extraConductorPerPoint: 0,
+  boxesPerPoint: 0,
+  lineColor: '#000000',
+  pointColor: '#000000',
+  lineWeight: 1,
+  opaquePoints: false,
+};
+/** ================================================================ */
+
 const DEFAULT_TAGS: Tag[] = [
   { id: crypto.randomUUID(), code: 'A',   name: 'Fixture A',      category: 'Lights',      color: '#FF9900' },
   { id: crypto.randomUUID(), code: 'A1',  name: 'Fixture A1',     category: 'Lights',      color: '#FF9900' },
@@ -76,6 +112,9 @@ type State = {
   /** Manual color overrides by tag CODE (case-insensitive). */
   colorOverrides: Record<string, string>;
 
+  /** ===== NEW: last-used measure dialog options (persisted) ===== */
+  lastMeasureOptions: MeasureOptions;
+
   // setters & actions
   setFileName: (n: string) => void;
   setProjectName: (n: string) => void;
@@ -130,6 +169,11 @@ type State = {
 
   toProject: () => ProjectSave;
   fromProject: (data: ProjectSave | any) => void;
+
+  /** ===== NEW: setters/getters for measure options ===== */
+  setLastMeasureOptions: (opts: Partial<MeasureOptions>) => void;
+  resetLastMeasureOptions: () => void;
+  getLastMeasureOptions: () => MeasureOptions;
 };
 
 export const useStore = create<State>()(
@@ -155,6 +199,9 @@ export const useStore = create<State>()(
 
       // key: overrides persist manual color choices for any code
       colorOverrides: {},
+
+      /** ===== NEW: initialize last used measure options ===== */
+      lastMeasureOptions: DEFAULT_MEASURE_OPTIONS,
 
       setFileName: (n) => set({ fileName: n, projectName: get().projectName || baseNameNoExt(n) }),
       setProjectName: (n) => set({ projectName: n || 'Untitled Project' }),
@@ -228,7 +275,7 @@ export const useStore = create<State>()(
       },
 
       setCalibration: (pageIndex, ppf, unit) => set((s) => {
-        const pages = s.pages.map((p) => (p.pageIndex === pageIndex ? ({ ...p, pixelsPerFoot: ppf, unit, calibrated: true }) : p));
+        const pages = s.pages.map((p) => (p.pageIndex === pageIndex ? ({ ...p, pixelsPerFoot: ppf, unit }) : p));
         return { pages };
       }),
 
@@ -250,7 +297,7 @@ export const useStore = create<State>()(
         const page = s.pages.find((p) => p.pageIndex === pageIndex); if (!page) return {};
         const current: HistoryEntry = { pageIndex, objects: asArray(page.objects) };
         const pages = s.pages.map((p) => (p.pageIndex === pageIndex ? ({ ...p, objects: entry.objects }) : p));
-        return { pages, history: { ...s.history, [pageIndex]: { undo: newUndo, redo: [...stack.redo, current] } } };
+        return { pages, history: { ...s.history, [pageIndex]: { undo: [...newUndo], redo: [...stack.redo, current] } } };
       }),
 
       redo: (pageIndex) => set((s) => {
@@ -428,14 +475,38 @@ export const useStore = create<State>()(
           history: {},
           projectTagIds: []
         });
-      }
+      },
+
+      /** ===== NEW: measure options helpers ===== */
+      setLastMeasureOptions: (opts) => set((s) => ({
+        lastMeasureOptions: {
+          ...s.lastMeasureOptions,
+          ...opts,
+          // keep exactly 3 conductor groups to simplify UI logic
+          conductors: (opts.conductors
+            ? [
+                opts.conductors[0] ?? s.lastMeasureOptions.conductors[0],
+                opts.conductors[1] ?? s.lastMeasureOptions.conductors[1],
+                opts.conductors[2] ?? s.lastMeasureOptions.conductors[2],
+              ]
+            : s.lastMeasureOptions.conductors
+          ) as MeasureOptions['conductors'],
+        }
+      })),
+      resetLastMeasureOptions: () => set({ lastMeasureOptions: DEFAULT_MEASURE_OPTIONS }),
+      getLastMeasureOptions: () => get().lastMeasureOptions,
     }),
     {
       name: 'skd.mastertags.v1',
       storage: createJSONStorage(() => localStorage),
       version: 1,
-      // persist master DB, palette, and overrides
-      partialize: (s) => ({ tags: s.tags, palette: s.palette, colorOverrides: s.colorOverrides }),
+      // persist master DB, palette, overrides, AND lastMeasureOptions
+      partialize: (s) => ({
+        tags: s.tags,
+        palette: s.palette,
+        colorOverrides: s.colorOverrides,
+        lastMeasureOptions: s.lastMeasureOptions,
+      }),
     }
   )
 );
