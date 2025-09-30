@@ -245,7 +245,19 @@ export default function PDFViewport({ pdf }: Props) {
         const px = pathLength(next);
         const input = prompt('Enter real length between points (feet):', '10');
         const feet = input ? parseFloat(input) : NaN;
-        if (!isNaN(feet) && feet > 0) setCalibration(activePage, px / feet, 'ft');
+        if (!isNaN(feet) && feet > 0) {
+          // Update calibration without affecting existing objects
+          const currentPage = pages.find(p => p.pageIndex === activePage);
+          if (currentPage) {
+            const updatedPage = {
+              ...currentPage,
+              pixelsPerFoot: px / feet,
+              unit: 'ft' as const,
+              calibrated: true
+            };
+            upsertPage(updatedPage);
+          }
+        }
         (page as any).__calibPts = [];
       }
     }
