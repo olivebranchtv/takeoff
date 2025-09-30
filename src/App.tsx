@@ -71,6 +71,17 @@ export default function App() {
   const pdfFileRef = useRef<HTMLInputElement>(null);
   const projFileRef = useRef<HTMLInputElement>(null);
 
+  /* ---------- NEW: viewer scroll/pan refs ---------- */
+  const viewerScrollRef = useRef<HTMLDivElement>(null);
+  const panStateRef = useRef<{
+    active: boolean;
+    startX: number;
+    startY: number;
+    startLeft: number;
+    startTop: number;
+    byMouseButton: 0 | 1 | 2;
+  }>({ active: false, startX: 0, startY: 0, startLeft: 0, startTop: 0, byMouseButton: 0 });
+
   /* ---------- viewer/pdf ---------- */
   const [pdf, setPdf] = useState<PDFDoc | null>(null);
   const [pdfName, setPdfName] = useState<string>('');
@@ -200,9 +211,6 @@ export default function App() {
       }
 
       // Derive a friendly project display name:
-      // 1) stored in core.name/projectName, else
-      // 2) embedded PDF name (no .pdf), else
-      // 3) opened file base name (no .skdproj/.json)
       const coreAny: any = bundle.core ?? {};
       const baseFromPdf = (bundle.pdf?.name || '').replace(/\.pdf$/i, '');
       const baseFromFile = file.name.replace(/\.(skdproj|json)$/i, '');
@@ -384,6 +392,54 @@ export default function App() {
   const headerProjectLabel = useStore(s => s.getProjectName());
 
   /* =========================================================================================
+     NEW: Hand-tool / middle/right button panning for the viewer scroll container
+     ========================================================================================= */
+  const beginPan = (e: React.MouseEvent) => {
+    const container = viewerScrollRef.current;
+    if (!container) return;
+
+    // Left-drag only if Hand tool; middle/right always allowed
+    const button = e.button as 0 | 1 | 2;
+    const allow =
+      (button === 0 && tool === 'hand') || button === 1 || button === 2;
+    if (!allow) return;
+
+    e.preventDefault();
+    const { clientX, clientY } = e;
+    panStateRef.current = {
+      active: true,
+      startX: clientX,
+      startY: clientY,
+      startLeft: container.scrollLeft,
+      startTop: container.scrollTop,
+      byMouseButton: button,
+    };
+    // Prevent text/image selection while dragging
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'grabbing';
+  };
+
+  const movePan = (e: React.MouseEvent) => {
+    const st = panStateRef.current;
+    const container = viewerScrollRef.current;
+    if (!st.active || !container) return;
+    e.preventDefault();
+
+    const dx = e.clientX - st.startX;
+    const dy = e.clientY - st.startY;
+
+    container.scrollLeft = st.startLeft - dx;
+    container.scrollTop = st.startTop - dy;
+  };
+
+  const endPan = () => {
+    if (!panStateRef.current.active) return;
+    panStateRef.current.active = false;
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
+  };
+
+  /* =========================================================================================
      RENDER
      ========================================================================================= */
   return (
@@ -524,7 +580,7 @@ export default function App() {
                   onClick={(e)=>{ e.stopPropagation(); setProjectTags(list => list.filter(x => x.id !== t.id)); if (currentTag === t.code) setCurrentTag(''); }}
                   title="Remove from Project Tags"
                   style={{position:'absolute', top:-6, right:-6, width:18, height:18, lineHeight:'16px', textAlign:'center',
-                          border:'1px solid #bbb', borderRadius:'50%', background:'#fff', cursor:'pointer', fontSize:11}}
+                          border:'1px solid '#bbb', borderRadius:'50%', background:'#fff', cursor:'pointer', fontSize:11}}
                 >×</span>
               </button>
             );
@@ -602,7 +658,22 @@ export default function App() {
           <SidebarBOM bom={bom} />
         </aside>
 
-        <div style={{position:'relative', overflow:'auto'}}>
+        {/* NEW: attach pan handlers to this scroll container */}
+        <div
+          ref={viewerScrollRef}
+          style={{
+            position:'relative',
+            overflow:'auto',
+            cursor: panStateRef.current.active ? 'grabbing' : (tool === 'hand' ? 'grab' : 'default')
+          }}
+          onMouseDown={beginPan}
+          onMouseMove={movePan}
+          onMouseUp={endPan}
+          onMouseLeave={endPan}
+          onContextMenu={(e)=>{ // allow right-drag pan without the menu popping
+            if (tool === 'hand' || panStateRef.current.active) e.preventDefault();
+          }}
+        >
           {!pdf && (
             <div style={{padding:'2rem'}}>
               <div className="drop" style={{border:'2px dashed #bbb', borderRadius:8, padding:'2rem', color:'#666', textAlign:'center'}}>
