@@ -77,19 +77,31 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
       let loaded = 0;
 
       for (const row of rows) {
-        const category = String(row['Category'] || row['category'] || row['Division'] || row['Type'] || '').trim();
-        const description = String(row['Description'] || row['description'] || row['Item'] || row['Material'] || '').trim();
-        const unit = String(row['Unit'] || row['unit'] || row['UOM'] || 'EA').trim();
-        const cost = parseFloat(row['Cost'] || row['cost'] || row['Price'] || row['Unit Cost'] || '0');
+        // SKD Database format: name, category, unit_cost, labor_unit_s..., supplier, description
+        const category = String(row['category'] || row['Category'] || row['Division'] || row['Type'] || '').trim();
+        const description = String(row['description'] || row['Description'] || row['name'] || row['Name'] || row['Item'] || row['Material'] || '').trim();
+        const unit = String(row['unit'] || row['Unit'] || row['UOM'] || 'EA').trim();
 
-        if (description && cost > 0) {
+        // SKD uses 'unit_cost' column
+        const cost = parseFloat(row['unit_cost'] || row['unit cost'] || row['Unit Cost'] || row['Cost'] || row['cost'] || row['Price'] || '0');
+
+        // SKD uses 'labor_unit_s...' column
+        const laborHours = parseFloat(row['labor_unit_s'] || row['labor_unit_supply'] || row['labor_unit_supplier'] || row['Labor Hours'] || row['Labor Hrs'] || '0');
+
+        // Skip header rows
+        if (!description || description.toLowerCase().includes('description') || description.toLowerCase().includes('name')) {
+          continue;
+        }
+
+        if (description && (cost > 0 || laborHours > 0)) {
           const key = `${category}::${description}`;
           pricingDb.setMaterialPrice(key, {
             category,
             description,
             unit,
             materialCost: cost,
-            vendor: row['Vendor'] || row['vendor'],
+            laborHours: laborHours > 0 ? laborHours : undefined,
+            vendor: row['supplier'] || row['Supplier'] || row['Vendor'] || row['vendor'],
             vendorPartNumber: row['Part Number'] || row['Part #']
           });
 
@@ -98,7 +110,8 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
             description,
             unit,
             material_cost: cost,
-            vendor: row['Vendor'] || row['vendor'],
+            labor_hours: laborHours > 0 ? laborHours : undefined,
+            vendor: row['supplier'] || row['Supplier'] || row['Vendor'] || row['vendor'],
             vendor_part_number: row['Part Number'] || row['Part #'],
             last_updated: new Date().toISOString()
           });

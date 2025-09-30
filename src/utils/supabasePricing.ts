@@ -17,6 +17,7 @@ export interface MaterialPricing {
   description: string;
   unit: string;
   material_cost: number;
+  labor_hours?: number;
   vendor?: string;
   vendor_part_number?: string;
   last_updated?: string;
