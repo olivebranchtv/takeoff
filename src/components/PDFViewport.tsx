@@ -266,7 +266,11 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
         });
 
       } catch (error) {
-        console.error(`Error rendering PDF page ${pageIndex}:`, error);
+        // Only log non-cancellation errors to avoid console noise
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (!errorMessage.includes('Rendering cancelled')) {
+          console.error(`Error rendering PDF page ${pageIndex}:`, error);
+        }
         if (!cancelled) setInfo(null);
       }
     })();
