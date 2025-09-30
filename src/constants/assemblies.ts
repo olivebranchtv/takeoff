@@ -1179,5 +1179,41 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
       { id: 'mounting-plate-sensor', description: 'Sensor Mounting Plate', unit: 'EA', quantityPer: 1, category: 'Controls', wasteFactor: 1.02 },
       { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
     ]
+  },
+
+  // ============================================================================
+  // DIMMER SWITCHES
+  // ============================================================================
+  {
+    id: 'dimmer-sp-600w',
+    code: 'DIM',
+    name: 'Dimmer Switch Single-Pole 600W',
+    description: 'Single-pole dimmer switch assembly with box, plate, and fittings',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'dimmer-sp-600w', description: 'Dimmer Switch, Single-Pole, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ny-1g', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'dimmer-3w-600w',
+    code: 'DIM-3W',
+    name: 'Dimmer Switch Three-Way 600W',
+    description: 'Three-way dimmer switch assembly with box, plate, and fittings',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'Deeper box for 3-way wiring' },
+      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'dimmer-3w-600w', description: 'Dimmer Switch, Three-Way, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ny-1g', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
   }
 ];

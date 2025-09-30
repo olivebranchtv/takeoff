@@ -71,6 +71,8 @@ export const DEFAULT_MASTER_TAGS: MasterTag[] = [
   { code: 'SW', name: 'Switch (SP)', color: '#60A5FA', category: 'Switches' },
   { code: 'SW-3W', name: 'Switch (3-way)', color: '#60A5FA', category: 'Switches' },
   { code: 'SW-4W', name: 'Switch (4-way)', color: '#60A5FA', category: 'Switches' },
+  { code: 'DIM', name: 'Dimmer Switch (SP)', color: '#60A5FA', category: 'Switches' },
+  { code: 'DIM-3W', name: 'Dimmer Switch (3-way)', color: '#60A5FA', category: 'Switches' },
   { code: 'KS', name: 'Key Switch', color: '#60A5FA', category: 'Switches' },
   { code: 'SPST', name: 'SPST', color: '#60A5FA', category: 'Switches' },
   { code: 'DPST', name: 'DPST', color: '#60A5FA', category: 'Switches' },
