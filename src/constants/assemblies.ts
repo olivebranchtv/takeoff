@@ -531,7 +531,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
   },
   {
     id: 'panel-800a',
-    code: '800/3MLO/3 Pole',
+    code: '800/MLO/3 Pole',
     name: 'Panel 800A Assembly',
     description: '800A panel from master database',
     type: 'panel',
