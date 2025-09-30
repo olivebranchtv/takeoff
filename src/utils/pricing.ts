@@ -243,9 +243,26 @@ export class PricingDatabase {
 
     const keyTerms = normDesc.split(/[,\/]/).filter(t => t.length > 2);
 
-    // Search for matches in same category
+    // Category mapping for fuzzy matching
+    const normCategory = category.toLowerCase();
+    const categoryMatches = (dbCat: string): boolean => {
+      const dbCatLower = dbCat.toLowerCase();
+
+      // Direct category matches
+      if (normCategory === dbCatLower) return true;
+
+      // Map common assembly categories to database categories
+      if (normCategory === 'fittings' && (dbCatLower.includes('flex') || dbCatLower.includes('conduit') || dbCatLower.includes('coupling'))) return true;
+      if (normCategory === 'devices' && (dbCatLower.includes('box') || dbCatLower.includes('plate'))) return true;
+      if (normCategory === 'wire' && dbCatLower.includes('cable')) return true;
+      if (normCategory === 'conduit' && dbCatLower.includes('conduit')) return true;
+
+      return false;
+    };
+
+    // Search for matches across related categories
     for (const [key, price] of this.materialPrices.entries()) {
-      if (price.category !== category || !price.materialCost || price.materialCost <= 0) continue;
+      if (!categoryMatches(price.category) || !price.materialCost || price.materialCost <= 0) continue;
 
       const dbDesc = price.description.toLowerCase()
         .replace(/["']/g, '')
