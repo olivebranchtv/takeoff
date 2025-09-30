@@ -12,7 +12,30 @@ import type {
 
 type HistoryEntry = { pageIndex: number; objects: AnyTakeoffObject[] };
 
-/** ====== Raceway/Conductor Measure Options defaults (persisted) ====== */
+/** ====== Raceway/Conductor Measure Options defaults (persisted) ======
+ *
+ * INDUSTRY-STANDARD WASTE FACTORS (Electrical Estimating):
+ *
+ * • Conduit (EMT, RGS, PVC, MC cable) → 5% (1.05)
+ *   Accounts for cuts, bends, stubs, overlaps, and scraps
+ *
+ * • Wire (THHN, feeders, branch circuits) → 10% (1.10)
+ *   Covers pulling slack, cutting, stripping, termination length, and scrap
+ *
+ * • Devices (receptacles, switches, plates) → 2% (1.02)
+ *   For damaged/misplaced devices or extras during install
+ *
+ * • Fixtures (lighting, emergency, exit signs) → 2-3% (1.02-1.03)
+ *   Allows for shipping damage or small field changes
+ *
+ * • Gear (panels, switchboards, transformers) → 0% (1.00)
+ *   Ordered exact — no waste built-in
+ *
+ * • Special Systems (fire alarm, data, security) → 5-10% (1.05-1.10)
+ *   Extra cabling to reach devices, loop into ceiling, and terminations
+ *
+ * ===================================================================== */
+
 const DEFAULT_CONDUCTOR = {
   count: 0,
   size: '' as MeasureOptions['conductors'][number]['size'], // '' allowed
@@ -21,19 +44,23 @@ const DEFAULT_CONDUCTOR = {
 };
 
 const DEFAULT_MEASURE_OPTIONS: MeasureOptions = {
-  // raceway
-  emtSize: '',                   // user sets per run
-  extraRacewayPerPoint: 0,
+  // CONDUIT: 5% waste standard (cuts, bends, stubs, overlaps, scraps)
+  emtSize: '3/4"',               // Most common residential/light commercial size
+  extraRacewayPerPoint: 1.5,     // Extra feet per bend/coupling point (industry standard)
 
-  // conductors (3 groups)
-  conductors: [ { ...DEFAULT_CONDUCTOR }, { ...DEFAULT_CONDUCTOR }, { ...DEFAULT_CONDUCTOR } ],
+  // WIRE: 10% waste standard (pulling slack, cuts, stripping, termination, scrap)
+  conductors: [
+    { count: 3, size: '#12', insulation: 'THHN/THWN-2', material: 'CU' },  // Common 3-wire circuit
+    { ...DEFAULT_CONDUCTOR },
+    { ...DEFAULT_CONDUCTOR }
+  ],
 
-  // per-point extras for each conductor, j-box density, and waste
-  extraConductorPerPoint: 0,
-  boxesPerPoint: 0,
-  wasteFactor: 1.05,             // 5% waste default
+  // Per-point extras for pulling slack and junction boxes
+  extraConductorPerPoint: 2,     // Extra feet per point for pulling slack, termination (industry standard)
+  boxesPerPoint: 0.5,            // Average 1 box per 2 points (typical for long runs)
+  wasteFactor: 1.10,             // 10% waste for WIRE (industry standard)
 
-  // display
+  // Display options
   lineColor: '#000000',
   pointColor: '#000000',
   lineWeight: 1,
