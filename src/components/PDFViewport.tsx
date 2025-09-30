@@ -1,12 +1,10 @@
-// src/components/PDFViewport.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import type { PDFDoc } from '@/lib/pdf';
 import { useStore } from '@/state/store';
 import { Stage, Layer, Group, Line, Text as KText, Transformer, Rect, Circle } from 'react-konva';
 import Konva from 'konva';
 import { pathLength, simplifyRDP } from '@/utils/geometry';
-import type { AnyTakeoffObject, MeasureOptions, MeasureResult } from '@/types';
-import MeasureDialog from '@/components/MeasureDialog';
+import type { AnyTakeoffObject } from '@/types';
 
 type Props = { pdf: PDFDoc | null };
 
@@ -75,11 +73,11 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
         const msg = String(error?.message || error);
         const isCancel = msg.includes('Rendering cancelled') || error?.name === 'RenderingCancelledException';
         if (isCancel) {
+          // Normal when a render is superseded; KEEP the previous bitmap.
           console.warn(`PDF render cancelled for page ${pageIndex} (ignored)`);
-          // keep previous bitmap
         } else {
           console.error(`Error rendering PDF page ${pageIndex}:`, error);
-          // keep previous bitmap instead of clearing
+          // Keep previous bitmap instead of blanking the screen.
         }
       }
     })();
@@ -107,14 +105,10 @@ export default function PDFViewport({ pdf }: Props) {
   const [, setPaintTick] = useState(0);
   const liveLabelRef = useRef<{text:string;x:number;y:number}|null>(null);
 
-  // measurement dialog (only for polyline/freeform)
-  const [measureOpen, setMeasureOpen] = useState(false);
-  const pendingMeasureRef = useRef<MeasureOptions | null>(null);
-
   const {
     pages, upsertPage, addObject, patchObject, tool, zoom,
     currentTag, setCalibration, selectedIds, selectOnly, clearSelection,
-    deleteSelected, undo, redo, activePage, tags, setTool
+    deleteSelected, undo, redo, activePage, tags
   } = useStore();
 
   useEffect(() => {
@@ -133,13 +127,6 @@ export default function PDFViewport({ pdf }: Props) {
       calibPtsRef.current = [];
       calibLiveRef.current = null;
       setPaintTick(t => t + 1);
-    }
-  }, [tool]);
-
-  // Open measurement dialog immediately when switching to polyline/freeform (if not set already)
-  useEffect(() => {
-    if ((tool === 'polyline' || tool === 'freeform') && !pendingMeasureRef.current) {
-      setMeasureOpen(true);
     }
   }, [tool]);
 
@@ -189,75 +176,14 @@ export default function PDFViewport({ pdf }: Props) {
     liveLabelRef.current = { text, x: posStage.x + 8, y: posStage.y - 12 };
   }
 
-  function computeMeasureResult(
-    vertsPage: {x:number;y:number}[],
-    ppf: number | undefined,
-    measure?: MeasureOptions
-  ): { lengthFt: number; result?: MeasureResult } {
-    const points = vertsPage.length;
-    const px = pathLength(vertsPage);
-    const baseFt = ppf && ppf > 0 ? (px / ppf) : 0;
-
-    if (!measure) {
-      return {
-        lengthFt: baseFt,
-        result: undefined
-      };
-    }
-
-    const waste = 1 + (measure.wastePct ?? 0);
-    const racewayExtra = (measure.extraRacewayPerPoint ?? 0) * points;
-    const racewayLength = (baseFt + racewayExtra) * waste;
-
-    const condExtra = (measure.extraConductorPerPoint ?? 0) * points;
-    const condBasePer = (baseFt + condExtra) * waste;
-
-    const conductors = (measure.conductors || []).slice(0, 3).map(g => ({
-      size: (g?.size ?? '') as MeasureResult['conductors'][number]['size'],
-      count: Math.max(0, Math.floor(g?.count ?? 0)),
-      lengthFt: Math.max(0, Math.floor(g?.count ?? 0)) > 0 ? condBasePer * Math.max(0, Math.floor(g?.count ?? 0)) : 0
-    }));
-
-    const boxes = (measure.boxesPerPoint ?? 0) * points;
-
-    const result: MeasureResult = {
-      points,
-      baseLengthFt: baseFt,
-      raceway: {
-        emtSize: (measure.emtSize ?? '') as MeasureResult['raceway']['emtSize'],
-        extraFt: racewayExtra * waste, // show after waste applied to be explicit
-        lengthFt: racewayLength,
-      },
-      conductors,
-      boxes,
-      calculatedAt: new Date().toISOString(),
-    };
-
-    return { lengthFt: baseFt, result };
-  }
-
   function commitObject(type:'segment'|'polyline'|'freeform', vertsPage:{x:number;y:number}[]) {
-    const page = pages.find(p => p.pageIndex === activePage);
-    const ppf = page?.pixelsPerFoot;
-
-    const measure = (type === 'polyline' || type === 'freeform') ? (pendingMeasureRef.current ?? undefined) : undefined;
-    const { lengthFt, result } = computeMeasureResult(vertsPage, ppf, measure || undefined);
-
     addObject(activePage, {
       id: crypto.randomUUID(),
       type,
       pageIndex: activePage,
       vertices: vertsPage,
       code: currentTag || undefined,
-      lengthFt,         // base geometric LF at time of commit
-      measure,          // user inputs that drove the calc
-      result,           // computed outputs for BOM
     } as AnyTakeoffObject);
-
-    if (type === 'polyline' || type === 'freeform') {
-      // Clear the pending options after first use to force dialog next time
-      pendingMeasureRef.current = null;
-    }
   }
 
   const isLeft  = (e: any) => (e?.evt?.button ?? 0) === 0;
@@ -265,12 +191,6 @@ export default function PDFViewport({ pdf }: Props) {
 
   function onMouseDown(e: any) {
     if (!info) return;
-
-    // Ensure measure options exist before starting polyline/freeform
-    if ((tool === 'polyline' || tool === 'freeform') && !pendingMeasureRef.current) {
-      setMeasureOpen(true);
-      return; // do not begin collecting points yet
-    }
 
     // Right-click: delete object under cursor
     if (isRight(e)) {
@@ -507,23 +427,6 @@ export default function PDFViewport({ pdf }: Props) {
           </Stage>
         </div>
       </div>
-
-      {/* ===== Measurement Dialog ===== */}
-      <MeasureDialog
-        open={measureOpen}
-        onCancel={() => {
-          setMeasureOpen(false);
-          // revert tool so it doesn't immediately reopen
-          setTool('hand');
-          pendingMeasureRef.current = null;
-        }}
-        onSubmit={(opts) => {
-          pendingMeasureRef.current = opts;
-          setMeasureOpen(false);
-          // keep current tool and allow drawing to begin
-        }}
-        title={`Measurement Options — ${tool === 'polyline' ? 'Polyline' : 'Freeform'}`}
-      />
     </div>
   );
 }
