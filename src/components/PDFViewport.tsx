@@ -31,6 +31,7 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
     if (!pdf || pageIndex < 0) {
       setInfo(null);
       lastGoodRef.current = null;
+      isRenderingRef.current = false;
       return;
     }
 
