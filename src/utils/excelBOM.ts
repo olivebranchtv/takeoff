@@ -142,8 +142,10 @@ export function calculateAssemblyMaterials(
 
         if (totalCondLf <= 0) continue;
 
-        // Format wire description to match database
-        const wireDesc = `${cond.size} THHN Copper Wire,Sol`;
+        // Format wire description to match database exactly
+        // Standard: #14, #12, #10 use Stranded for flexibility; #8+ always Stranded
+        const wireType = 'Str'; // Use stranded by default (industry standard for branch circuits)
+        const wireDesc = `${cond.size} THHN Copper Wire,${wireType}`;
         const matKey = `wire::${wireDesc}::EA`;
         const existing = materialAcc.get(matKey);
 

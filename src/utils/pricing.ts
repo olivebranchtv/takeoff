@@ -244,7 +244,8 @@ export class PricingDatabase {
     // Try exact match first
     const exactKey = `${category}::${description}`;
     const exact = this.materialPrices.get(exactKey);
-    console.log(`🔍 Pricing lookup: "${exactKey}" → ${exact ? `$${exact.materialCost}` : 'NOT FOUND'}`);
+    const result = exact && exact.materialCost > 0 ? `$${exact.materialCost}` : 'NOT FOUND';
+    console.log(`🔍 [${category}] "${description}" → ${result}`);
     if (exact && exact.materialCost > 0) {
       return exact.materialCost;
     }
