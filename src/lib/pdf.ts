@@ -4,7 +4,8 @@
  * This eliminates all CORS and worker-related issues
  */
 
-import { getDocument, GlobalWorkerOptions, version } from 'pdfjs-dist/build/pdf.mjs';
+import { getDocument, GlobalWorkerOptions, version } from 'pdfjs-dist';
+// @ts-ignore - Worker URL import
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 export type PDFDoc = any;

@@ -439,3 +439,6 @@ export const useStore = create<State>()(
     }
   )
 );
+
+// Export useAppStore as an alias for useStore for compatibility
+export const useAppStore = useStore;

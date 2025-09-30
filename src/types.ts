@@ -1,6 +1,26 @@
 // src/types.ts
 export type XY = { x: number; y: number };
 
+export type Tool = 'hand' | 'count' | 'segment' | 'polyline' | 'freeform' | 'calibrate';
+
+export type Tag = {
+  id: string;
+  code: string;
+  name: string;
+  color: string;
+  category?: string;
+};
+
+export type PageState = {
+  pageIndex: number;
+  canvasWidth?: number;
+  canvasHeight?: number;
+  pixelsPerFoot?: number;
+  unit: 'ft' | 'm';
+  calibrated: boolean;
+  objects: AnyTakeoffObject[];
+};
+
 export type CountObject = {
   id: string;
   type: 'count';
@@ -37,5 +57,5 @@ export type ProjectSave = {
     unit?: 'ft';
     objects: AnyTakeoffObject[];
   }>;
-  tags: Array<{ id: string; code: string; name: string; color: string; category?: string }>;
+  tags: Tag[];
 };
