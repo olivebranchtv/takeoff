@@ -69,14 +69,16 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
           canvas
         });
 
-      } catch (error) {
-        // Handle PDF.js rendering cancellation as expected behavior
-        if (error instanceof Error && error.message.includes('Rendering cancelled')) {
-          console.warn(`PDF rendering cancelled for page ${pageIndex} (expected behavior)`);
+      } catch (error: any) {
+        const msg = String(error?.message || error);
+        const isCancel = msg.includes('Rendering cancelled') || error?.name === 'RenderingCancelledException';
+        if (isCancel) {
+          // Normal when a render is superseded; KEEP the previous bitmap.
+          console.warn(`PDF render cancelled for page ${pageIndex} (ignored)`);
         } else {
           console.error(`Error rendering PDF page ${pageIndex}:`, error);
+          // Keep previous bitmap instead of blanking the screen.
         }
-        if (!cancelled) setInfo(null);
       }
     })();
 
@@ -119,6 +121,15 @@ export default function PDFViewport({ pdf }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdf]);
 
+  // If user switches away from Calibrate, wipe overlay (prevents stale state)
+  useEffect(() => {
+    if (tool !== 'calibrate') {
+      calibPtsRef.current = [];
+      calibLiveRef.current = null;
+      setPaintTick(t => t + 1);
+    }
+  }, [tool]);
+
   const info = usePageBitmap(pdf, zoom, activePage);
   const pageScale = (i: PageRenderInfo) => i.width / i.baseWidth;
 
@@ -136,7 +147,7 @@ export default function PDFViewport({ pdf }: Props) {
     const posStage = stage?.getPointerPosition();
     if (!posStage) { liveLabelRef.current = null; return; }
 
-    // If calibrating: show the live pixel length between A and cursor
+    // Calibrate: show live distance readout between first point and cursor
     if (tool === 'calibrate' && calibPtsRef.current.length === 1) {
       const a = calibPtsRef.current[0];
       const b = toPage(i, posStage);
