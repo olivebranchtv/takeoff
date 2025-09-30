@@ -298,6 +298,18 @@ export class PricingDatabase {
   }
 
   /**
+   * Get labor hours per unit for a material (e.g., wire, conduit)
+   */
+  getMaterialLaborHours(category: string, description: string): number {
+    const exactKey = `${category}::${description}`;
+    const exact = this.materialPrices.get(exactKey);
+    if (exact && exact.laborHours && exact.laborHours > 0) {
+      return exact.laborHours;
+    }
+    return 0;
+  }
+
+  /**
    * Set labor rate for assembly
    */
   setLaborRate(code: string, rate: LaborRate) {
@@ -372,6 +384,35 @@ export function calculateProjectCosts(
   let laborHoursTotal = 0;
   const divisionMap = new Map<string, DivisionCost>();
 
+  // Add labor hours from individual materials (wire, conduit, etc.)
+  for (const mat of materials) {
+    const laborPerUnit = pricingDb.getMaterialLaborHours(mat.category, mat.description);
+    if (laborPerUnit > 0) {
+      const materialLaborHours = laborPerUnit * mat.totalQty;
+      laborHoursTotal += materialLaborHours;
+      console.log(`⚙️ Material labor: ${mat.category}::${mat.description} = ${mat.totalQty} × ${laborPerUnit} hrs = ${materialLaborHours} hrs`);
+
+      // Track by division
+      const division = mat.category || 'General';
+      const existing = divisionMap.get(division);
+      if (existing) {
+        existing.laborHours += materialLaborHours;
+      } else {
+        const price = pricingDb.getMaterialPrice(mat.category, mat.description) || 0;
+        const matCost = mat.totalQty * price;
+        divisionMap.set(division, {
+          division,
+          materialCost: matCost,
+          laborHours: materialLaborHours,
+          laborCost: 0,
+          totalCost: 0,
+          sellPrice: 0
+        });
+      }
+    }
+  }
+
+  // Add labor hours from assemblies
   for (const usage of assemblyUsage) {
     const hoursPerUnit = pricingDb.getLaborHours(usage.code);
     const totalHours = hoursPerUnit * usage.count;
