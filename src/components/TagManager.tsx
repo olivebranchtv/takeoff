@@ -48,7 +48,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     row?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // Reset UI & ensure defaults exist
+  // Reset UI & ensure defaults exist (but never overwrite user edits)
   useEffect(() => {
     if (!open) {
       setQuery('');
@@ -115,6 +115,40 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   if (!open) return null;
 
+  // ============ helpers ============
+  const norm = (s: string) => (s || '').trim().toUpperCase();
+
+  /** Upsert-by-code (case-insensitive). Overwrites any existing/default tag with same code. */
+  function upsertByCode(next: Draft, currentEditId?: string | null) {
+    const codeKey = norm(next.code);
+    const existing = (tags as Tag[]).find(t => norm(t.code) === codeKey);
+
+    if (existing) {
+      // Update the canonical record (existing)
+      updateTag(existing.id, {
+        code: codeKey,
+        name: next.name || '',
+        category: (next.category || '').trim(),
+        color: next.color || '#FFA500',
+      });
+
+      // If user was editing a different duplicate record, remove it to avoid twins
+      if (currentEditId && currentEditId !== existing.id) {
+        try { deleteTag(currentEditId); } catch {}
+      }
+      return existing.id;
+    } else {
+      // No canonical record yet → add new
+      addTag({
+        code: codeKey,
+        name: next.name || '',
+        category: (next.category || '').trim(),
+        color: next.color || '#FFA500',
+      });
+      return null;
+    }
+  }
+
   // actions
   function startNew() {
     setEditId(null);
@@ -158,19 +192,11 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     setError('');
   }
 
-  // Exact duplicate only: blocks only when code + category match (case-insensitive)
+  // Minimal validation (no duplicate blocking—overwrites are allowed)
   function validate(next: Draft): string {
-    const norm = (s: string) => (s || '').trim().toUpperCase();
     if (!next.code.trim()) return 'Code is required.';
     if (!/^[a-z0-9\-/# ]+$/i.test(next.code.trim())) return 'Use letters, numbers, space, hyphen, slash, # only.';
-    if (!next.category.trim()) return 'Category is required.';
-
-    const exactDup = (tags as Tag[]).some(
-      t => norm(t.code) === norm(next.code) && norm(t.category) === norm(next.category)
-    );
-    if (!editId && exactDup) {
-      return `Code “${norm(next.code)}” already exists in category “${next.category}”.`;
-    }
+    if (!(next.category || '').trim()) return 'Category is required.';
     return '';
   }
 
@@ -184,7 +210,8 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     const next: Draft = { ...draft, code: draft.code.trim().toUpperCase(), category };
     const msg = validate(next);
     if (msg) { setError(msg); return; }
-    addTag(next);
+
+    upsertByCode(next, null);
     setDraft(d => ({ ...d, code: '', name: '' }));
     setError('');
     codeInputRef.current?.focus();
@@ -195,19 +222,16 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     if (!editId) return;
     const category = resolvedCategory();
     const next: Draft = { ...draft, code: draft.code.trim().toUpperCase(), category };
-
-    const norm = (s: string) => (s || '').trim().toUpperCase();
     const msg = validate(next);
-    if (msg && msg.includes('already exists')) {
-      const conflict = (tags as Tag[]).find(
-        t => norm(t.code) === norm(next.code) && norm(t.category) === norm(next.category)
-      );
-      if (!conflict || conflict.id !== editId) { setError(msg); return; }
-    } else if (msg) { setError(msg); return; }
+    if (msg) { setError(msg); return; }
 
-    updateTag(editId, next);
+    const canonicalId = upsertByCode(next, editId);
     if (category) scrollToCategory(category);
+    // Clear editor after successful save
     cancelEdit();
+
+    // Optional: small toast/alert to confirm overwrite behavior
+    // alert('Saved. This code now overrides the default in the master database.');
   }
 
   function remove(id: string) {
@@ -267,7 +291,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     alert(`Default master tags loaded. Added ${added} new tag(s). Total master: ${DEFAULT_MASTER_TAGS.length}.`);
   }
 
-  const headerNote = 'Lights category always renders orange on the plan, regardless of saved color.';
+  const headerNote = 'Edits here permanently override defaults for matching codes in the master database.';
 
   // Drag handlers (drag anywhere on title bar)
   function onDragStart(e: React.MouseEvent) {
@@ -497,9 +521,9 @@ const S: Record<string, React.CSSProperties> = {
   modal: {
     position:'fixed',
     background:'#fff',
-    width: 1200,               // wider
+    width: 1200,
     maxWidth:'96vw',
-    maxHeight:'96vh',          // taller
+    maxHeight:'96vh',
     overflow:'hidden',
     borderRadius:12,
     boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
@@ -520,7 +544,6 @@ const S: Record<string, React.CSSProperties> = {
   search: { flex:1, padding:'10px 12px', border:'1px solid #ccc', borderRadius:8, fontSize:14, lineHeight:'20px', boxSizing:'border-box' },
   jump:   { width:260, padding:'10px 12px', border:'1px solid #ccc', borderRadius:8, fontSize:14 },
 
-  // Key: give the interior ALL the space and make the table flex to fill it
   content: { flex:1, display:'flex', flexDirection:'column', overflow:'hidden' },
 
   card:   { padding:'10px 14px', borderBottom:'1px solid #f2f2f2', background:'#fff' },
@@ -531,7 +554,6 @@ const S: Record<string, React.CSSProperties> = {
   swatch: { width:24, height:24, borderRadius:4, cursor:'pointer' },
   error:  { marginTop:8, color:'#b00020', fontSize:13, fontWeight:600 },
 
-  // The table region now fills the remaining height (tons of rows visible)
   tableWrap: { flex:1, overflow:'auto', padding:'0 14px 14px' },
   table:  { width:'100%', borderCollapse:'separate', borderSpacing:0 },
   thNarrow: { width:64, textAlign:'center', padding:'8px 6px', fontSize:12, color:'#555',
