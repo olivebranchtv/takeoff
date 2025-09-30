@@ -13,7 +13,7 @@
 ### Step 2: Calculate Costs (2 minutes)
 1. Click **"💰 Pricing & Bidding"** (green button)
 2. Click **"📁 Upload Pricing Excel"** to load your material costs
-3. Adjust **Overhead %** (default: 15%)
+3. Adjust **Overhead %** (default: 10%)
 4. Adjust **Profit %** (default: 10%)
 5. Add **Equipment Rental** costs if needed
 
@@ -153,10 +153,10 @@ All defaults are adjustable in the Pricing panel.
 Material: $2,850.00
 Labor: 31.5 hrs × $30 = $945.00
 Subtotal: $3,795.00
-Overhead (15%): $569.25
+Overhead (10%): $379.50
 Subtotal w/ OH: $4,364.25
-Profit (10%): $436.43
-TOTAL BID: $4,800.68
+Profit (10%): $417.45
+TOTAL BID: $4,591.95
 ```
 
 **4. Export bid summary → Send to client → Win job!**

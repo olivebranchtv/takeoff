@@ -94,7 +94,7 @@ export function UserGuide({ onClose }: UserGuideProps) {
               <ul>
                 <li>Click <strong>"💰 Pricing & Bidding"</strong> (green button)</li>
                 <li>Click <strong>"📁 Upload Pricing Excel"</strong> to load material costs</li>
-                <li>Adjust <strong>Overhead %</strong> (default: 15%)</li>
+                <li>Adjust <strong>Overhead %</strong> (default: 10%)</li>
                 <li>Adjust <strong>Profit %</strong> (default: 10%)</li>
                 <li>Add <strong>Equipment Rental</strong> costs if needed</li>
               </ul>
@@ -222,12 +222,13 @@ export function UserGuide({ onClose }: UserGuideProps) {
               </ol>
             </SubSection>
 
-            <SubSection title="Additional Export Options">
+            <SubSection title="Export Lighting Fixtures">
               <ul>
-                <li><strong>Export Lighting Fixtures:</strong> Lighting-only list</li>
-                <li><strong>Export CSV (Itemized Raceway):</strong> Every conduit segment detailed</li>
-                <li><strong>Export CSV (Summarized Raceway):</strong> Conduit totals only</li>
-                <li><strong>Export Excel (Detailed Measurements):</strong> Both itemized and summarized</li>
+                <li>Exports all lighting fixtures to Excel</li>
+                <li>Includes linear fixtures, troffers, high-bays, downlights, emergency, exit signs</li>
+                <li>Perfect for sending to lighting vendors for pricing quotes</li>
+                <li>Organized by fixture type with quantities</li>
+                <li>Helps get competitive pricing for lighting packages</li>
               </ul>
             </SubSection>
           </Section>
@@ -265,9 +266,9 @@ Conduit  | EMT 1/2"              | FT   | 0.42`}
 
             <SubSection title="J. Configure Markup Settings">
               <ul>
-                <li><strong>Overhead %:</strong> Default 15% (adjust for your company)</li>
+                <li><strong>Overhead %:</strong> Default 10% (adjust for your company)</li>
                 <li><strong>Profit Margin %:</strong> Default 10% (adjust per job)</li>
-                <li><strong>Sales Tax %:</strong> Default 8.5% (your local rate)</li>
+                <li><strong>Sales Tax %:</strong> Default 9.5% (your local rate)</li>
                 <li><strong>Shipping Cost $:</strong> Flat freight charge</li>
                 <li><strong>Equipment Rental $:</strong> Lifts, tools, generators</li>
               </ul>
@@ -439,9 +440,9 @@ Conduit  | EMT 1/2"              | FT   | 0.42`}
                 <li>Material: $2,850.00</li>
                 <li>Labor: 31.5 hrs × $30 = $945.00</li>
                 <li>Subtotal: $3,795.00</li>
-                <li>Overhead (15%): $569.25</li>
-                <li>Profit (10%): $436.43</li>
-                <li><strong>TOTAL BID: $4,800.68</strong></li>
+                <li>Overhead (10%): $379.50</li>
+                <li>Profit (10%): $417.45</li>
+                <li><strong>TOTAL BID: $4,591.95</strong></li>
               </ul>
 
               <strong>4. Export & Submit:</strong>

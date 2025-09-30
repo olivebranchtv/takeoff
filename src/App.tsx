@@ -759,12 +759,6 @@ export default function App() {
         <button className="btn" onClick={()=>setPricingPanelOpen(true)} style={{background:'#2e7d32', color:'#fff', fontWeight:'bold'}}>💰 Pricing & Bidding</button>
         <button className="btn" onClick={exportExcelFull}>Export Excel (Full BOM)</button>
         <button className="btn" onClick={exportFixturesOnly}>Export Lighting Fixtures</button>
-
-        {/* NEW export buttons */}
-        <div style={{borderLeft:'1px solid #eee', height:24, margin:'0 6px'}} />
-        <button className="btn" onClick={exportCSVItemizedRaceway} title="Itemized CSV with raceway, conductors, boxes">Export CSV (Itemized Raceway)</button>
-        <button className="btn" onClick={exportCSVSummarizedRaceway} title="Summarized CSV with raceway totals">Export CSV (Summarized Raceway)</button>
-        <button className="btn" onClick={exportExcelDetailedMeasurements} title="Excel with itemized & summarized measurement sheets">Export Excel (Detailed Measurements)</button>
       </div>
 
       {/* PROJECT TAGS BAR */}
