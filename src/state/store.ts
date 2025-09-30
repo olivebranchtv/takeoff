@@ -228,7 +228,7 @@ export const useStore = create<State>()(
       },
 
       setCalibration: (pageIndex, ppf, unit) => set((s) => {
-        const pages = s.pages.map((p) => (p.pageIndex === pageIndex ? ({ ...p, pixelsPerFoot: ppf, unit }) : p));
+        const pages = s.pages.map((p) => (p.pageIndex === pageIndex ? ({ ...p, pixelsPerFoot: ppf, unit, calibrated: true }) : p));
         return { pages };
       }),
 
