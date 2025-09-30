@@ -291,7 +291,7 @@ export const useStore = create<State>()(
         if (currentIdx < 0) return {};
 
         const nextCode = patch.code ? norm(patch.code) : norm(tags[currentIdx].code);
-        const nextCat  = (patch.category ?? tags[currentIdx].category || '').trim();
+        const nextCat  = (patch.category ?? (tags[currentIdx].category || '')).trim();
         const nextName = patch.name ?? tags[currentIdx].name;
         const nextColor= patch.color ?? tags[currentIdx].color;
 
