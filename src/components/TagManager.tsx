@@ -43,7 +43,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   // Category anchors for jump
   const groupRefs = useRef(new Map<string, HTMLTableRowElement>());
-  const scrollToCategory = (cat: string) => {
+  const scrollToCategory = (cat: string | undefined) => {
     const row = groupRefs.current.get(cat || 'Uncategorized');
     row?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -400,7 +400,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                   <div style={S.label}>Category</div>
                   <div style={{ display:'flex', gap:8, minWidth:0 }}>
                     <select
-                      value={catSelect || (sortedCategories.includes(draft.category) ? draft.category : (draft.category ? CUSTOM_CAT_VALUE : ''))}
+                      value={catSelect || (draft.category && sortedCategories.includes(draft.category) ? draft.category : (draft.category ? CUSTOM_CAT_VALUE : ''))}
                       onChange={(e) => {
                         const v = e.target.value;
                         setCatSelect(v);
@@ -409,7 +409,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                         } else {
                           setDraft(d => ({ ...d, category: v }));
                           setCustomCategory('');
-                          if (v) scrollToCategory(v);
+                          scrollToCategory(v);
                         }
                       }}
                       style={S.input}

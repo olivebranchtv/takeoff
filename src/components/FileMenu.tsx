@@ -16,7 +16,8 @@ export const FileMenu: React.FC<FileMenuProps> = ({ onAction, onOpenGuide }) => 
   const fileRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
 
-  const currentProject = useStore(s => s.currentProject);
+  const toProject = useStore(s => s.toProject);
+  const projectName = useStore(s => s.projectName);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -41,14 +42,15 @@ export const FileMenu: React.FC<FileMenuProps> = ({ onAction, onOpenGuide }) => 
   };
 
   const downloadCurrent = () => {
-    if (!currentProject) {
+    if (!projectName) {
       addToast('No open project to download', 'error');
       return;
     }
+    const currentProject = toProject();
     const blob = new Blob([JSON.stringify(currentProject, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const fn = `${currentProject.name || 'project'}.skdproj`;
+    const fn = `${projectName || 'project'}.skdproj`;
     a.href = url; a.download = fn; a.click();
     URL.revokeObjectURL(url);
     setIsOpen(false);

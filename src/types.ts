@@ -47,13 +47,14 @@ export type EMTSize =
 
 /** Common conductor sizes (AWG / kcmil). '' = unset. */
 export type WireSize =
+  | '18' | '16' | '14' | '12' | '10' | '8' | '6' | '4' | '3' | '2' | '1'
   | '#18' | '#16' | '#14' | '#12' | '#10' | '#8' | '#6' | '#4' | '#3' | '#2' | '#1'
   | '1/0' | '2/0' | '3/0' | '4/0'
   | '250' | '300' | '350' | '400' | '500' | '600' | '750' | '1000'
   | '';
 
 export type WireMaterial = 'CU' | 'AL';
-export type WireInsulation = 'THHN/THWN-2' | 'XHHW-2' | 'MTW' | 'RW90' | 'USE-2' | 'Other';
+export type WireInsulation = 'THHN/THWN-2' | 'XHHW-2' | 'MTW' | 'RW90' | 'USE-2' | 'RHH/RHW-2' | 'Other';
 
 export type ConductorSpec = {
   count: number;              // number of conductors in the group

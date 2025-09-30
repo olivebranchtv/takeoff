@@ -1,6 +1,6 @@
 // src/components/MeasureDialog.tsx
 import React, { useEffect, useMemo, useState } from 'react';
-import type { MeasureOptions, EMTSize } from '@/types';
+import type { MeasureOptions, EMTSize, WireSize, ConductorSpec } from '@/types';
 import { useStore } from '@/state/store';
 
 /** EMT sizes for raceway */
@@ -122,10 +122,10 @@ export default function MeasureDialog({
     // normalize & sanitize
     const conductors = normalizeConductor3(form.conductors).map(g => ({
       count: clampNonNegInt(g.count),
-      size: (g.count ?? 0) > 0 ? String(g.size ?? '') : '',
+      size: (g.count ?? 0) > 0 ? String(g.size ?? '') as WireSize : '' as WireSize,
       insulation: (g.count ?? 0) > 0 ? (g.insulation || 'THHN/THWN-2') : 'THHN/THWN-2',
       material: (g.count ?? 0) > 0 ? (g.material || 'CU') : 'CU',
-    }));
+    })) as [ConductorSpec, ConductorSpec, ConductorSpec];
 
     const clean: MeasureOptions = {
       emtSize: form.emtSize ?? '',

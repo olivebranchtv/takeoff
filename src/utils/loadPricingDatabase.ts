@@ -9,6 +9,7 @@ export interface SKDPricingRow {
   description?: string;
   unit?: string;
   cost?: number;
+  laborHours?: number;
   vendor?: string;
   partNumber?: string;
 }
@@ -57,7 +58,11 @@ export async function loadSKDPricingDatabase(filePath: string): Promise<Material
 
       const cost =
         parseFloat(row['Cost'] || row['cost'] || row['Price'] ||
-        row['Unit Cost'] || row['COST'] || row['$'] || '0');
+        row['Unit Cost'] || row['COST'] || row['Material Cost'] || row['$'] || '0');
+
+      const laborHours =
+        parseFloat(row['Labor Hours'] || row['Labor Hrs'] || row['Hours'] ||
+        row['Install Hours'] || row['Installation Time'] || row['Hrs'] || '0');
 
       const vendor =
         row['Vendor'] || row['vendor'] || row['Supplier'] || '';
@@ -71,12 +76,13 @@ export async function loadSKDPricingDatabase(filePath: string): Promise<Material
         continue;
       }
 
-      if (cost > 0) {
+      if (cost > 0 || laborHours > 0) {
         materialPrices.push({
           category: String(category),
           description: String(description),
           unit: String(unit),
           materialCost: cost,
+          laborHours: laborHours > 0 ? laborHours : undefined,
           vendor: vendor ? String(vendor) : undefined,
           vendorPartNumber: partNumber ? String(partNumber) : undefined
         });
@@ -136,7 +142,11 @@ export function parseSKDWorkbook(workbook: any): MaterialPrice[] {
 
     const cost =
       parseFloat(row['Cost'] || row['cost'] || row['Price'] ||
-      row['Unit Cost'] || row['COST'] || row['$'] || '0');
+      row['Unit Cost'] || row['COST'] || row['Material Cost'] || row['$'] || '0');
+
+    const laborHours =
+      parseFloat(row['Labor Hours'] || row['Labor Hrs'] || row['Hours'] ||
+      row['Install Hours'] || row['Installation Time'] || row['Hrs'] || '0');
 
     const vendor =
       row['Vendor'] || row['vendor'] || row['Supplier'] || '';
@@ -150,12 +160,13 @@ export function parseSKDWorkbook(workbook: any): MaterialPrice[] {
       continue;
     }
 
-    if (cost > 0) {
+    if (cost > 0 || laborHours > 0) {
       materialPrices.push({
         category: String(category),
         description: String(description),
         unit: String(unit),
         materialCost: cost,
+        laborHours: laborHours > 0 ? laborHours : undefined,
         vendor: vendor ? String(vendor) : undefined,
         vendorPartNumber: partNumber ? String(partNumber) : undefined
       });

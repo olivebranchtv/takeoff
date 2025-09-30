@@ -1,11 +1,11 @@
 // src/components/Header.tsx
 import React, { useState } from 'react';
-import { useAppStore } from '@/state/store';
+import { useStore } from '@/state/store';
 import { Pencil } from 'lucide-react';
 
 export const Header: React.FC = () => {
-  const name = useAppStore(s => s.currentProjectName);
-  const rename = useAppStore(s => s.renameCurrentProject);
+  const name = useStore(s => s.projectName);
+  const rename = useStore(s => s.setProjectName);
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(name ?? '');
@@ -39,7 +39,7 @@ export const Header: React.FC = () => {
       {!editing ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div title={name ?? ''} style={{ maxWidth: 420, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-            {name ?? 'No project'}
+            {name || 'No project'}
           </div>
           {name && (
             <button

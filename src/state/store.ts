@@ -263,7 +263,7 @@ export const useStore = create<State>()(
       addObject: (pageIndex, obj) => {
         const { pushHistory } = get(); pushHistory(pageIndex);
         set((s) => {
-          const pages = s.pages.map((p) => p.pageIndex === pageIndex ? ({ ...p, objects: [...asArray(p.objects), obj] }) : p );
+          const pages = s.pages.map((p) => p.pageIndex === pageIndex ? ({ ...p, objects: [...asArray<AnyTakeoffObject>(p.objects), obj] }) : p );
           return { pages };
         });
       },
@@ -271,7 +271,7 @@ export const useStore = create<State>()(
       replaceObjects: (pageIndex, objs) => {
         const { pushHistory } = get(); pushHistory(pageIndex);
         set((s) => {
-          const pages = s.pages.map((p) => p.pageIndex === pageIndex ? ({ ...p, objects: safeObjects(objs) }) : p );
+          const pages = s.pages.map((p) => p.pageIndex === pageIndex ? ({ ...p, objects: safeObjects(objs) as AnyTakeoffObject[] }) : p );
           return { pages };
         });
       },
@@ -281,7 +281,7 @@ export const useStore = create<State>()(
         set((s) => {
           const pages = s.pages.map((p) => {
             if (p.pageIndex !== pageIndex) return p;
-            const objects = asArray<AnyTakeoffObject>(p.objects).map((o) => (o.id === id ? ({ ...o, ...patch }) : o));
+            const objects = asArray<AnyTakeoffObject>(p.objects).map((o) => (o.id === id ? ({ ...o, ...patch } as AnyTakeoffObject) : o));
             return { ...p, objects };
           });
           return { pages };

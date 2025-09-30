@@ -11,6 +11,7 @@ export interface MaterialPrice {
   description: string;
   unit: string;
   materialCost: number;
+  laborHours?: number;
   vendor?: string;
   vendorPartNumber?: string;
 }
