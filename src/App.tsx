@@ -412,6 +412,112 @@ export default function App() {
   };
 
   /* =========================================================================================
+     EXCEL EXPORT (Lighting, Measurements, Counts, Summary)
+     ========================================================================================= */
+  function nameForCode(code: string): string {
+    const t = (tags as Tag[]).find(t => (t.code || '').toUpperCase() === (code || '').toUpperCase());
+    return t?.name || '';
+  }
+  function isLighting(code: string): boolean {
+    const t = (tags as Tag[]).find(t => (t.code || '').toUpperCase() === (code || '').toUpperCase());
+    const cat = (t?.category || '').toLowerCase();
+    return cat.includes('light') || (code || '').toUpperCase().startsWith('L');
+  }
+
+  const exportExcel = async () => {
+    let XLSX: any;
+    try {
+      XLSX = (await import('xlsx')).default || (await import('xlsx'));
+    } catch (e) {
+      alert('Missing dependency "xlsx". Install with:  npm i xlsx');
+      return;
+    }
+
+    // Aggregate counts and measurements
+    const countByCode = new Map<string, number>();
+    const measByCode = new Map<string, { meas: number; lf: number }>();
+
+    for (const pg of pages) {
+      const ppf = pg.pixelsPerFoot || 0;
+      for (const obj of (pg.objects ?? [])) {
+        const code = (obj as any).code || '';
+        if (!code) continue;
+
+        if (obj.type === 'count') {
+          countByCode.set(code, (countByCode.get(code) || 0) + 1);
+        } else {
+          const verts = (obj as AnyTakeoffObject).vertices ?? [];
+          const lenPx = pathLength(verts);
+          const lf = ppf > 0 ? lenPx / ppf : 0;
+          const box = measByCode.get(code) ?? { meas: 0, lf: 0 };
+          box.meas += 1;
+          box.lf += lf;
+          measByCode.set(code, box);
+        }
+      }
+    }
+
+    // Sheet 1: Lighting
+    const lightingRows = Array.from(countByCode.entries())
+      .filter(([code]) => isLighting(code))
+      .map(([code, count]) => ({
+        Code: code,
+        Name: nameForCode(code),
+        Count: count
+      }))
+      .sort((a, b) => a.Code.localeCompare(b.Code));
+
+    // Sheet 2: Measurements (all codes with any LF/meas)
+    const measRows = Array.from(measByCode.entries())
+      .map(([code, v]) => ({
+        Code: code,
+        Name: nameForCode(code),
+        'Meas Count': v.meas,
+        'LF (ft)': +v.lf.toFixed(2),
+      }))
+      .sort((a, b) => a.Code.localeCompare(b.Code));
+
+    // Sheet 3: Counts (All)
+    const countRows = Array.from(countByCode.entries())
+      .map(([code, count]) => ({
+        Code: code,
+        Name: nameForCode(code),
+        Count: count
+      }))
+      .sort((a, b) => a.Code.localeCompare(b.Code));
+
+    // Sheet 4: Summary
+    const summaryRows = [
+      { Metric: 'Total Tags', Value: bom.totalTags },
+      { Metric: 'Segment LF', Value: bom.segLF.toFixed(2) },
+      { Metric: 'Polyline LF', Value: bom.plLF.toFixed(2) },
+      { Metric: 'Freeform LF', Value: bom.ffLF.toFixed(2) },
+      { Metric: 'Total LF', Value: bom.totalLF.toFixed(2) },
+      { Metric: 'Calibrated Pages', Value: `${bom.calibratedCount}/${bom.totalPages}` },
+    ];
+
+    const wb = XLSX.utils.book_new();
+
+    const wsLighting = XLSX.utils.json_to_sheet(lightingRows);
+    XLSX.utils.book_append_sheet(wb, wsLighting, 'Lighting');
+
+    const wsMeas = XLSX.utils.json_to_sheet(measRows);
+    XLSX.utils.book_append_sheet(wb, wsMeas, 'Measurements');
+
+    const wsCounts = XLSX.utils.json_to_sheet(countRows);
+    XLSX.utils.book_append_sheet(wb, wsCounts, 'Counts (All)');
+
+    const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+    const baseName =
+      useStore.getState().getProjectName()?.trim() ||
+      (pdfName || fileName || 'BOM').replace(/\.[^.]+$/, '');
+
+    XLSX.writeFile(wb, `${baseName}.xlsx`);
+  };
+
+  /* =========================================================================================
      RENDER
      ========================================================================================= */
   return (
@@ -447,7 +553,7 @@ export default function App() {
           <div style={{opacity:.7}}>·</div>
           <button
             title="Click to rename project"
-            onClick={()=>{ const next = prompt('Project name:', headerProjectLabel); if (next != null) setProjectName(next.trim() || 'Untitled Project'); }}
+            onClick={()=>{ const next = prompt('Project name:', useStore.getState().getProjectName()); if (next != null) setProjectName(next.trim() || 'Untitled Project'); }}
             className="btn"
             style={{
               background:'transparent',
@@ -463,7 +569,7 @@ export default function App() {
               textOverflow:'ellipsis'
             }}
           >
-            {headerProjectLabel}
+            {useStore.getState().getProjectName()}
           </button>
         </div>
 
@@ -527,6 +633,7 @@ export default function App() {
         <div style={{flex:1}} />
 
         <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
+        <button className="btn" onClick={exportExcel}>Export Excel</button>
       </div>
 
       {/* PROJECT TAGS BAR */}
@@ -634,7 +741,7 @@ export default function App() {
           style={{
             position:'relative',
             overflow:'auto',
-            whiteSpace:'nowrap',  // ← ensures horizontal overflow so we can pan left/right
+            whiteSpace:'nowrap',  // allow horizontal overflow for left/right panning
             cursor: panStateRef.current.active ? 'grabbing' : (tool === 'hand' ? 'grab' : 'default')
           }}
           onMouseDown={beginPan}
