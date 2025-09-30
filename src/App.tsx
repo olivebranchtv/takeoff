@@ -4,6 +4,7 @@ import type { PDFDoc } from '@/lib/pdf';
 import { loadPdfFromBytes } from '@/lib/pdf';
 import PDFViewport from '@/components/PDFViewport';
 import TagManager from '@/components/TagManager';
+import { AssemblyPanel } from '@/components/AssemblyPanel';
 import { useStore } from '@/state/store';
 import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
 import { pathLength } from '@/utils/geometry';
@@ -73,6 +74,9 @@ export default function App() {
 
   /* ---------- Tag Manager modal ---------- */
   const [tagsOpen, setTagsOpen] = useState(false);
+
+  /* ---------- Assembly Panel modal ---------- */
+  const [assemblyPanelOpen, setAssemblyPanelOpen] = useState(false);
 
   /* ---------- File menu ---------- */
   const [fileMenuOpen, setFileMenuOpen] = useState(false);
@@ -664,6 +668,9 @@ export default function App() {
   /* NEW: Excel – Detailed measurements (itemized + summarized with raceway) */
   const exportExcelDetailedMeasurements = async () => {
     const XLSX = await ensureXLSX();
+    const { calculateAssemblyMaterials } = await import('@/utils/assemblies');
+    const { tags, assemblies } = useStore.getState();
+
     const itemRows = buildBOMRows(pages, 'itemized');
     const sumRows  = buildBOMRows(pages, 'summarized');
 
@@ -708,9 +715,25 @@ export default function App() {
       Category: r.category || '',
     }));
 
+    // Calculate assembly materials
+    const assemblyMaterials = calculateAssemblyMaterials(pages, tags, assemblies);
+    const assemblyObjs = assemblyMaterials.map(mat => ({
+      Description: mat.description,
+      Quantity: +mat.quantity.toFixed(2),
+      Unit: mat.unit,
+      Category: mat.category,
+      Assembly: mat.assemblyCode + ' - ' + mat.assemblyName,
+      Notes: mat.notes || ''
+    }));
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(itemObjs), 'Measurements (Itemized)');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sumObjs),  'Measurements (Summarized)');
+
+    // Add assembly materials sheet if there are any
+    if (assemblyObjs.length > 0) {
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(assemblyObjs), 'Assembly Materials');
+    }
 
     const base = useStore.getState().getProjectName()?.trim() || 'Measurements';
     XLSX.writeFile(wb, `${base} - Detailed Measurements.xlsx`);
@@ -832,6 +855,7 @@ export default function App() {
         <div style={{flex:1}} />
 
         <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
+        <button className="btn" onClick={()=>setAssemblyPanelOpen(true)}>Assemblies</button>
         <button className="btn" onClick={exportExcelFull}>Export Excel (Full BOM)</button>
         <button className="btn" onClick={exportFixturesOnly}>Export Lighting Fixtures</button>
 
@@ -980,6 +1004,62 @@ export default function App() {
           setTagsOpen(false);
         }}
       />
+
+      {assemblyPanelOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px'
+          }}
+          onClick={() => setAssemblyPanelOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: '8px',
+              width: '95%',
+              maxWidth: '1400px',
+              height: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '16px 20px',
+                borderBottom: '1px solid #ddd',
+                background: '#f8f9fa'
+              }}
+            >
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>
+                Assembly Manager
+              </h2>
+              <button
+                className="btn"
+                onClick={() => setAssemblyPanelOpen(false)}
+                style={{ padding: '4px 12px' }}
+              >
+                ✕ Close
+              </button>
+            </div>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <AssemblyPanel />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,7 +8,9 @@ import type {
   AnyTakeoffObject,
   Tag,
   MeasureOptions,
+  Assembly,
 } from '@/types';
+import { STANDARD_ASSEMBLIES } from '@/constants/assemblies';
 
 type HistoryEntry = { pageIndex: number; objects: AnyTakeoffObject[] };
 
@@ -143,6 +145,9 @@ type State = {
   /** Last-used measure dialog options (persisted) */
   lastMeasureOptions: MeasureOptions;
 
+  // ASSEMBLY DATABASE (standard material kits)
+  assemblies: Assembly[];
+
   // setters & actions
   setFileName: (n: string) => void;
   setProjectName: (n: string) => void;
@@ -230,6 +235,9 @@ export const useStore = create<State>()(
 
       // initialize last used measure options
       lastMeasureOptions: DEFAULT_MEASURE_OPTIONS,
+
+      // initialize assemblies with standard kits
+      assemblies: STANDARD_ASSEMBLIES,
 
       setFileName: (n) => set({ fileName: n, projectName: get().projectName || baseNameNoExt(n) }),
       setProjectName: (n) => set({ projectName: n || 'Untitled Project' }),

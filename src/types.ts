@@ -13,6 +13,29 @@ export type Tag = {
   name: string;
   color: string;
   category?: string;
+  assemblyId?: string; // Optional link to a standard assembly
+};
+
+/* ===== Assembly System (Standard Material Kits) ===== */
+
+export type AssemblyItem = {
+  id: string;
+  description: string;    // e.g., "4\" Square Box, 1-1/2\" deep"
+  unit: string;           // e.g., "EA", "LF", "BOX"
+  quantityPer: number;    // Quantity per assembly instance
+  category: string;       // e.g., "Boxes", "Devices", "Fittings", "Wire"
+  wasteFactor: number;    // e.g., 1.02 for 2% waste
+  notes?: string;
+};
+
+export type Assembly = {
+  id: string;
+  code: string;           // e.g., "RECEP-20A"
+  name: string;           // e.g., "Standard 20A Receptacle Assembly"
+  description: string;    // Full description for estimating
+  type: 'device' | 'panel' | 'fixture' | 'custom';
+  items: AssemblyItem[];
+  isActive: boolean;      // Whether this assembly is available for use
 };
 
 /* ===== Raceway & Conductor vocab ===== */

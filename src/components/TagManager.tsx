@@ -23,7 +23,7 @@ const CUSTOM_CAT_VALUE = '__CUSTOM__';
 
 export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const store = useStore() as any;
-  const { tags, palette, addTag, updateTag, deleteTag, importTags, exportTags } = store;
+  const { tags, palette, addTag, updateTag, deleteTag, importTags, exportTags, assemblies } = store;
 
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -438,6 +438,25 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     style={S.input}
                     onKeyDown={(e)=>{ if (e.key==='Enter') (editId ? saveEdit() : add()); }}
                   />
+                </div>
+              </div>
+
+              <div style={{ marginTop: 10 }}>
+                <div style={S.label}>Assembly (Optional)</div>
+                <select
+                  value={draft.assemblyId || ''}
+                  onChange={e => setDraft(d => ({ ...d, assemblyId: e.target.value || undefined }))}
+                  style={{ ...S.input, width: '100%', maxWidth: '500px' }}
+                >
+                  <option value="">— No Assembly —</option>
+                  {assemblies && assemblies.filter((a: any) => a.isActive).map((assembly: any) => (
+                    <option key={assembly.id} value={assembly.id}>
+                      {assembly.code} - {assembly.name} ({assembly.items.length} items)
+                    </option>
+                  ))}
+                </select>
+                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                  Assemblies automatically calculate materials for count objects (receptacles, switches, etc.)
                 </div>
               </div>
 
