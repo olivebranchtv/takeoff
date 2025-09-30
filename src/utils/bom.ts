@@ -21,6 +21,8 @@ export type BomRow = {
   note?: string;
 
   // ===== NEW: raceway/enrichment computed from object.measure =====
+  /** EMT conduit size */
+  emtSize?: string;
   /** number of vertices/points on the run (for segment/polyline/freeform) */
   points?: number;
   /** LF including extra footage per point (raceway) */
@@ -29,8 +31,8 @@ export type BomRow = {
   conductorLfTotal?: number;
   /** Sum of boxes (boxesPerPoint * points) */
   boxes?: number;
-  /** Up to 3 conductor groups (count + size) copied from measure */
-  conductors?: Array<{ count: number; size: string }>;
+  /** Up to 3 conductor groups (count + size + insulation + material) copied from measure */
+  conductors?: Array<{ count: number; size: string; insulation: string; material: string }>;
 };
 
 /** Helper: compute lineal feet from vertices using page calibration. */
@@ -43,10 +45,10 @@ function lfFromVertices(ppf: number | undefined, vertices: Array<{x:number;y:num
 function computeRacewayStats(
   obj: any,
   ppf: number | undefined
-): Pick<BomRow, 'lengthFt' | 'points' | 'racewayLf' | 'conductorLfTotal' | 'boxes' | 'conductors'> {
+): Pick<BomRow, 'lengthFt' | 'emtSize' | 'points' | 'racewayLf' | 'conductorLfTotal' | 'boxes' | 'conductors'> {
   const type = obj?.type;
   if (type === 'count') {
-    return { lengthFt: undefined, points: undefined, racewayLf: undefined, conductorLfTotal: undefined, boxes: undefined, conductors: undefined };
+    return { lengthFt: undefined, emtSize: undefined, points: undefined, racewayLf: undefined, conductorLfTotal: undefined, boxes: undefined, conductors: undefined };
   }
 
   const vertices = (obj?.vertices ?? []) as Array<{x:number;y:number}>;
@@ -58,6 +60,7 @@ function computeRacewayStats(
     // No measure block: keep legacy LF only
     return {
       lengthFt,
+      emtSize: undefined,
       points,
       racewayLf: lengthFt,
       conductorLfTotal: 0,
@@ -71,11 +74,17 @@ function computeRacewayStats(
   const boxesPerPoint = Number(m.boxesPerPoint || 0);
 
   const racewayLf = lengthFt + extraRaceway * points;
+  const emtSize = m.emtSize || '';
 
-  // conductor groups (up to 3)
+  // conductor groups (up to 3) with full details
   const conductors = (m.conductors ?? [])
     .slice(0, 3)
-    .map(g => ({ count: Number(g.count || 0), size: String(g.size || '') }));
+    .map(g => ({
+      count: Number(g.count || 0),
+      size: String(g.size || ''),
+      insulation: String(g.insulation || ''),
+      material: String(g.material || '')
+    }));
 
   // total conductor LF = sum over groups (count × (racewayLf + extraConductorPerPoint × points))
   let conductorLfTotal = 0;
@@ -85,7 +94,7 @@ function computeRacewayStats(
 
   const boxes = boxesPerPoint * points;
 
-  return { lengthFt, points, racewayLf, conductorLfTotal, boxes, conductors };
+  return { lengthFt, emtSize, points, racewayLf, conductorLfTotal, boxes, conductors };
 }
 
 /**
@@ -115,6 +124,7 @@ export function buildBOMRows(pages: PageState[], mode: BomMode = 'itemized'): Bo
 
       // Compute geometry length and raceway/conductor enrichment
       let lengthFt: number | undefined = undefined;
+      let emtSize: string | undefined = undefined;
       let points: number | undefined = undefined;
       let racewayLf: number | undefined = undefined;
       let conductorLfTotal: number | undefined = undefined;
@@ -133,13 +143,19 @@ export function buildBOMRows(pages: PageState[], mode: BomMode = 'itemized'): Bo
 
           const m = (obj as any).measure as MeasureOptions | undefined;
           if (m) {
+            emtSize = m.emtSize || '';
             const extraRaceway = Number(m.extraRacewayPerPoint || 0);
             const extraConductor = Number(m.extraConductorPerPoint || 0);
             const boxesPerPoint = Number(m.boxesPerPoint || 0);
 
             racewayLf = lengthFt + extraRaceway * pts;
 
-            const mGroups = (m.conductors ?? []).slice(0, 3).map(g => ({ count: Number(g.count || 0), size: String(g.size || '') }));
+            const mGroups = (m.conductors ?? []).slice(0, 3).map(g => ({
+              count: Number(g.count || 0),
+              size: String(g.size || ''),
+              insulation: String(g.insulation || ''),
+              material: String(g.material || '')
+            }));
             conductors = mGroups;
 
             let cTotal = 0;
@@ -155,6 +171,7 @@ export function buildBOMRows(pages: PageState[], mode: BomMode = 'itemized'): Bo
         } else {
           const calc = computeRacewayStats(obj, ppf);
           lengthFt = calc.lengthFt;
+          emtSize = calc.emtSize;
           points = calc.points;
           racewayLf = calc.racewayLf;
           conductorLfTotal = calc.conductorLfTotal;
@@ -175,6 +192,7 @@ export function buildBOMRows(pages: PageState[], mode: BomMode = 'itemized'): Bo
         note: (obj as any).note ?? (obj as any).comment,
 
         // new fields
+        emtSize: shape === 'count' ? undefined : emtSize,
         points,
         racewayLf: shape === 'count' ? undefined : racewayLf,
         conductorLfTotal: shape === 'count' ? undefined : conductorLfTotal,
