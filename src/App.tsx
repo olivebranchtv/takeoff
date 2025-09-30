@@ -42,7 +42,6 @@ function b64ToAb(b64: string): ArrayBuffer {
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out.buffer;
 }
-/** quick sanity check that bytes look like a PDF ("%PDF") near the start */
 function looksLikePdf(bytes: Uint8Array): boolean {
   const searchLen = Math.min(bytes.length, 64);
   for (let i = 0; i <= searchLen - 5; i++) {
@@ -50,7 +49,6 @@ function looksLikePdf(bytes: Uint8Array): boolean {
   }
   return false;
 }
-/** Simple labels to avoid fragile pdf.js APIs. */
 async function resolvePageLabels(doc: any): Promise<string[]> {
   const count = (doc?.numPages ?? 0) | 0;
   return Array.from({ length: count }, (_, i) => `Page ${i + 1}`);
@@ -99,11 +97,11 @@ export default function App() {
     setProjectName,
   } = useStore();
 
-  /* ---------- viewer scroll container + content refs ---------- */
+  /* ---------- scroll container + content (for mini-map math) ---------- */
   const viewerScrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  /* ---------- Hand tool panning state (unchanged) ---------- */
+  /* ---------- Hand panning (unchanged) ---------- */
   const panStateRef = useRef<{
     active: boolean;
     startX: number;
@@ -113,7 +111,7 @@ export default function App() {
     byMouseButton: 0 | 1 | 2;
   }>({ active: false, startX: 0, startY: 0, startLeft: 0, startTop: 0, byMouseButton: 0 });
 
-  /* ---------- NEW: Navigator panel toggle ---------- */
+  /* ---------- Right Navigator panel toggle ---------- */
   const [navOpen, setNavOpen] = useState<boolean>(true);
 
   /* =========================================================================================
@@ -181,7 +179,6 @@ export default function App() {
           ? parsed
           : { kind: 'skdproj', version: 1, core: parsed as ProjectSave, projectTags: [], pdf: undefined };
 
-      // Load the store portion (restore pages/objects/tags BEFORE loading PDF)
       try {
         const state = useStore.getState();
 
@@ -269,6 +266,7 @@ export default function App() {
      ========================================================================================= */
   const openPdf = useCallback(async (file: File) => {
     const buf = await file.arrayBuffer();
+    // store base64 in project bundle
     let b64 = '';
     {
       const v = new Uint8Array(buf);
@@ -276,7 +274,6 @@ export default function App() {
       for (let i = 0; i < v.length; i++) s += String.fromCharCode(v[i]);
       b64 = btoa(s);
     }
-
     setPdfBytesBase64(b64);
     setPdfName(file.name);
 
@@ -340,7 +337,7 @@ export default function App() {
   }, [pages]);
 
   /* =========================================================================================
-     ADD-FROM-DB PICKER (grouped by category, Lights/Receptacles first)
+     ADD-FROM-DB PICKER
      ========================================================================================= */
   const PICKER_TOP_CATS = ['Lights', 'Receptacles'] as const;
 
@@ -377,17 +374,14 @@ export default function App() {
   const headerProjectLabel = useStore(s => s.getProjectName());
 
   /* =========================================================================================
-     Hand-tool panning (unchanged behavior)
+     HAND TOOL: drag to pan (left), middle/right pan always
      ========================================================================================= */
   const beginPan = (e: React.MouseEvent) => {
     const container = viewerScrollRef.current;
     if (!container) return;
-
     const button = e.button as 0 | 1 | 2;
-    const allow =
-      (button === 0 && tool === 'hand') || button === 1 || button === 2;
+    const allow = (button === 0 && tool === 'hand') || button === 1 || button === 2;
     if (!allow) return;
-
     e.preventDefault();
     const { clientX, clientY } = e;
     panStateRef.current = {
@@ -401,20 +395,16 @@ export default function App() {
     document.body.style.userSelect = 'none';
     document.body.style.cursor = 'grabbing';
   };
-
   const movePan = (e: React.MouseEvent) => {
     const st = panStateRef.current;
     const container = viewerScrollRef.current;
     if (!st.active || !container) return;
     e.preventDefault();
-
     const dx = e.clientX - st.startX;
     const dy = e.clientY - st.startY;
-
     container.scrollLeft = st.startLeft - dx;
-    container.scrollTop = st.startTop - dy;
+    container.scrollTop  = st.startTop  - dy;
   };
-
   const endPan = () => {
     if (!panStateRef.current.active) return;
     panStateRef.current.active = false;
@@ -423,97 +413,74 @@ export default function App() {
   };
 
   /* =========================================================================================
-     Navigator: mini-map with draggable blue viewport box
+     NAVIGATOR (right collapsible panel): page list + active page mini-map
      ========================================================================================= */
 
-  // Force re-render when sizes change
-  const [navTick, setNavTick] = useState(0);
+  // Keep sizes in sync while PDF rerenders/zoom changes
+  const [, forceTick] = useState(0);
   useLayoutEffect(() => {
-    const el = viewerScrollRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setNavTick(t => t + 1));
-    ro.observe(el);
-    const interval = setInterval(() => setNavTick(t => t + 1), 500); // catch PDF reflow
-    return () => { ro.disconnect(); clearInterval(interval); };
+    const sc = viewerScrollRef.current;
+    if (!sc) return;
+    const ro = new ResizeObserver(() => forceTick(t => t + 1));
+    ro.observe(sc);
+    const id = setInterval(() => forceTick(t => t + 1), 400);
+    return () => { ro.disconnect(); clearInterval(id); };
   }, []);
 
-  // Translate between minimap coords and scroll coords
-  const NAV_W = 260;  // panel inner max width
-  const NAV_H = 180;  // panel inner max height
-
-  const getMiniMetrics = () => {
-    const container = viewerScrollRef.current;
+  // Compute mini-map metrics based on total scrollable content
+  const NAV_MAX_W = 260;
+  const NAV_MAX_H = 170;
+  function getMiniMetrics() {
+    const sc = viewerScrollRef.current;
     const content = contentRef.current;
-    if (!container || !content) return null;
-
+    if (!sc || !content) return null;
     const contentW = content.scrollWidth || content.offsetWidth || content.clientWidth;
     const contentH = content.scrollHeight || content.offsetHeight || content.clientHeight;
-
     if (!contentW || !contentH) return null;
 
-    const scale = Math.min(NAV_W / contentW, NAV_H / contentH);
+    const scale = Math.min(NAV_MAX_W / contentW, NAV_MAX_H / contentH);
     const miniW = Math.max(20, Math.round(contentW * scale));
     const miniH = Math.max(20, Math.round(contentH * scale));
+    const boxW = Math.max(12, Math.round(sc.clientWidth * scale));
+    const boxH = Math.max(12, Math.round(sc.clientHeight * scale));
+    const boxX = Math.round(sc.scrollLeft * scale);
+    const boxY = Math.round(sc.scrollTop * scale);
+    return { scale, miniW, miniH, boxW, boxH, boxX, boxY };
+  }
 
-    const viewW = container.clientWidth;
-    const viewH = container.clientHeight;
-
-    const boxW = Math.max(12, Math.round(viewW * scale));
-    const boxH = Math.max(12, Math.round(viewH * scale));
-    const boxX = Math.round(container.scrollLeft * scale);
-    const boxY = Math.round(container.scrollTop * scale);
-
-    return { scale, miniW, miniH, boxW, boxH, boxX, boxY, contentW, contentH, viewW, viewH };
-  };
-
-  const navDragRef = useRef<{ dragging:boolean; offX:number; offY:number }>({ dragging:false, offX:0, offY:0 });
-
-  const onNavMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    // start dragging the blue viewport box if mouse is inside it
-    const m = getMiniMetrics();
-    if (!m) return;
-    const panel = (e.currentTarget as HTMLDivElement);
-    const rect = panel.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const bx = m.boxX, by = m.boxY, bw = m.boxW, bh = m.boxH;
-    if (x >= bx && x <= bx + bw && y >= by && y <= by + bh) {
-      navDragRef.current.dragging = true;
-      navDragRef.current.offX = x - bx;
-      navDragRef.current.offY = y - by;
+  const miniDragRef = useRef<{ dragging:boolean; offX:number; offY:number }>({ dragging:false, offX:0, offY:0 });
+  const onMiniDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    const m = getMiniMetrics(); if (!m) return;
+    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+    if (x >= m.boxX && x <= m.boxX + m.boxW && y >= m.boxY && y <= m.boxY + m.boxH) {
+      miniDragRef.current = { dragging:true, offX: x - m.boxX, offY: y - m.boxY };
       e.preventDefault();
     } else {
-      // Click elsewhere: center viewport there
-      centerMainViewAtMini(x - m.boxW / 2, y - m.boxH / 2, m);
+      // click elsewhere to center there
+      centerFromMini(x - m.boxW/2, y - m.boxH/2, m);
     }
   };
-  const onNavMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    if (!navDragRef.current.dragging) return;
-    const m = getMiniMetrics();
-    if (!m) return;
-    const panel = (e.currentTarget as HTMLDivElement);
-    const rect = panel.getBoundingClientRect();
-    let nx = e.clientX - rect.left - navDragRef.current.offX;
-    let ny = e.clientY - rect.top - navDragRef.current.offY;
-
+  const onMiniMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    if (!miniDragRef.current.dragging) return;
+    const m = getMiniMetrics(); if (!m) return;
+    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+    let nx = e.clientX - rect.left - miniDragRef.current.offX;
+    let ny = e.clientY - rect.top  - miniDragRef.current.offY;
     nx = Math.max(0, Math.min(nx, m.miniW - m.boxW));
     ny = Math.max(0, Math.min(ny, m.miniH - m.boxH));
-
-    // map to scroll
-    if (viewerScrollRef.current) {
-      viewerScrollRef.current.scrollLeft = Math.round(nx / m.scale);
-      viewerScrollRef.current.scrollTop  = Math.round(ny / m.scale);
-    }
+    const sc = viewerScrollRef.current; if (!sc) return;
+    sc.scrollLeft = Math.round(nx / m.scale);
+    sc.scrollTop  = Math.round(ny / m.scale);
   };
-  const onNavMouseUp = () => { navDragRef.current.dragging = false; };
-
-  function centerMainViewAtMini(miniX: number, miniY: number, m = getMiniMetrics()) {
-    if (!m || !viewerScrollRef.current) return;
+  const onMiniUp = () => { miniDragRef.current.dragging = false; };
+  function centerFromMini(miniX:number, miniY:number, m = getMiniMetrics()) {
+    if (!m) return;
+    const sc = viewerScrollRef.current; if (!sc) return;
     const x = Math.max(0, Math.min(miniX, m.miniW - m.boxW));
     const y = Math.max(0, Math.min(miniY, m.miniH - m.boxH));
-    viewerScrollRef.current.scrollLeft = Math.round(x / m.scale);
-    viewerScrollRef.current.scrollTop  = Math.round(y / m.scale);
+    sc.scrollLeft = Math.round(x / m.scale);
+    sc.scrollTop  = Math.round(y / m.scale);
   }
 
   /* =========================================================================================
@@ -632,7 +599,7 @@ export default function App() {
         <div style={{flex:1}} />
 
         <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
-        <button className="btn" onClick={()=>setNavOpen(v=>!v)}>{navOpen ? 'Hide Nav' : 'Nav'}</button>
+        <button className="btn" onClick={()=>setNavOpen(v=>!v)}>{navOpen ? '◂ Nav' : 'Nav ▸'}</button>
       </div>
 
       {/* PROJECT TAGS BAR */}
@@ -735,7 +702,7 @@ export default function App() {
           <SidebarBOM bom={bom} />
         </aside>
 
-        {/* Scroll container with Hand pan */}
+        {/* SCROLL CONTAINER (main sheet) */}
         <div
           ref={viewerScrollRef}
           style={{
@@ -762,65 +729,133 @@ export default function App() {
             </div>
           )}
 
-          {/* Navigator overlay (mini-map with draggable blue box) */}
-          {navOpen && pdf && (
+          {/* RIGHT COLLAPSIBLE NAV PANEL (overlays; doesn’t disturb layout) */}
+          {pdf && (
             <div
               style={{
                 position:'absolute',
+                top:12,
                 right:12,
-                bottom:12,
-                width:NAV_W + 16,
-                height:NAV_H + 16,
-                padding:8,
-                background:'rgba(255,255,255,.95)',
-                border:'1px solid #ddd',
-                borderRadius:10,
-                boxShadow:'0 8px 24px rgba(0,0,0,.12)',
-                zIndex:10,
-                userSelect:'none'
+                zIndex:15,
+                pointerEvents:'none'
               }}
             >
-              <div
-                onMouseDown={onNavMouseDown}
-                onMouseMove={onNavMouseMove}
-                onMouseUp={onNavMouseUp}
-                onMouseLeave={onNavMouseUp}
-                style={{
-                  position:'relative',
-                  width: getMiniMetrics()?.miniW ?? 80,
-                  height: getMiniMetrics()?.miniH ?? 60,
-                  background:'linear-gradient(180deg,#f9fbff,#f4f6fb)',
-                  border:'1px solid #cfd8ea',
-                  borderRadius:8,
-                  overflow:'hidden',
-                  transition:'width .08s, height .08s'
-                }}
-              >
-                {/* Document outline */}
-                {(() => {
-                  const m = getMiniMetrics();
-                  if (!m) return null;
-                  return (
-                    <>
-                      {/* Blue draggable viewport box */}
-                      <div
-                        style={{
-                          position:'absolute',
-                          left:m.boxX, top:m.boxY, width:m.boxW, height:m.boxH,
-                          border:'2px solid #2a7fff',
-                          background:'rgba(42,127,255,.10)',
-                          borderRadius:8,
-                          boxShadow:'0 0 0 1px rgba(42,127,255,.18) inset',
-                          cursor:'move'
-                        }}
-                        title="Drag to pan view"
-                      />
-                    </>
-                  );
-                })()}
-              </div>
-              <div style={{marginTop:6, fontSize:12, color:'#445'}}>Pan & Zoom Navigator</div>
-              <div style={{fontSize:11, color:'#667'}}>Drag the blue box to move around the sheet.</div>
+              {/* Drawer body */}
+              {navOpen && (
+                <div
+                  style={{
+                    width: 300,
+                    maxHeight: 'calc(100vh - 180px)',
+                    overflowY: 'auto',
+                    background:'#fff',
+                    border:'1px solid #e1e1e1',
+                    borderRadius:10,
+                    boxShadow:'0 10px 28px rgba(0,0,0,.15)',
+                    padding:10,
+                    pointerEvents:'auto'
+                  }}
+                >
+                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
+                    <div style={{fontWeight:700}}>Pages</div>
+                    <button className="btn" onClick={()=>setNavOpen(false)}>Close</button>
+                  </div>
+
+                  {/* Page tiles */}
+                  <div style={{display:'grid', gridTemplateColumns:'1fr', rowGap:10}}>
+                    {Array.from({length: pageCount}, (_, i) => {
+                      const isActive = i === activePage;
+                      return (
+                        <div key={i} style={{border:'1px solid #dde2ee', borderRadius:8, padding:8, position:'relative', background:'#f9fbff'}}>
+                          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
+                            <div style={{fontWeight:600}}>{i+1} — {pageLabels[i] || `Page ${i+1}`}</div>
+                            {!isActive && (
+                              <button className="btn" onClick={()=>setActivePage(i)}>Open</button>
+                            )}
+                          </div>
+
+                          {/* Mini-map only for active page (draggable blue box) */}
+                          {isActive ? (
+                            <div
+                              onMouseDown={onMiniDown}
+                              onMouseMove={onMiniMove}
+                              onMouseUp={onMiniUp}
+                              onMouseLeave={onMiniUp}
+                              style={{
+                                position:'relative',
+                                width: (getMiniMetrics()?.miniW ?? 200),
+                                height:(getMiniMetrics()?.miniH ?? 120),
+                                background:'linear-gradient(180deg,#eef3ff,#e9f0ff)',
+                                border:'1px solid #cfd8ea',
+                                borderRadius:8,
+                                overflow:'hidden',
+                                transition:'width .08s, height .08s',
+                                cursor:'default',
+                                userSelect:'none'
+                              }}
+                            >
+                              {(() => {
+                                const m = getMiniMetrics();
+                                if (!m) return null;
+                                return (
+                                  <div
+                                    style={{
+                                      position:'absolute',
+                                      left:m.boxX, top:m.boxY, width:m.boxW, height:m.boxH,
+                                      border:'2px solid #2a7fff',
+                                      background:'rgba(42,127,255,.10)',
+                                      borderRadius:8,
+                                      boxShadow:'0 0 0 1px rgba(42,127,255,.18) inset',
+                                      cursor:'move'
+                                    }}
+                                    title="Drag to pan the main view"
+                                  />
+                                );
+                              })()}
+                            </div>
+                          ) : (
+                            <div
+                              onClick={()=>setActivePage(i)}
+                              title="Go to page"
+                              style={{
+                                width: 220, height: 140,
+                                background:'#fafafa',
+                                border:'1px dashed #ddd',
+                                borderRadius:8,
+                                display:'grid',
+                                placeItems:'center',
+                                color:'#888',
+                                cursor:'pointer'
+                              }}
+                            >
+                              Click to open
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Floating open button when collapsed */}
+              {!navOpen && (
+                <button
+                  className="btn"
+                  onClick={()=>setNavOpen(true)}
+                  style={{
+                    pointerEvents:'auto',
+                    width:80,
+                    height:36,
+                    background:'#ffffff',
+                    border:'1px solid #ddd',
+                    borderRadius:8,
+                    boxShadow:'0 6px 18px rgba(0,0,0,.12)'
+                  }}
+                  title="Open Navigator"
+                >
+                  Nav ▸
+                </button>
+              )}
             </div>
           )}
         </div>
