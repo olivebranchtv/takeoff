@@ -40,17 +40,18 @@ export type Assembly = {
 
 /* ===== Raceway & Conductor vocab ===== */
 
-/** EMT nominal sizes we support ('' = unset). */
+/** EMT nominal sizes we support ('' = unset). Match database format exactly. */
 export type EMTSize =
-  | '1/2"' | '3/4"' | '1"' | '1-1/4"' | '1-1/2"' | '2"'
-  | '2-1/2"' | '3"' | '3-1/2"' | '4"' | '';
+  | '1/2"' | '3/4"' | '1"' | '1 1/4"' | '1 1/2"' | '2"'
+  | '2 1/2"' | '3"' | '3 1/2"' | '4"' | '';
 
-/** Common conductor sizes (AWG / kcmil). '' = unset. */
+/** Common conductor sizes (AWG / kcmil). '' = unset. Match database format with # prefix. */
 export type WireSize =
   | '18' | '16' | '14' | '12' | '10' | '8' | '6' | '4' | '3' | '2' | '1'
   | '#18' | '#16' | '#14' | '#12' | '#10' | '#8' | '#6' | '#4' | '#3' | '#2' | '#1'
   | '1/0' | '2/0' | '3/0' | '4/0'
   | '250' | '300' | '350' | '400' | '500' | '600' | '750' | '1000'
+  | '250MCM' | '350MCM' | '500MCM' | '600MCM' | '750MCM'
   | '';
 
 export type WireMaterial = 'CU' | 'AL';

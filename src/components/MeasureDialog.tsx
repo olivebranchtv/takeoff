@@ -3,16 +3,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { MeasureOptions, EMTSize, WireSize, ConductorSpec } from '@/types';
 import { useStore } from '@/state/store';
 
-/** EMT sizes for raceway */
+/** EMT sizes for raceway - Match database format exactly */
 const EMT_SIZES: EMTSize[] = [
-  '1/2"', '3/4"', '1"', '1-1/4"', '1-1/2"', '2"',
-  '2-1/2"', '3"', '3-1/2"', '4"', ''
+  '1/2"', '3/4"', '1"', '1 1/4"', '1 1/2"', '2"',
+  '2 1/2"', '3"', '3 1/2"', '4"', ''
 ] as const;
 
-/** Commercial wire sizes commonly used (AWG + kcmil) */
+/** Commercial wire sizes - Match database format with # prefix */
 const WIRE_SIZES = [
-  '18','16','14','12','10','8','6','4','3','2','1','1/0','2/0','3/0','4/0',
-  '250','300','350','400','500','600','750','1000'
+  '#14','#12','#10','#8','#6','#4','#2','#1','1/0','2/0','3/0','4/0',
+  '250MCM','350MCM','500MCM','600MCM','750MCM'
 ] as const;
 
 /** Conductor insulation types (expand as needed) */
