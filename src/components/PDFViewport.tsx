@@ -31,6 +31,7 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
     if (!pdf || pageIndex < 0) {
       setInfo(null);
       lastGoodRef.current = null;
+      isRenderingRef.current = false;
       return;
     }
 
@@ -97,6 +98,8 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
           // Do NOT clear info on fatal errors either; retain last good to avoid “job closed” feel.
           if (!cancelled) setInfo(lastGoodRef.current);
         }
+      } finally {
+        isRenderingRef.current = false;
       }
     })();
 
