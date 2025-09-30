@@ -101,7 +101,7 @@ export default function App() {
   const viewerScrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  /* ---------- Hand panning (unchanged) ---------- */
+  /* ---------- Hand panning ---------- */
   const panStateRef = useRef<{
     active: boolean;
     startX: number;
@@ -441,39 +441,119 @@ export default function App() {
     const scale = Math.min(NAV_MAX_W / contentW, NAV_MAX_H / contentH);
     const miniW = Math.max(20, Math.round(contentW * scale));
     const miniH = Math.max(20, Math.round(contentH * scale));
-    const boxW = Math.max(12, Math.round(sc.clientWidth * scale));
-    const boxH = Math.max(12, Math.round(sc.clientHeight * scale));
+    const viewW = sc.clientWidth;
+    const viewH = sc.clientHeight;
+    const boxW = Math.max(12, Math.round(viewW * scale));
+    const boxH = Math.max(12, Math.round(viewH * scale));
     const boxX = Math.round(sc.scrollLeft * scale);
     const boxY = Math.round(sc.scrollTop * scale);
-    return { scale, miniW, miniH, boxW, boxH, boxX, boxY };
+    return { scale, miniW, miniH, boxW, boxH, boxX, boxY, viewW, viewH };
   }
 
-  const miniDragRef = useRef<{ dragging:boolean; offX:number; offY:number }>({ dragging:false, offX:0, offY:0 });
+  // Drag/Resize state + helpers (Adobe-style)
+  type MiniMode = 'move' | 'nw' | 'ne' | 'sw' | 'se' | null;
+  const miniRef = useRef<{ mode:MiniMode; offX:number; offY:number; startX:number; startY:number }>(
+    { mode:null, offX:0, offY:0, startX:0, startY:0 }
+  );
+
+  function hitHandle(x:number, y:number, m:ReturnType<typeof getMiniMetrics>) : MiniMode {
+    const sz = 10;
+    const { boxX, boxY, boxW, boxH } = m!;
+    const inRect = (rx:number, ry:number) => x>=rx && x<=rx+sz && y>=ry && y<=ry+sz;
+    if (inRect(boxX-2,           boxY-2))           return 'nw';
+    if (inRect(boxX+boxW-sz+2,   boxY-2))           return 'ne';
+    if (inRect(boxX-2,           boxY+boxH-sz+2))   return 'sw';
+    if (inRect(boxX+boxW-sz+2,   boxY+boxH-sz+2))   return 'se';
+    return null;
+  }
+
+  function applyScrollFromMini(targetMiniX:number, targetMiniY:number, targetScale:number) {
+    const sc = viewerScrollRef.current;
+    if (!sc) return;
+    sc.scrollLeft = Math.max(0, Math.round(targetMiniX / targetScale));
+    sc.scrollTop  = Math.max(0, Math.round(targetMiniY / targetScale));
+  }
+
   const onMiniDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
     const m = getMiniMetrics(); if (!m) return;
     const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
     const x = e.clientX - rect.left, y = e.clientY - rect.top;
+
+    const h = hitHandle(x, y, m);
+    if (h) {
+      miniRef.current.mode = h;
+      miniRef.current.startX = x;
+      miniRef.current.startY = y;
+      e.preventDefault();
+      return;
+    }
+
     if (x >= m.boxX && x <= m.boxX + m.boxW && y >= m.boxY && y <= m.boxY + m.boxH) {
-      miniDragRef.current = { dragging:true, offX: x - m.boxX, offY: y - m.boxY };
+      miniRef.current.mode = 'move';
+      miniRef.current.offX = x - m.boxX;
+      miniRef.current.offY = y - m.boxY;
       e.preventDefault();
     } else {
-      // click elsewhere to center there
-      centerFromMini(x - m.boxW/2, y - m.boxH/2, m);
+      // click elsewhere: center there
+      const nx = Math.max(0, Math.min(x - m.boxW/2, m.miniW - m.boxW));
+      const ny = Math.max(0, Math.min(y - m.boxH/2, m.miniH - m.boxH));
+      applyScrollFromMini(nx, ny, m.scale);
     }
   };
+
   const onMiniMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    if (!miniDragRef.current.dragging) return;
+    const mode = miniRef.current.mode;
+    if (!mode) return;
     const m = getMiniMetrics(); if (!m) return;
-    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-    let nx = e.clientX - rect.left - miniDragRef.current.offX;
-    let ny = e.clientY - rect.top  - miniDragRef.current.offY;
-    nx = Math.max(0, Math.min(nx, m.miniW - m.boxW));
-    ny = Math.max(0, Math.min(ny, m.miniH - m.boxH));
-    const sc = viewerScrollRef.current; if (!sc) return;
-    sc.scrollLeft = Math.round(nx / m.scale);
-    sc.scrollTop  = Math.round(ny / m.scale);
+
+    const panel = (e.currentTarget as HTMLDivElement);
+    const r = panel.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+
+    if (mode === 'move') {
+      let nx = x - miniRef.current.offX;
+      let ny = y - miniRef.current.offY;
+      nx = Math.max(0, Math.min(nx, m.miniW - m.boxW));
+      ny = Math.max(0, Math.min(ny, m.miniH - m.boxH));
+      applyScrollFromMini(nx, ny, m.scale);
+      return;
+    }
+
+    // ---- resize (corner handles) -> change zoom like Adobe ----
+    const aspect = m.viewW / m.viewH;
+    let bx = m.boxX, by = m.boxY, bw = m.boxW, bh = m.boxH;
+
+    const clamp = () => {
+      bx = Math.max(0, Math.min(bx, m.miniW - 8));
+      by = Math.max(0, Math.min(by, m.miniH - 8));
+      bw = Math.max(16, Math.min(bw, m.miniW - bx));
+      bh = Math.max(16, Math.min(bh, m.miniH - by));
+      // keep viewport aspect
+      const wantW = Math.min(bw, Math.round(bh * aspect));
+      const wantH = Math.min(bh, Math.round(bw / aspect));
+      if (wantW / aspect <= bh) { bw = wantW; bh = Math.round(wantW / aspect); }
+      else { bh = wantH; bw = Math.round(wantH * aspect); }
+    };
+
+    if (mode === 'nw') { bx = Math.min(x, m.boxX + m.boxW - 8); by = Math.min(y, m.boxY + m.boxH - 8); bw = (m.boxX + m.boxW) - bx; bh = (m.boxY + m.boxH) - by; clamp(); }
+    if (mode === 'ne') { by = Math.min(y, m.boxY + m.boxH - 8); bw = Math.max(8, x - m.boxX);            bh = (m.boxY + m.boxH) - by; clamp(); }
+    if (mode === 'sw') { bx = Math.min(x, m.boxX + m.boxW - 8); bw = (m.boxX + m.boxW) - bx;            bh = Math.max(8, y - m.boxY); clamp(); }
+    if (mode === 'se') { bw = Math.max(8, x - m.boxX);            bh = Math.max(8, y - m.boxY);            clamp(); }
+
+    // zoom' = zoom * (oldBoxW / newBoxW)
+    const nextZoom = Math.max(0.05, Math.min(40, zoom * (m.boxW / bw)));
+    if (nextZoom !== zoom) setZoom(nextZoom);
+
+    // keep center constant
+    const nextScale = m.scale * (zoom / nextZoom);
+    const cx = bx + bw / 2, cy = by + bh / 2;
+    const nx = Math.max(0, Math.min(cx - bw/2, m.miniW - bw));
+    const ny = Math.max(0, Math.min(cy - bh/2, m.miniH - bh));
+    requestAnimationFrame(() => applyScrollFromMini(nx, ny, nextScale));
   };
-  const onMiniUp = () => { miniDragRef.current.dragging = false; };
+
+  const onMiniUp = () => { miniRef.current.mode = null; };
+
   function centerFromMini(miniX:number, miniY:number, m = getMiniMetrics()) {
     if (!m) return;
     const sc = viewerScrollRef.current; if (!sc) return;
@@ -773,7 +853,7 @@ export default function App() {
                             )}
                           </div>
 
-                          {/* Mini-map only for active page (draggable blue box) */}
+                          {/* Mini-map only for active page (drag + resize) */}
                           {isActive ? (
                             <div
                               onMouseDown={onMiniDown}
@@ -792,23 +872,43 @@ export default function App() {
                                 cursor:'default',
                                 userSelect:'none'
                               }}
+                              title="Drag the blue box to pan. Drag a corner to zoom."
                             >
                               {(() => {
                                 const m = getMiniMetrics();
                                 if (!m) return null;
                                 return (
-                                  <div
-                                    style={{
-                                      position:'absolute',
-                                      left:m.boxX, top:m.boxY, width:m.boxW, height:m.boxH,
-                                      border:'2px solid #2a7fff',
-                                      background:'rgba(42,127,255,.10)',
-                                      borderRadius:8,
-                                      boxShadow:'0 0 0 1px rgba(42,127,255,.18) inset',
-                                      cursor:'move'
-                                    }}
-                                    title="Drag to pan the main view"
-                                  />
+                                  <>
+                                    {/* blue viewport */}
+                                    <div
+                                      style={{
+                                        position:'absolute',
+                                        left:m.boxX, top:m.boxY, width:m.boxW, height:m.boxH,
+                                        border:'2px solid #2a7fff',
+                                        background:'rgba(42,127,255,.10)',
+                                        borderRadius:8,
+                                        boxShadow:'0 0 0 1px rgba(42,127,255,.18) inset',
+                                        cursor:'move'
+                                      }}
+                                    />
+                                    {/* resize handles */}
+                                    {(['nw','ne','sw','se'] as const).map((pos)=> {
+                                      const s = 10;
+                                      const left  = pos.includes('w') ? m.boxX-2 : m.boxX+m.boxW-s+2;
+                                      const top   = pos.includes('n') ? m.boxY-2 : m.boxY+m.boxH-s+2;
+                                      const cursor = `${pos}-resize`;
+                                      return (
+                                        <div key={pos}
+                                          style={{
+                                            position:'absolute', left, top, width:s, height:s,
+                                            background:'#2a7fff', border:'1px solid #1b5fd8', borderRadius:3,
+                                            boxShadow:'0 0 0 1px rgba(0,0,0,.08)',
+                                            cursor
+                                          }}
+                                        />
+                                      );
+                                    })}
+                                  </>
                                 );
                               })()}
                             </div>
