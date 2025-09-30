@@ -580,7 +580,7 @@ export default function App() {
                   onClick={(e)=>{ e.stopPropagation(); setProjectTags(list => list.filter(x => x.id !== t.id)); if (currentTag === t.code) setCurrentTag(''); }}
                   title="Remove from Project Tags"
                   style={{position:'absolute', top:-6, right:-6, width:18, height:18, lineHeight:'16px', textAlign:'center',
-                          border:'1px solid '#bbb', borderRadius:'50%', background:'#fff', cursor:'pointer', fontSize:11}}
+                          border:'1px solid #bbb', borderRadius:'50%', background:'#fff', cursor:'pointer', fontSize:11}}
                 >×</span>
               </button>
             );
