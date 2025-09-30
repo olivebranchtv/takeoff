@@ -880,7 +880,7 @@ export default function App() {
       </div>
 
       {/* TOOLBAR (tools + zoom) */}
-      <div className="toolbar" style={{display:'flex', alignItems:'center', gap:8, padding:'8px 12px', borderBottom:'1px solid #e6e6e6', position:'sticky', top:48, background:'#fff', zIndex:40}}>
+      <div className="toolbar" style={{display:'flex', alignItems:'center', gap:8, padding:'8px 12px', borderBottom:'1px solid #e6e6e6', position:'sticky', top:48, background:'#fff', zIndex:40, flexWrap:'wrap'}}>
         {pageCount > 0 && (
           <div style={{display:'flex', alignItems:'center', gap:6}}>
             <button className="btn" onClick={()=>setActivePage(Math.max(0, activePage-1))} disabled={activePage<=0}>◀</button>
@@ -913,19 +913,21 @@ export default function App() {
 
         <div style={{flex:1}} />
 
-        <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
-        <button className="btn" onClick={()=>setAssemblyPanelOpen(true)}>Assemblies</button>
-        <button
-          className="btn"
-          onClick={runAIAnalysis}
-          disabled={!pdf || aiAnalyzing}
-          style={{background: aiAnalyzing ? '#9e9e9e' : '#667eea', color:'#fff', fontWeight:'bold'}}
-        >
-          {aiAnalyzing ? '⏳ Analyzing...' : '🤖 AI Scan Documents'}
-        </button>
-        <button className="btn" onClick={()=>setPricingPanelOpen(true)} style={{background:'#2e7d32', color:'#fff', fontWeight:'bold'}}>💰 Pricing & Bidding</button>
-        <button className="btn" onClick={exportExcelFull}>Export Excel (Full BOM)</button>
-        <button className="btn" onClick={exportFixturesOnly}>Export Lighting Fixtures</button>
+        <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
+          <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
+          <button className="btn" onClick={()=>setAssemblyPanelOpen(true)}>Assemblies</button>
+          <button
+            className="btn"
+            onClick={runAIAnalysis}
+            disabled={!pdf || aiAnalyzing}
+            style={{background: aiAnalyzing ? '#9e9e9e' : '#667eea', color:'#fff', fontWeight:'bold', whiteSpace:'nowrap'}}
+          >
+            {aiAnalyzing ? '⏳ Analyzing...' : '🤖 AI Scan Documents'}
+          </button>
+          <button className="btn" onClick={()=>setPricingPanelOpen(true)} style={{background:'#2e7d32', color:'#fff', fontWeight:'bold', whiteSpace:'nowrap'}}>💰 Pricing & Bidding</button>
+          <button className="btn" onClick={exportExcelFull} style={{whiteSpace:'nowrap'}}>Export Excel (Full BOM)</button>
+          <button className="btn" onClick={exportFixturesOnly} style={{whiteSpace:'nowrap'}}>Export Lighting Fixtures</button>
+        </div>
       </div>
 
       {/* PROJECT TAGS BAR */}
@@ -969,7 +971,8 @@ export default function App() {
                 border:'1px solid #ddd',
                 borderRadius:6,
                 padding:8,
-                width:360,
+                width:'min(360px, calc(100vw - 24px))',
+                maxWidth:360,
                 zIndex:999
               }}
             >
@@ -1014,9 +1017,9 @@ export default function App() {
       {/* MAIN AREA: Sidebar (BOM) + Viewer */}
       <div className="viewer" style={{
         display:'grid',
-        gridTemplateColumns: leftOpen ? '320px 1fr' : '0 1fr',
+        gridTemplateColumns: leftOpen ? 'min(320px, 30vw) 1fr' : '0 1fr',
         transition:'grid-template-columns .18s ease',
-        minHeight:0, flex:1, position:'relative'
+        minHeight:0, flex:1, position:'relative', overflow:'hidden'
       }}>
         {!leftOpen && (
           <button className="btn" onClick={()=>setLeftOpen(true)} style={{position:'absolute', top:8, left:8, zIndex:5}} title="Show sidebar">☰ BOM</button>
