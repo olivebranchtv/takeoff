@@ -91,12 +91,12 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
         const msg = String(error?.message || '');
         // PDF.js throws "Rendering cancelled" on effect re-runs. That's expected.
         if (/Rendering cancelled/i.test(msg)) {
-          // Keep displaying the last good bitmap; don't clear the screen.
-          if (!cancelled) setInfo(lastGoodRef.current);
+          // Keep displaying the last good bitmap during cancellation
+          return;
         } else {
           console.error(`Error rendering PDF page ${pageIndex}:`, error);
-          // Do NOT clear info on fatal errors either; retain last good to avoid "job closed" feel.
-          if (!cancelled) setInfo(lastGoodRef.current);
+          // Keep last good render on errors too
+          return;
         }
       } finally {
         isRenderingRef.current = false;
@@ -343,8 +343,6 @@ export default function PDFViewport({ pdf }: Props) {
           const feet = input ? parseFloat(input) : NaN;
           if (!isNaN(feet) && feet > 0) {
             setCalibration(activePage, px / feet, 'ft');
-            // Force a repaint after calibration to ensure PDF stays visible
-            setPaintTick(t => t + 1);
           }
         } finally {
           // Clear local calibration state regardless
