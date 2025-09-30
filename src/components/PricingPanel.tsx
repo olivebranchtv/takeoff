@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '@/state/store';
 import { PricingDatabase, calculateProjectCosts, type ProjectCosts } from '@/utils/pricing';
+import { loadMaterialPricingFromSupabase, saveMaterialPricingToSupabase, loadCompanySettings, saveCompanySettings, saveProjectEstimate, type MaterialPricing } from '@/utils/supabasePricing';
 import type { PageState } from '@/types';
 
 interface PricingPanelProps {
@@ -17,15 +18,50 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
   const { tags, assemblies } = useStore();
 
   const [pricingDb] = useState(() => new PricingDatabase(30.0));
-  const [overheadPct, setOverheadPct] = useState(10);
-  const [profitPct, setProfitPct] = useState(10);
-  const [taxRate, setTaxRate] = useState(9.5);
+  const [overheadPct, setOverheadPct] = useState(15);
+  const [profitPct, setProfitPct] = useState(12);
+  const [taxRate, setTaxRate] = useState(8.5);
   const [shipping, setShipping] = useState(0);
   const [equipment, setEquipment] = useState(0);
   const [pricesLoaded, setPricesLoaded] = useState(false);
   const [priceCount, setPriceCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [costs, setCosts] = useState<ProjectCosts | null>(null);
+
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  const loadInitialData = async () => {
+    setIsLoading(true);
+
+    const settings = await loadCompanySettings();
+    if (settings) {
+      setOverheadPct(settings.default_overhead_percentage);
+      setProfitPct(settings.default_profit_percentage);
+      setTaxRate(settings.material_tax_rate * 100);
+    }
+
+    const materials = await loadMaterialPricingFromSupabase();
+    if (materials && materials.length > 0) {
+      materials.forEach(m => {
+        const key = `${m.category}::${m.description}`;
+        pricingDb.setMaterialPrice(key, {
+          category: m.category,
+          description: m.description,
+          unit: m.unit,
+          materialCost: m.material_cost,
+          vendor: m.vendor,
+          vendorPartNumber: m.vendor_part_number
+        });
+      });
+      setPricesLoaded(true);
+      setPriceCount(materials.length);
+    }
+
+    setIsLoading(false);
+  };
 
   const loadPricingFile = async (file: File) => {
     try {
@@ -36,7 +72,9 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
       let sheet = wb.Sheets[wb.SheetNames[0]];
       const rows: any[] = XLSX.utils.sheet_to_json(sheet);
 
+      const materials: Omit<MaterialPricing, 'id' | 'user_id' | 'created_at'>[] = [];
       let loaded = 0;
+
       for (const row of rows) {
         const category = String(row['Category'] || row['category'] || row['Division'] || row['Type'] || '').trim();
         const description = String(row['Description'] || row['description'] || row['Item'] || row['Material'] || '').trim();
@@ -53,16 +91,75 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
             vendor: row['Vendor'] || row['vendor'],
             vendorPartNumber: row['Part Number'] || row['Part #']
           });
+
+          materials.push({
+            category,
+            description,
+            unit,
+            material_cost: cost,
+            vendor: row['Vendor'] || row['vendor'],
+            vendor_part_number: row['Part Number'] || row['Part #'],
+            last_updated: new Date().toISOString()
+          });
+
           loaded++;
         }
       }
 
       setPricesLoaded(true);
       setPriceCount(loaded);
-      alert(`Successfully loaded ${loaded} material prices!`);
+
+      const saved = await saveMaterialPricingToSupabase(materials);
+      if (saved) {
+        alert(`Successfully loaded and saved ${loaded} material prices to database!`);
+      } else {
+        alert(`Loaded ${loaded} material prices (session only - not saved to database)`);
+      }
     } catch (error) {
       console.error('Error loading pricing file:', error);
       alert('Failed to load pricing file. Please check the format.');
+    }
+  };
+
+  const saveSettings = async () => {
+    const saved = await saveCompanySettings({
+      default_overhead_percentage: overheadPct,
+      default_profit_percentage: profitPct,
+      default_labor_rate: 30.0,
+      material_tax_rate: taxRate / 100
+    });
+
+    if (saved) {
+      alert('Settings saved successfully!');
+    }
+  };
+
+  const saveBid = async () => {
+    if (!costs) return;
+
+    const projectName = useStore.getState().getProjectName() || 'Untitled Project';
+    const estimateId = await saveProjectEstimate(
+      projectName,
+      {
+        materialCostTotal: costs.materialCostTotal,
+        materialTaxRate: taxRate / 100,
+        materialTax: costs.materialTax,
+        materialShipping: costs.materialShipping,
+        laborHoursTotal: costs.laborHoursTotal,
+        laborCostTotal: costs.laborCostTotal,
+        equipmentCostTotal: costs.equipmentCostTotal,
+        subtotal: costs.subtotal,
+        overheadPercentage: overheadPct,
+        overheadAmount: costs.overheadAmount,
+        profitPercentage: profitPct,
+        profitAmount: costs.profitAmount,
+        totalBidPrice: costs.totalBidPrice
+      },
+      { pages, tags, assemblies }
+    );
+
+    if (estimateId) {
+      alert('Bid saved to database successfully!');
     }
   };
 
@@ -194,36 +291,42 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
         </button>
       </div>
 
-      <div style={{ marginBottom: '20px', padding: '12px', background: pricesLoaded ? '#d4edda' : '#fff3cd', borderRadius: '6px', border: pricesLoaded ? '1px solid #c3e6cb' : '1px solid #ffeaa7' }}>
-        <div style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: pricesLoaded ? '#155724' : '#856404' }}>
-          {pricesLoaded ? `✓ ${priceCount} Material Prices Loaded` : '⚠ No Material Pricing Loaded'}
+      {isLoading ? (
+        <div style={{ marginBottom: '20px', padding: '12px', background: '#f8f9fa', borderRadius: '6px', textAlign: 'center', color: '#666' }}>
+          Loading pricing data...
         </div>
-        <label
-          htmlFor="pricing-upload"
-          style={{
-            display: 'inline-block',
-            padding: '8px 12px',
-            background: '#2e7d32',
-            color: '#fff',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontWeight: '500'
-          }}
-        >
-          📁 Upload Pricing Excel
-        </label>
-        <input
-          id="pricing-upload"
-          type="file"
-          accept=".xlsx,.xls"
-          style={{ display: 'none' }}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) loadPricingFile(file);
-          }}
-        />
-      </div>
+      ) : (
+        <div style={{ marginBottom: '20px', padding: '12px', background: pricesLoaded ? '#d4edda' : '#fff3cd', borderRadius: '6px', border: pricesLoaded ? '1px solid #c3e6cb' : '1px solid #ffeaa7' }}>
+          <div style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: pricesLoaded ? '#155724' : '#856404' }}>
+            {pricesLoaded ? `✓ ${priceCount} Material Prices Loaded from Database` : '⚠ No Material Pricing Loaded'}
+          </div>
+          <label
+            htmlFor="pricing-upload"
+            style={{
+              display: 'inline-block',
+              padding: '8px 12px',
+              background: '#2e7d32',
+              color: '#fff',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: '500'
+            }}
+          >
+            📁 Upload Pricing Excel
+          </label>
+          <input
+            id="pricing-upload"
+            type="file"
+            accept=".xlsx,.xls"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) loadPricingFile(file);
+            }}
+          />
+        </div>
+      )}
 
       <div style={{ marginBottom: '30px' }}>
         <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px', color: '#0d3b66' }}>
@@ -421,7 +524,42 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
               marginBottom: '10px'
             }}
           >
-            Export Bid Summary (Excel)
+            📄 Export Bid Summary (Excel)
+          </button>
+
+          <button
+            onClick={saveBid}
+            style={{
+              width: '100%',
+              padding: '12px',
+              background: '#1976d2',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              marginBottom: '10px'
+            }}
+          >
+            💾 Save Bid to Database
+          </button>
+
+          <button
+            onClick={saveSettings}
+            style={{
+              width: '100%',
+              padding: '10px',
+              background: '#757575',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '13px',
+              fontWeight: '500',
+              cursor: 'pointer'
+            }}
+          >
+            ⚙️ Save Settings as Default
           </button>
 
           {costs.divisionBreakdown.length > 0 && (
@@ -465,12 +603,21 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
         </div>
       )}
 
-      {!pricesLoaded && (
+      {!pricesLoaded && !isLoading && (
         <div style={{ marginTop: '30px', padding: '15px', background: '#fff3cd', borderRadius: '6px', fontSize: '12px', color: '#856404' }}>
           <strong>Note:</strong> Material costs default to $0 until pricing database is loaded.
-          Click "📁 Upload Pricing Excel\" above to load your material costs.
+          Click "📁 Upload Pricing Excel" above to load your material costs. Your pricing will be saved to the database and automatically load next time!
         </div>
       )}
+
+      <div style={{ marginTop: '20px', padding: '15px', background: '#e3f2fd', borderRadius: '6px', fontSize: '12px', color: '#1565c0' }}>
+        <strong>💡 How it works:</strong><br/>
+        • Upload your pricing Excel once - it saves to the database<br/>
+        • Costs auto-calculate as you do your takeoff<br/>
+        • Your settings (overhead, profit, tax) are saved<br/>
+        • Click "Save Bid" to store this estimate<br/>
+        • Export to Excel for client proposals
+      </div>
     </div>
   );
 }

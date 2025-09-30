@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.58.0",
     "@tailwindcss/postcss": "^4.1.13",
     "konva": "9.3.16",
     "pdfjs-dist": "4.4.168",
