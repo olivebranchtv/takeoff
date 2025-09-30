@@ -22,6 +22,7 @@ type PageRenderInfo = {
 function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
   const [info, setInfo] = useState<PageRenderInfo | null>(null);
   const lastGoodRef = useRef<PageRenderInfo | null>(null);
+  const isRenderingRef = useRef<boolean>(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,10 +34,17 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
       return;
     }
 
+    // If already rendering the same content, don't start a new render
+    if (isRenderingRef.current && lastGoodRef.current?.pageIndex === pageIndex) {
+      return;
+    }
+
     const DPR = Math.max(1, window.devicePixelRatio || 1);
 
     (async () => {
       try {
+        isRenderingRef.current = true;
+        
         if (pageIndex >= pdf.numPages) {
           throw new Error(`Page index ${pageIndex} out of range (0-${pdf.numPages - 1})`);
         }
@@ -83,21 +91,22 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
         // PDF.js throws "Rendering cancelled" on effect re-runs. That's expected.
         if (/Rendering cancelled/i.test(msg)) {
           // Keep displaying the last good bitmap; don't clear the screen.
-          if (!cancelled && lastGoodRef.current) setInfo(lastGoodRef.current);
+          if (!cancelled) setInfo(lastGoodRef.current);
         } else {
           console.error(`Error rendering PDF page ${pageIndex}:`, error);
-          // Do NOT clear info on fatal errors either; retain last good to avoid “job closed” feel.
-          if (!cancelled && lastGoodRef.current) setInfo(lastGoodRef.current);
+          // Do NOT clear info on fatal errors either; retain last good to avoid "job closed" feel.
+          if (!cancelled) setInfo(lastGoodRef.current);
         }
       } finally {
         isRenderingRef.current = false;
       }
     })();
 
+    return () => { 
+      cancelled = true; 
+      cleanup?.(); 
       isRenderingRef.current = false;
-    }
-
-    return () => { cancelled = true; cleanup?.(); };
+    };
   }, [pdf, zoom, pageIndex]);
 
   return info;
