@@ -344,6 +344,8 @@ export function calculateProjectCosts(
     const price = pricingDb.getMaterialPrice(mat.category, mat.description);
     if (price) {
       materialCostTotal += mat.totalQty * price;
+    } else {
+      console.log(`⚠️ No price found for: ${mat.category}::${mat.description} (qty: ${mat.totalQty})`);
     }
   }
 
