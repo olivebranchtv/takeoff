@@ -63,6 +63,15 @@ export async function analyzeDrawingsWithOpenAI(
   try {
     // Prepare the prompt
     const prompt = `You are an expert electrical estimator analyzing construction drawings.
+
+CRITICAL RULE: ABSOLUTE ACCURACY - NO GUESSING
+- ONLY extract information that is EXPLICITLY VISIBLE in the drawings
+- If information is not present or unclear, leave it empty or null
+- DO NOT infer, assume, or guess based on industry standards
+- DO NOT fill in typical values - only report what you can actually see
+- If you cannot read something clearly, leave it blank
+- Better to have empty data than incorrect guessed data
+
 Analyze these electrical drawings and extract the following information in a structured format:
 
 1. PROJECT ASSUMPTIONS:
@@ -86,10 +95,13 @@ Analyze these electrical drawings and extract the following information in a str
 
 4. PANEL SCHEDULE:
    - Extract EVERY SINGLE PANEL from the panel schedule
-   - Look for panel schedules with circuit breaker listings
-   - Read ALL panels shown (LP-1, LP-2, PP-1, etc.)
+   - Look for panel schedules with circuit breaker listings and detailed panel information
+   - Read ALL panels shown (LP-1, LP-2, PP-1, DP-1, etc.)
    - Include: Panel ID, Location, Voltage, Phases, Main Breaker, Circuit Count, Fed From
-   - Copy the exact information from each panel
+   - Copy the exact information from each panel - DO NOT GUESS OR INFER
+   - If a panel property is not visible, leave it empty or null
+   - Do not calculate or assume circuit counts - only report what is explicitly shown
+   - Do not assume voltage or phases - only report what is written
    - Count ALL panels in the schedule - do not stop early
 
 5. KEY NOTES:
@@ -98,8 +110,13 @@ Analyze these electrical drawings and extract the following information in a str
    - Coordination notes
 
 6. SCOPE OF WORK:
-   - What work IS included
-   - What work IS NOT included (exclusions)
+   - ONLY extract scope of work that is EXPLICITLY STATED in the drawings
+   - Look for sections titled: "SCOPE OF WORK", "CONTRACTOR RESPONSIBILITIES", "INCLUDED WORK", "EXCLUDED WORK", "GENERAL NOTES"
+   - Copy the exact text from these sections - do not paraphrase
+   - Included Work: What the electrical contractor IS responsible for (explicitly stated)
+   - Excluded Work: What IS NOT included in contractor's scope (explicitly stated)
+   - If no scope of work section is found, return empty arrays
+   - DO NOT ASSUME typical construction scope - only report what is written
 
 Please provide the information in this exact JSON format:
 {
@@ -136,12 +153,20 @@ Please provide the information in this exact JSON format:
   ],
   "keyNotes": ["note 1", "note 2", ...],
   "scope": {
-    "includedWork": ["item 1", "item 2", ...],
-    "excludedWork": ["item 1", "item 2", ...]
+    "includedWork": ["Furnish and install all lighting fixtures per schedule", "Provide all branch circuit wiring"],
+    "excludedWork": ["Fire alarm system (by others)", "Low voltage/data cabling (by others)"]
   }
 }
 
-Be thorough and extract all available information. If information is not found, use empty arrays or "Not specified" for that section.`;
+IMPORTANT NOTES:
+- If panel schedule is not found or not clear, return empty array []
+- If scope of work section does not exist, return empty arrays for includedWork and excludedWork
+- If lighting schedule is not present, return empty array []
+- Use empty string "" for missing text fields
+- Use null for missing numeric fields
+- If you cannot determine information with certainty, leave it empty - DO NOT GUESS
+
+Be thorough and extract all available information. If information is not found, use empty arrays for that section.`;
 
     // Convert PDF pages to base64 images for analysis
     // Note: OpenAI's vision model can analyze images
@@ -251,6 +276,14 @@ export async function analyzeDrawingsWithImages(
   try {
     const prompt = `You are an expert electrical estimator analyzing construction drawings.
 
+CRITICAL RULE: ABSOLUTE ACCURACY - NO GUESSING
+- ONLY extract information that is EXPLICITLY VISIBLE in the drawings
+- If information is not present or unclear, leave it empty or null
+- DO NOT infer, assume, or guess based on industry standards
+- DO NOT fill in typical values - only report what you can actually see
+- If you cannot read something clearly, leave it blank
+- Better to have empty data than incorrect guessed data
+
 CRITICAL INSTRUCTIONS:
 - Analyze EVERY SINGLE PAGE provided
 - Find and extract the ACTUAL lighting schedule (not assumptions)
@@ -301,10 +334,13 @@ Extract the following information:
 
 4. PANEL SCHEDULE:
    - Extract EVERY SINGLE PANEL from the panel schedule
-   - Look for panel schedules with circuit breaker listings
-   - Read ALL panels shown (LP-1, LP-2, PP-1, etc.)
+   - Look for panel schedules with circuit breaker listings and detailed panel information
+   - Read ALL panels shown (LP-1, LP-2, PP-1, DP-1, etc.)
    - Include: Panel ID, Location, Voltage, Phases, Main Breaker, Circuit Count, Fed From
-   - Copy the exact information from each panel
+   - Copy the exact information from each panel - DO NOT GUESS OR INFER
+   - If a panel property is not visible, leave it empty or null
+   - Do not calculate or assume circuit counts - only report what is explicitly shown
+   - Do not assume voltage or phases - only report what is written
    - Count ALL panels in the schedule - do not stop early
    - If no panel schedule is found, return empty array
 
@@ -314,8 +350,14 @@ Extract the following information:
    - Coordination notes from the documents
 
 6. SCOPE OF WORK:
-   - What work IS explicitly included in the contractor's scope
-   - What work IS explicitly excluded (exclusions stated in drawings)
+   - ONLY extract scope of work that is EXPLICITLY STATED in the drawings
+   - Look for sections titled: "SCOPE OF WORK", "CONTRACTOR RESPONSIBILITIES", "INCLUDED WORK", "EXCLUDED WORK", "GENERAL NOTES"
+   - Copy the exact text from these sections - do not paraphrase
+   - Included Work: What the electrical contractor IS responsible for (explicitly stated)
+   - Excluded Work: What IS NOT included in contractor's scope (explicitly stated)
+   - If no scope of work section is found, return empty arrays
+   - DO NOT ASSUME typical construction scope - only report what is written
+   - If scope is unclear or not stated, return empty arrays with a note
 
 7. DRAWING PAGES:
    - For each page, provide:
@@ -386,8 +428,8 @@ Provide the response in valid JSON format following this structure:
   }],
   "keyNotes": ["note 1"],
   "scope": {
-    "includedWork": ["item 1"],
-    "excludedWork": ["item 1"]
+    "includedWork": ["Furnish and install all lighting fixtures per schedule", "Provide all branch circuit wiring", "Install all panels and disconnects"],
+    "excludedWork": ["Fire alarm system (by others)", "Low voltage/data cabling (by others)", "Main service entrance (by utility)"]
   },
   "drawingPages": [{
     "pageNumber": 1,
@@ -408,7 +450,15 @@ Provide the response in valid JSON format following this structure:
     "description": "Floor plan showing lighting fixture locations and circuiting",
     "findings": ["Type A fixtures in main area", "Type B pendants over counter", "Wall switches near entrances"]
   }]
-}`;
+}
+
+IMPORTANT NOTES:
+- If panel schedule is not found or not clear, return empty array []
+- If scope of work section does not exist, return empty arrays for includedWork and excludedWork
+- If lighting schedule is not present, return empty array []
+- Use empty string "" for missing text fields
+- Use null for missing numeric fields
+- If you cannot determine information with certainty, leave it empty - DO NOT GUESS`;
 
     // Prepare messages with images
     const imageMessages = imageDataUrls.slice(0, 10).map(url => ({
