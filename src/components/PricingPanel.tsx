@@ -53,6 +53,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
           description: m.description,
           unit: m.unit,
           materialCost: m.material_cost,
+          laborHours: m.labor_hours,
           vendor: m.vendor,
           vendorPartNumber: m.vendor_part_number
         });
