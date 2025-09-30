@@ -224,12 +224,27 @@ export class PricingDatabase {
   }
 
   /**
+   * Get total number of prices loaded
+   */
+  getPriceCount(): number {
+    return this.materialPrices.size;
+  }
+
+  /**
+   * Get all loaded price keys (for debugging)
+   */
+  getAllKeys(): string[] {
+    return Array.from(this.materialPrices.keys());
+  }
+
+  /**
    * Get material price by description (with fuzzy matching)
    */
   getMaterialPrice(category: string, description: string): number | undefined {
     // Try exact match first
     const exactKey = `${category}::${description}`;
     const exact = this.materialPrices.get(exactKey);
+    console.log(`🔍 Pricing lookup: "${exactKey}" → ${exact ? `$${exact.materialCost}` : 'NOT FOUND'}`);
     if (exact && exact.materialCost > 0) {
       return exact.materialCost;
     }

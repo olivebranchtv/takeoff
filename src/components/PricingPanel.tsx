@@ -67,7 +67,13 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
       });
       setPricesLoaded(true);
       setPriceCount(materials.length);
-      console.log(`Loaded ${loadedCount} material prices with costs from Supabase`);
+      console.log(`✅ Loaded ${loadedCount} material prices with costs from Supabase (${pricingDb.getPriceCount()} total entries)`);
+
+      // Show sample of wire and conduit prices loaded
+      const wireKeys = pricingDb.getAllKeys().filter(k => k.startsWith('wire::')).slice(0, 3);
+      const conduitKeys = pricingDb.getAllKeys().filter(k => k.startsWith('EMT CONDUIT::')).slice(0, 3);
+      console.log('📦 Sample wire prices:', wireKeys);
+      console.log('📦 Sample conduit prices:', conduitKeys);
     }
 
     setIsLoading(false);
