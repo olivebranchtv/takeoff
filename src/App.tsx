@@ -932,14 +932,12 @@ export default function App() {
         transition:'grid-template-columns .18s ease',
         minHeight:0, flex:1, position:'relative'
       }}>
-        {leftOpen ? (
-          <button className="btn" onClick={()=>setLeftOpen(false)} style={{position:'absolute', top:8, left:8, zIndex:5}} title="Hide sidebar">‹ Hide</button>
-        ) : (
+        {!leftOpen && (
           <button className="btn" onClick={()=>setLeftOpen(true)} style={{position:'absolute', top:8, left:8, zIndex:5}} title="Show sidebar">☰ BOM</button>
         )}
 
         <aside className="sidebar" style={{ borderRight:'1px solid #eee', overflow:'auto', opacity: leftOpen ? 1 : 0, pointerEvents: leftOpen ? 'auto' : 'none' }}>
-          <SidebarBOM bom={bom} />
+          <SidebarBOM bom={bom} onToggle={()=>setLeftOpen(false)} />
         </aside>
 
         <div
@@ -986,12 +984,13 @@ export default function App() {
   );
 }
 
-function SidebarBOM({ bom }:{
+function SidebarBOM({ bom, onToggle }:{
   bom: {
     totalTags: number; segLF: number; plLF: number; ffLF: number; totalLF: number;
     rows: { code:string; tags:number; meas:number; lf:number }[];
     calibratedCount: number; totalPages: number;
-  }
+  };
+  onToggle: () => void;
 }) {
   const { pages } = useStore();
 
@@ -1002,8 +1001,9 @@ function SidebarBOM({ bom }:{
 
   return (
     <div>
-      <div style={{display:'flex', alignItems:'center', gap:8, padding:'8px 10px', position:'sticky', top:0, background:'#fff', zIndex:2, borderBottom:'1px solid #f2f2f2'}}>
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, padding:'8px 10px', position:'sticky', top:0, background:'#fff', zIndex:2, borderBottom:'1px solid #f2f2f2'}}>
         <div className="label" style={{fontWeight:700}}>BOM Summary</div>
+        <button className="btn" onClick={onToggle} style={{fontSize:12, padding:'2px 8px'}} title="Hide sidebar">‹ Hide</button>
       </div>
 
       <div style={{padding:'10px'}}>
