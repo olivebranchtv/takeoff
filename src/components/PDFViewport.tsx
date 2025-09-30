@@ -177,6 +177,8 @@ export default function PDFViewport({ pdf }: Props) {
   function onMouseDown(e: any) {
     if (!info) return;
 
+    console.log('Mouse down - tool:', tool, 'drawing state:', drawingRef.current);
+
     // Right-click: delete object under cursor
     if (isRight(e)) {
       if (e.target?.attrs?.name?.startsWith('obj-')) {
@@ -215,6 +217,7 @@ export default function PDFViewport({ pdf }: Props) {
     } else if (tool === 'polyline') {
       if (drawingRef.current.type !== 'polyline') {
         // Show measure options dialog before starting polyline
+        console.log('Showing polyline dialog');
         setPendingMeasureType('polyline');
         setMeasureDialogOpen(true);
         return;
@@ -224,9 +227,15 @@ export default function PDFViewport({ pdf }: Props) {
     } else if (tool === 'freeform') {
       if (drawingRef.current.type !== 'freeform') {
         // Show measure options dialog before starting freeform
+        console.log('Showing freeform dialog');
         setPendingMeasureType('freeform');
         setMeasureDialogOpen(true);
         return;
+      } else {
+        // Start freeform drawing
+        console.log('Starting freeform drawing at:', posPage);
+        freeformActive.current = true;
+        drawingRef.current.pts = [posPage];
       }
     } else if (tool === 'calibrate') {
       const page = pages.find(p => p.pageIndex === activePage)!;
@@ -301,14 +310,13 @@ export default function PDFViewport({ pdf }: Props) {
   }
 
   const handleMeasureOptionsApply = (options: any) => {
+    console.log('Applying measure options for:', pendingMeasureType, options);
     setMeasureOptions(options);
     
     // Start the measurement with the selected type
     if (pendingMeasureType) {
       drawingRef.current = { type: pendingMeasureType, pts: [] };
-      if (pendingMeasureType === 'freeform') {
-        freeformActive.current = false;
-      }
+      console.log('Set drawing state to:', drawingRef.current);
       if (info) updateLiveLabel(info);
       setPaintTick(t => t + 1);
     }
