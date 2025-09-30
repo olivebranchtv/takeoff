@@ -412,28 +412,62 @@ export default function App() {
   };
 
   /* =========================================================================================
-     EXCEL EXPORT (Lighting, Measurements, Counts, Summary)
+     EXCEL EXPORTS (Full BOM + Fixtures Only)
      ========================================================================================= */
+
+  // category helpers
+  function tagByCode(code: string) {
+    const up = (code || '').toUpperCase();
+    return (tags as Tag[]).find(t => (t.code || '').toUpperCase() === up);
+  }
   function nameForCode(code: string): string {
-    const t = (tags as Tag[]).find(t => (t.code || '').toUpperCase() === (code || '').toUpperCase());
-    return t?.name || '';
+    return tagByCode(code)?.name || '';
   }
-  function isLighting(code: string): boolean {
-    const t = (tags as Tag[]).find(t => (t.code || '').toUpperCase() === (code || '').toUpperCase());
+  function catOf(code: string): string {
+    const t = tagByCode(code);
     const cat = (t?.category || '').toLowerCase();
-    return cat.includes('light') || (code || '').toUpperCase().startsWith('L');
+
+    // Heuristics by code prefix if category missing
+    const up = (code || '').toUpperCase();
+    if (cat) return cat;
+    if (/^L/.test(up)) return 'lights';
+    if (/^REC|^GFI|^GFCI|^OUT|^R-?/.test(up)) return 'receptacles';
+    if (/^EM|^MLO|^PANEL|^SWBD|^XFMR/.test(up)) return 'power';
+    if (/^FA|^SM|^PULL|^HORN|^STROBE/.test(up)) return 'fire alarm';
+    if (/^DATA|^TEL|^CAT|^WAP|^AP|^COM|^LV/.test(up)) return 'data/comm';
+    if (/^CTRL|^OC|^DIM|^SW/.test(up)) return 'lighting controls';
+    return 'special systems';
+  }
+  function isLighting(code: string) {
+    const c = catOf(code);
+    return c.includes('light') && !c.includes('control');
+  }
+  function isLightingControl(code: string) {
+    const c = catOf(code);
+    return c.includes('control');
+  }
+  function isReceptacle(code: string) {
+    return catOf(code).includes('receptacle');
+  }
+  function isPower(code: string) {
+    const c = catOf(code);
+    return c.includes('power');
+  }
+  function isDataComm(code: string) {
+    const c = catOf(code);
+    return c.includes('data') || c.includes('comm');
+  }
+  function isFireAlarm(code: string) {
+    const c = catOf(code);
+    return c.includes('fire alarm');
+  }
+  function isSpecial(code: string) {
+    const c = catOf(code);
+    return c.includes('special');
   }
 
-  const exportExcel = async () => {
-    let XLSX: any;
-    try {
-      XLSX = (await import('xlsx')).default || (await import('xlsx'));
-    } catch (e) {
-      alert('Missing dependency "xlsx". Install with:  npm i xlsx');
-      return;
-    }
-
-    // Aggregate counts and measurements
+  // aggregated project data
+  function aggregate() {
     const countByCode = new Map<string, number>();
     const measByCode = new Map<string, { meas: number; lf: number }>();
 
@@ -456,18 +490,46 @@ export default function App() {
         }
       }
     }
+    return { countByCode, measByCode };
+  }
 
-    // Sheet 1: Lighting
-    const lightingRows = Array.from(countByCode.entries())
-      .filter(([code]) => isLighting(code))
-      .map(([code, count]) => ({
-        Code: code,
-        Name: nameForCode(code),
-        Count: count
-      }))
-      .sort((a, b) => a.Code.localeCompare(b.Code));
+  async function ensureXLSX() {
+    try {
+      const x = (await import('xlsx')) as any;
+      return x.default || x;
+    } catch {
+      alert('Missing dependency "xlsx". Install with:  npm i xlsx');
+      throw new Error('xlsx missing');
+    }
+  }
 
-    // Sheet 2: Measurements (all codes with any LF/meas)
+  const exportExcelFull = async () => {
+    const XLSX = await ensureXLSX();
+    const { countByCode, measByCode } = aggregate();
+
+    const rowsFor = (filterFn: (code: string) => boolean) =>
+      Array.from(countByCode.entries())
+        .filter(([code]) => filterFn(code))
+        .map(([code, count]) => ({ Code: code, Name: nameForCode(code), Count: count }))
+        .sort((a, b) => a.Code.localeCompare(b.Code));
+
+    // tabs
+    const assumptionsRows = [
+      { Assumption: 'Scope', Value: 'Electrical takeoff – quantities only; no material submittals included.' },
+      { Assumption: 'Drawings', Value: (pdfName || fileName) || '—' },
+      { Assumption: 'Units', Value: 'Linear feet (LF) measured from calibrated pages.' },
+      { Assumption: 'Exclusions', Value: 'Permits, taxes, engineering, as-built changes.' },
+      { Assumption: 'Notes', Value: 'Verify all quantities and device types in the field.' },
+    ];
+
+    const lightingRows = rowsFor(isLighting);
+    const controlsRows = rowsFor(isLightingControl);
+    const receptRows  = rowsFor(isReceptacle);
+    const powerRows   = rowsFor(isPower);
+    const dataRows    = rowsFor(isDataComm);
+    const fireRows    = rowsFor(isFireAlarm);
+    const specialRows = rowsFor(isSpecial);
+
     const measRows = Array.from(measByCode.entries())
       .map(([code, v]) => ({
         Code: code,
@@ -477,16 +539,10 @@ export default function App() {
       }))
       .sort((a, b) => a.Code.localeCompare(b.Code));
 
-    // Sheet 3: Counts (All)
-    const countRows = Array.from(countByCode.entries())
-      .map(([code, count]) => ({
-        Code: code,
-        Name: nameForCode(code),
-        Count: count
-      }))
+    const countAllRows = Array.from(countByCode.entries())
+      .map(([code, count]) => ({ Code: code, Name: nameForCode(code), Count: count }))
       .sort((a, b) => a.Code.localeCompare(b.Code));
 
-    // Sheet 4: Summary
     const summaryRows = [
       { Metric: 'Total Tags', Value: bom.totalTags },
       { Metric: 'Segment LF', Value: bom.segLF.toFixed(2) },
@@ -497,22 +553,43 @@ export default function App() {
     ];
 
     const wb = XLSX.utils.book_new();
-
-    const wsLighting = XLSX.utils.json_to_sheet(lightingRows);
-    XLSX.utils.book_append_sheet(wb, wsLighting, 'Lighting');
-
-    const wsMeas = XLSX.utils.json_to_sheet(measRows);
-    XLSX.utils.book_append_sheet(wb, wsMeas, 'Measurements');
-
-    const wsCounts = XLSX.utils.json_to_sheet(countRows);
-    XLSX.utils.book_append_sheet(wb, wsCounts, 'Counts (All)');
-
-    const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
-    XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(assumptionsRows), 'Assumptions');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(lightingRows),   'Lighting');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(controlsRows),   'Lighting Controls');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(receptRows),     'Receptacles');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(powerRows),      'Power');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataRows),       'Data-Comm');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(fireRows),       'Fire Alarm');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(specialRows),    'Special Systems');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(measRows),       'Measurements');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(countAllRows),   'Counts (All)');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows),    'Summary');
 
     const baseName =
       useStore.getState().getProjectName()?.trim() ||
       (pdfName || fileName || 'BOM').replace(/\.[^.]+$/, '');
+
+    XLSX.writeFile(wb, `${baseName}.xlsx`);
+  };
+
+  const exportFixturesOnly = async () => {
+    const XLSX = await ensureXLSX();
+    const { countByCode } = aggregate();
+
+    const lightingRows = Array.from(countByCode.entries())
+      .filter(([code]) => isLighting(code))
+      .map(([code, count]) => ({
+        Code: code,
+        Name: nameForCode(code),
+        Count: count
+      }))
+      .sort((a, b) => a.Code.localeCompare(b.Code));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(lightingRows), 'Lighting');
+
+    const baseName =
+      (useStore.getState().getProjectName()?.trim() || 'Lighting') + ' - Fixtures';
 
     XLSX.writeFile(wb, `${baseName}.xlsx`);
   };
@@ -553,7 +630,7 @@ export default function App() {
           <div style={{opacity:.7}}>·</div>
           <button
             title="Click to rename project"
-            onClick={()=>{ const next = prompt('Project name:', useStore.getState().getProjectName()); if (next != null) setProjectName(next.trim() || 'Untitled Project'); }}
+            onClick={()=>{ const next = prompt('Project name:', headerProjectLabel); if (next != null) setProjectName(next.trim() || 'Untitled Project'); }}
             className="btn"
             style={{
               background:'transparent',
@@ -569,7 +646,7 @@ export default function App() {
               textOverflow:'ellipsis'
             }}
           >
-            {useStore.getState().getProjectName()}
+            {headerProjectLabel}
           </button>
         </div>
 
@@ -633,7 +710,8 @@ export default function App() {
         <div style={{flex:1}} />
 
         <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
-        <button className="btn" onClick={exportExcel}>Export Excel</button>
+        <button className="btn" onClick={exportExcelFull}>Export Excel (Full BOM)</button>
+        <button className="btn" onClick={exportFixturesOnly}>Export Lighting Fixtures</button>
       </div>
 
       {/* PROJECT TAGS BAR */}
