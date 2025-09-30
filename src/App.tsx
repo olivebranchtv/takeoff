@@ -8,6 +8,13 @@ import { useStore } from '@/state/store';
 import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
 import { pathLength } from '@/utils/geometry';
 
+/* NEW: raceway BOM helpers */
+import {
+  buildBOMRows,
+  toCSVItemizedWithRaceway,
+  toCSVSummarizedWithRaceway,
+} from '@/utils/bom';
+
 /* Tag shape used by the DB + project bar */
 type TagLite = { id: string; code: string; name: string; color: string; category?: string };
 
@@ -412,10 +419,10 @@ export default function App() {
   };
 
   /* =========================================================================================
-     EXCEL EXPORTS (Full BOM + Fixtures Only)
+     EXPORTS (Full Excel + Fixtures Only + NEW Raceway CSV/Excel)
      ========================================================================================= */
 
-  // category helpers
+  // category helpers (for your existing Excel exports)
   function tagByCode(code: string) {
     const up = (code || '').toUpperCase();
     return (tags as Tag[]).find(t => (t.code || '').toUpperCase() === up);
@@ -442,31 +449,8 @@ export default function App() {
     const c = catOf(code);
     return c.includes('light') && !c.includes('control');
   }
-  function isLightingControl(code: string) {
-    const c = catOf(code);
-    return c.includes('control');
-  }
-  function isReceptacle(code: string) {
-    return catOf(code).includes('receptacle');
-  }
-  function isPower(code: string) {
-    const c = catOf(code);
-    return c.includes('power');
-  }
-  function isDataComm(code: string) {
-    const c = catOf(code);
-    return c.includes('data') || c.includes('comm');
-  }
-  function isFireAlarm(code: string) {
-    const c = catOf(code);
-    return c.includes('fire alarm');
-  }
-  function isSpecial(code: string) {
-    const c = catOf(code);
-    return c.includes('special');
-  }
 
-  // aggregated project data
+  // aggregated project data (for your existing Excel exports)
   function aggregate() {
     const countByCode = new Map<string, number>();
     const measByCode = new Map<string, { meas: number; lf: number }>();
@@ -503,6 +487,7 @@ export default function App() {
     }
   }
 
+  /* Existing “Full BOM” Excel (kept as-is) */
   const exportExcelFull = async () => {
     const XLSX = await ensureXLSX();
     const { countByCode, measByCode } = aggregate();
@@ -513,7 +498,6 @@ export default function App() {
         .map(([code, count]) => ({ Code: code, Name: nameForCode(code), Count: count }))
         .sort((a, b) => a.Code.localeCompare(b.Code));
 
-    // tabs
     const assumptionsRows = [
       { Assumption: 'Scope', Value: 'Electrical takeoff – quantities only; no material submittals included.' },
       { Assumption: 'Drawings', Value: (pdfName || fileName) || '—' },
@@ -523,12 +507,12 @@ export default function App() {
     ];
 
     const lightingRows = rowsFor(isLighting);
-    const controlsRows = rowsFor(isLightingControl);
-    const receptRows  = rowsFor(isReceptacle);
-    const powerRows   = rowsFor(isPower);
-    const dataRows    = rowsFor(isDataComm);
-    const fireRows    = rowsFor(isFireAlarm);
-    const specialRows = rowsFor(isSpecial);
+    const controlsRows = rowsFor((code)=>catOf(code).includes('control'));
+    const receptRows  = rowsFor((code)=>catOf(code).includes('receptacle'));
+    const powerRows   = rowsFor((code)=>catOf(code).includes('power'));
+    const dataRows    = rowsFor((code)=>catOf(code).includes('data') || catOf(code).includes('comm'));
+    const fireRows    = rowsFor((code)=>catOf(code).includes('fire alarm'));
+    const specialRows = rowsFor((code)=>catOf(code).includes('special'));
 
     const measRows = Array.from(measByCode.entries())
       .map(([code, v]) => ({
@@ -572,6 +556,7 @@ export default function App() {
     XLSX.writeFile(wb, `${baseName}.xlsx`);
   };
 
+  /* Existing fixtures-only Excel (kept) */
   const exportFixturesOnly = async () => {
     const XLSX = await ensureXLSX();
     const { countByCode } = aggregate();
@@ -592,6 +577,86 @@ export default function App() {
       (useStore.getState().getProjectName()?.trim() || 'Lighting') + ' - Fixtures';
 
     XLSX.writeFile(wb, `${baseName}.xlsx`);
+  };
+
+  /* NEW: small CSV downloader */
+  function downloadCSV(filename: string, csv: string) {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /* NEW: CSV – Itemized with raceway/conductors/boxes */
+  const exportCSVItemizedRaceway = () => {
+    const rows = buildBOMRows(pages, 'itemized');
+    const csv = toCSVItemizedWithRaceway(rows);
+    const baseName = (useStore.getState().getProjectName()?.trim() || 'BOM') + ' - Itemized (Raceway).csv';
+    downloadCSV(baseName, csv);
+  };
+
+  /* NEW: CSV – Summarized with raceway totals */
+  const exportCSVSummarizedRaceway = () => {
+    const rows = buildBOMRows(pages, 'summarized');
+    const csv = toCSVSummarizedWithRaceway(rows);
+    const baseName = (useStore.getState().getProjectName()?.trim() || 'BOM') + ' - Summarized (Raceway).csv';
+    downloadCSV(baseName, csv);
+  };
+
+  /* NEW: Excel – Detailed measurements (itemized + summarized with raceway) */
+  const exportExcelDetailedMeasurements = async () => {
+    const XLSX = await ensureXLSX();
+    const itemRows = buildBOMRows(pages, 'itemized');
+    const sumRows  = buildBOMRows(pages, 'summarized');
+
+    // Build objects so numbers stay numeric in Excel
+    const itemObjs = itemRows.map(r => {
+      const c = r.conductors ?? [];
+      const c1 = c[0] ?? { count: 0, size: '' };
+      const c2 = c[1] ?? { count: 0, size: '' };
+      const c3 = c[2] ?? { count: 0, size: '' };
+      return {
+        Tag: r.tagCode,
+        Index: r.index ?? null,
+        Shape: r.shape,
+        Qty: r.qty,
+        GeomLF: typeof r.lengthFt === 'number' ? +r.lengthFt.toFixed(2) : null,
+        RacewayLF: typeof r.racewayLf === 'number' ? +r.racewayLf.toFixed(2) : null,
+        ConductorLF: typeof r.conductorLfTotal === 'number' ? +r.conductorLfTotal.toFixed(2) : null,
+        Boxes: typeof r.boxes === 'number' ? r.boxes : null,
+        Points: typeof r.points === 'number' ? r.points : null,
+        Cond1Count: c1.count || null,
+        Cond1Size: c1.size || '',
+        Cond2Count: c2.count || null,
+        Cond2Size: c2.size || '',
+        Cond3Count: c3.count || null,
+        Cond3Size: c3.size || '',
+        Page: r.pageIndex,
+        Name: r.tagName || '',
+        Category: r.category || '',
+        Note: (r.note ?? '').toString().replace(/\n/g, ' ').trim(),
+      };
+    });
+
+    const sumObjs = sumRows.map(r => ({
+      Tag: r.tagCode,
+      Shape: r.shape,
+      Qty: r.qty,
+      GeomLF: typeof r.lengthFt === 'number' ? +r.lengthFt.toFixed(2) : null,
+      RacewayLF: typeof r.racewayLf === 'number' ? +r.racewayLf.toFixed(2) : null,
+      ConductorLF: typeof r.conductorLfTotal === 'number' ? +r.conductorLfTotal.toFixed(2) : null,
+      Boxes: typeof r.boxes === 'number' ? r.boxes : null,
+      Name: r.tagName || '',
+      Category: r.category || '',
+    }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(itemObjs), 'Measurements (Itemized)');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sumObjs),  'Measurements (Summarized)');
+
+    const base = useStore.getState().getProjectName()?.trim() || 'Measurements';
+    XLSX.writeFile(wb, `${base} - Detailed Measurements.xlsx`);
   };
 
   /* =========================================================================================
@@ -712,6 +777,12 @@ export default function App() {
         <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
         <button className="btn" onClick={exportExcelFull}>Export Excel (Full BOM)</button>
         <button className="btn" onClick={exportFixturesOnly}>Export Lighting Fixtures</button>
+
+        {/* NEW export buttons */}
+        <div style={{borderLeft:'1px solid #eee', height:24, margin:'0 6px'}} />
+        <button className="btn" onClick={exportCSVItemizedRaceway} title="Itemized CSV with raceway, conductors, boxes">Export CSV (Itemized Raceway)</button>
+        <button className="btn" onClick={exportCSVSummarizedRaceway} title="Summarized CSV with raceway totals">Export CSV (Summarized Raceway)</button>
+        <button className="btn" onClick={exportExcelDetailedMeasurements} title="Excel with itemized & summarized measurement sheets">Export Excel (Detailed Measurements)</button>
       </div>
 
       {/* PROJECT TAGS BAR */}
