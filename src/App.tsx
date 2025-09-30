@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useCallback, useMemo, useRef, useState, useLayoutEffect } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type { PDFDoc } from '@/lib/pdf';
 import { loadPdfFromBytes } from '@/lib/pdf';
 import PDFViewport from '@/components/PDFViewport';
@@ -23,7 +23,6 @@ type SKDBundle = {
 /* =========================================================================================
    helpers for base64 <-> ArrayBuffer
    ========================================================================================= */
-
 function normalizeBase64(input: string): string {
   let src = (input || '').trim();
   const comma = src.indexOf(',');
@@ -42,6 +41,7 @@ function b64ToAb(b64: string): ArrayBuffer {
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out.buffer;
 }
+/** quick sanity check that bytes look like a PDF ("%PDF") near the start */
 function looksLikePdf(bytes: Uint8Array): boolean {
   const searchLen = Math.min(bytes.length, 64);
   for (let i = 0; i <= searchLen - 5; i++) {
@@ -97,9 +97,8 @@ export default function App() {
     setProjectName,
   } = useStore();
 
-  /* ---------- scroll container + content (for mini-map math) ---------- */
+  /* ---------- scroll container + content ---------- */
   const viewerScrollRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
 
   /* ---------- Hand panning ---------- */
   const panStateRef = useRef<{
@@ -111,13 +110,9 @@ export default function App() {
     byMouseButton: 0 | 1 | 2;
   }>({ active: false, startX: 0, startY: 0, startLeft: 0, startTop: 0, byMouseButton: 0 });
 
-  /* ---------- Right Navigator panel toggle ---------- */
-  const [navOpen, setNavOpen] = useState<boolean>(true);
-
   /* =========================================================================================
      FILE MENU  — New / Open / Save / Save As / Print / Close
      ========================================================================================= */
-
   const makeBundle = useCallback<() => SKDBundle>(() => {
     const state = useStore.getState();
     const core: ProjectSave = {
@@ -266,7 +261,8 @@ export default function App() {
      ========================================================================================= */
   const openPdf = useCallback(async (file: File) => {
     const buf = await file.arrayBuffer();
-    // store base64 in project bundle
+
+    // Store as base64 in the project bundle
     let b64 = '';
     {
       const v = new Uint8Array(buf);
@@ -274,12 +270,15 @@ export default function App() {
       for (let i = 0; i < v.length; i++) s += String.fromCharCode(v[i]);
       b64 = btoa(s);
     }
+
     setPdfBytesBase64(b64);
     setPdfName(file.name);
 
+    // Always feed pdf.js a Uint8Array
     const doc = await loadPdfFromBytes(new Uint8Array(buf));
     setPdf(doc);
     setFileName(file.name);
+    // For standalone PDF open, start fresh pages
     setPages([]);
     setPageCount(doc.numPages);
     setPageLabels(await resolvePageLabels(doc));
@@ -337,7 +336,7 @@ export default function App() {
   }, [pages]);
 
   /* =========================================================================================
-     ADD-FROM-DB PICKER
+     ADD-FROM-DB PICKER (grouped by category, Lights/Receptacles first)
      ========================================================================================= */
   const PICKER_TOP_CATS = ['Lights', 'Receptacles'] as const;
 
@@ -411,157 +410,6 @@ export default function App() {
     document.body.style.userSelect = '';
     document.body.style.cursor = '';
   };
-
-  /* =========================================================================================
-     NAVIGATOR (right collapsible panel): page list + active page mini-map
-     ========================================================================================= */
-
-  // Keep sizes in sync while PDF rerenders/zoom changes
-  const [, forceTick] = useState(0);
-  useLayoutEffect(() => {
-    const sc = viewerScrollRef.current;
-    if (!sc) return;
-    const ro = new ResizeObserver(() => forceTick(t => t + 1));
-    ro.observe(sc);
-    const id = setInterval(() => forceTick(t => t + 1), 400);
-    return () => { ro.disconnect(); clearInterval(id); };
-  }, []);
-
-  // Compute mini-map metrics based on total scrollable content
-  const NAV_MAX_W = 260;
-  const NAV_MAX_H = 170;
-  function getMiniMetrics() {
-    const sc = viewerScrollRef.current;
-    const content = contentRef.current;
-    if (!sc || !content) return null;
-    const contentW = content.scrollWidth || content.offsetWidth || content.clientWidth;
-    const contentH = content.scrollHeight || content.offsetHeight || content.clientHeight;
-    if (!contentW || !contentH) return null;
-
-    const scale = Math.min(NAV_MAX_W / contentW, NAV_MAX_H / contentH);
-    const miniW = Math.max(20, Math.round(contentW * scale));
-    const miniH = Math.max(20, Math.round(contentH * scale));
-    const viewW = sc.clientWidth;
-    const viewH = sc.clientHeight;
-    const boxW = Math.max(12, Math.round(viewW * scale));
-    const boxH = Math.max(12, Math.round(viewH * scale));
-    const boxX = Math.round(sc.scrollLeft * scale);
-    const boxY = Math.round(sc.scrollTop * scale);
-    return { scale, miniW, miniH, boxW, boxH, boxX, boxY, viewW, viewH };
-  }
-
-  // Drag/Resize state + helpers (Adobe-style)
-  type MiniMode = 'move' | 'nw' | 'ne' | 'sw' | 'se' | null;
-  const miniRef = useRef<{ mode:MiniMode; offX:number; offY:number; startX:number; startY:number }>(
-    { mode:null, offX:0, offY:0, startX:0, startY:0 }
-  );
-
-  function hitHandle(x:number, y:number, m:ReturnType<typeof getMiniMetrics>) : MiniMode {
-    const sz = 10;
-    const { boxX, boxY, boxW, boxH } = m!;
-    const inRect = (rx:number, ry:number) => x>=rx && x<=rx+sz && y>=ry && y<=ry+sz;
-    if (inRect(boxX-2,           boxY-2))           return 'nw';
-    if (inRect(boxX+boxW-sz+2,   boxY-2))           return 'ne';
-    if (inRect(boxX-2,           boxY+boxH-sz+2))   return 'sw';
-    if (inRect(boxX+boxW-sz+2,   boxY+boxH-sz+2))   return 'se';
-    return null;
-  }
-
-  function applyScrollFromMini(targetMiniX:number, targetMiniY:number, targetScale:number) {
-    const sc = viewerScrollRef.current;
-    if (!sc) return;
-    sc.scrollLeft = Math.max(0, Math.round(targetMiniX / targetScale));
-    sc.scrollTop  = Math.max(0, Math.round(targetMiniY / targetScale));
-  }
-
-  const onMiniDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    const m = getMiniMetrics(); if (!m) return;
-    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-    const x = e.clientX - rect.left, y = e.clientY - rect.top;
-
-    const h = hitHandle(x, y, m);
-    if (h) {
-      miniRef.current.mode = h;
-      miniRef.current.startX = x;
-      miniRef.current.startY = y;
-      e.preventDefault();
-      return;
-    }
-
-    if (x >= m.boxX && x <= m.boxX + m.boxW && y >= m.boxY && y <= m.boxY + m.boxH) {
-      miniRef.current.mode = 'move';
-      miniRef.current.offX = x - m.boxX;
-      miniRef.current.offY = y - m.boxY;
-      e.preventDefault();
-    } else {
-      // click elsewhere: center there
-      const nx = Math.max(0, Math.min(x - m.boxW/2, m.miniW - m.boxW));
-      const ny = Math.max(0, Math.min(y - m.boxH/2, m.miniH - m.boxH));
-      applyScrollFromMini(nx, ny, m.scale);
-    }
-  };
-
-  const onMiniMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    const mode = miniRef.current.mode;
-    if (!mode) return;
-    const m = getMiniMetrics(); if (!m) return;
-
-    const panel = (e.currentTarget as HTMLDivElement);
-    const r = panel.getBoundingClientRect();
-    const x = e.clientX - r.left, y = e.clientY - r.top;
-
-    if (mode === 'move') {
-      let nx = x - miniRef.current.offX;
-      let ny = y - miniRef.current.offY;
-      nx = Math.max(0, Math.min(nx, m.miniW - m.boxW));
-      ny = Math.max(0, Math.min(ny, m.miniH - m.boxH));
-      applyScrollFromMini(nx, ny, m.scale);
-      return;
-    }
-
-    // ---- resize (corner handles) -> change zoom like Adobe ----
-    const aspect = m.viewW / m.viewH;
-    let bx = m.boxX, by = m.boxY, bw = m.boxW, bh = m.boxH;
-
-    const clamp = () => {
-      bx = Math.max(0, Math.min(bx, m.miniW - 8));
-      by = Math.max(0, Math.min(by, m.miniH - 8));
-      bw = Math.max(16, Math.min(bw, m.miniW - bx));
-      bh = Math.max(16, Math.min(bh, m.miniH - by));
-      // keep viewport aspect
-      const wantW = Math.min(bw, Math.round(bh * aspect));
-      const wantH = Math.min(bh, Math.round(bw / aspect));
-      if (wantW / aspect <= bh) { bw = wantW; bh = Math.round(wantW / aspect); }
-      else { bh = wantH; bw = Math.round(wantH * aspect); }
-    };
-
-    if (mode === 'nw') { bx = Math.min(x, m.boxX + m.boxW - 8); by = Math.min(y, m.boxY + m.boxH - 8); bw = (m.boxX + m.boxW) - bx; bh = (m.boxY + m.boxH) - by; clamp(); }
-    if (mode === 'ne') { by = Math.min(y, m.boxY + m.boxH - 8); bw = Math.max(8, x - m.boxX);            bh = (m.boxY + m.boxH) - by; clamp(); }
-    if (mode === 'sw') { bx = Math.min(x, m.boxX + m.boxW - 8); bw = (m.boxX + m.boxW) - bx;            bh = Math.max(8, y - m.boxY); clamp(); }
-    if (mode === 'se') { bw = Math.max(8, x - m.boxX);            bh = Math.max(8, y - m.boxY);            clamp(); }
-
-    // zoom' = zoom * (oldBoxW / newBoxW)
-    const nextZoom = Math.max(0.05, Math.min(40, zoom * (m.boxW / bw)));
-    if (nextZoom !== zoom) setZoom(nextZoom);
-
-    // keep center constant
-    const nextScale = m.scale * (zoom / nextZoom);
-    const cx = bx + bw / 2, cy = by + bh / 2;
-    const nx = Math.max(0, Math.min(cx - bw/2, m.miniW - bw));
-    const ny = Math.max(0, Math.min(cy - bh/2, m.miniH - bh));
-    requestAnimationFrame(() => applyScrollFromMini(nx, ny, nextScale));
-  };
-
-  const onMiniUp = () => { miniRef.current.mode = null; };
-
-  function centerFromMini(miniX:number, miniY:number, m = getMiniMetrics()) {
-    if (!m) return;
-    const sc = viewerScrollRef.current; if (!sc) return;
-    const x = Math.max(0, Math.min(miniX, m.miniW - m.boxW));
-    const y = Math.max(0, Math.min(miniY, m.miniH - m.boxH));
-    sc.scrollLeft = Math.round(x / m.scale);
-    sc.scrollTop  = Math.round(y / m.scale);
-  }
 
   /* =========================================================================================
      RENDER
@@ -679,7 +527,6 @@ export default function App() {
         <div style={{flex:1}} />
 
         <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
-        <button className="btn" onClick={()=>setNavOpen(v=>!v)}>{navOpen ? '◂ Nav' : 'Nav ▸'}</button>
       </div>
 
       {/* PROJECT TAGS BAR */}
@@ -782,7 +629,6 @@ export default function App() {
           <SidebarBOM bom={bom} />
         </aside>
 
-        {/* SCROLL CONTAINER (main sheet) */}
         <div
           ref={viewerScrollRef}
           style={{
@@ -803,161 +649,7 @@ export default function App() {
               </div>
             </div>
           )}
-          {pdf && (
-            <div ref={contentRef}>
-              <PDFViewport pdf={pdf} />
-            </div>
-          )}
-
-          {/* RIGHT COLLAPSIBLE NAV PANEL (overlays; doesn’t disturb layout) */}
-          {pdf && (
-            <div
-              style={{
-                position:'absolute',
-                top:12,
-                right:12,
-                zIndex:15,
-                pointerEvents:'none'
-              }}
-            >
-              {/* Drawer body */}
-              {navOpen && (
-                <div
-                  style={{
-                    width: 300,
-                    maxHeight: 'calc(100vh - 180px)',
-                    overflowY: 'auto',
-                    background:'#fff',
-                    border:'1px solid #e1e1e1',
-                    borderRadius:10,
-                    boxShadow:'0 10px 28px rgba(0,0,0,.15)',
-                    padding:10,
-                    pointerEvents:'auto'
-                  }}
-                >
-                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
-                    <div style={{fontWeight:700}}>Pages</div>
-                    <button className="btn" onClick={()=>setNavOpen(false)}>Close</button>
-                  </div>
-
-                  {/* Page tiles */}
-                  <div style={{display:'grid', gridTemplateColumns:'1fr', rowGap:10}}>
-                    {Array.from({length: pageCount}, (_, i) => {
-                      const isActive = i === activePage;
-                      return (
-                        <div key={i} style={{border:'1px solid #dde2ee', borderRadius:8, padding:8, position:'relative', background:'#f9fbff'}}>
-                          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
-                            <div style={{fontWeight:600}}>{i+1} — {pageLabels[i] || `Page ${i+1}`}</div>
-                            {!isActive && (
-                              <button className="btn" onClick={()=>setActivePage(i)}>Open</button>
-                            )}
-                          </div>
-
-                          {/* Mini-map only for active page (drag + resize) */}
-                          {isActive ? (
-                            <div
-                              onMouseDown={onMiniDown}
-                              onMouseMove={onMiniMove}
-                              onMouseUp={onMiniUp}
-                              onMouseLeave={onMiniUp}
-                              style={{
-                                position:'relative',
-                                width: (getMiniMetrics()?.miniW ?? 200),
-                                height:(getMiniMetrics()?.miniH ?? 120),
-                                background:'linear-gradient(180deg,#eef3ff,#e9f0ff)',
-                                border:'1px solid #cfd8ea',
-                                borderRadius:8,
-                                overflow:'hidden',
-                                transition:'width .08s, height .08s',
-                                cursor:'default',
-                                userSelect:'none'
-                              }}
-                              title="Drag the blue box to pan. Drag a corner to zoom."
-                            >
-                              {(() => {
-                                const m = getMiniMetrics();
-                                if (!m) return null;
-                                return (
-                                  <>
-                                    {/* blue viewport */}
-                                    <div
-                                      style={{
-                                        position:'absolute',
-                                        left:m.boxX, top:m.boxY, width:m.boxW, height:m.boxH,
-                                        border:'2px solid #2a7fff',
-                                        background:'rgba(42,127,255,.10)',
-                                        borderRadius:8,
-                                        boxShadow:'0 0 0 1px rgba(42,127,255,.18) inset',
-                                        cursor:'move'
-                                      }}
-                                    />
-                                    {/* resize handles */}
-                                    {(['nw','ne','sw','se'] as const).map((pos)=> {
-                                      const s = 10;
-                                      const left  = pos.includes('w') ? m.boxX-2 : m.boxX+m.boxW-s+2;
-                                      const top   = pos.includes('n') ? m.boxY-2 : m.boxY+m.boxH-s+2;
-                                      const cursor = `${pos}-resize`;
-                                      return (
-                                        <div key={pos}
-                                          style={{
-                                            position:'absolute', left, top, width:s, height:s,
-                                            background:'#2a7fff', border:'1px solid #1b5fd8', borderRadius:3,
-                                            boxShadow:'0 0 0 1px rgba(0,0,0,.08)',
-                                            cursor
-                                          }}
-                                        />
-                                      );
-                                    })}
-                                  </>
-                                );
-                              })()}
-                            </div>
-                          ) : (
-                            <div
-                              onClick={()=>setActivePage(i)}
-                              title="Go to page"
-                              style={{
-                                width: 220, height: 140,
-                                background:'#fafafa',
-                                border:'1px dashed #ddd',
-                                borderRadius:8,
-                                display:'grid',
-                                placeItems:'center',
-                                color:'#888',
-                                cursor:'pointer'
-                              }}
-                            >
-                              Click to open
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Floating open button when collapsed */}
-              {!navOpen && (
-                <button
-                  className="btn"
-                  onClick={()=>setNavOpen(true)}
-                  style={{
-                    pointerEvents:'auto',
-                    width:80,
-                    height:36,
-                    background:'#ffffff',
-                    border:'1px solid #ddd',
-                    borderRadius:8,
-                    boxShadow:'0 6px 18px rgba(0,0,0,.12)'
-                  }}
-                  title="Open Navigator"
-                >
-                  Nav ▸
-                </button>
-              )}
-            </div>
-          )}
+          {pdf && <PDFViewport pdf={pdf} />}
         </div>
       </div>
 
