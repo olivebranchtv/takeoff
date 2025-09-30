@@ -18,12 +18,53 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
 
   const [pricingDb] = useState(() => new PricingDatabase(30.0));
   const [overheadPct, setOverheadPct] = useState(15);
-  const [profitPct, setProfitPct] = useState(12);
+  const [profitPct, setProfitPct] = useState(10);
   const [taxRate, setTaxRate] = useState(8.5);
   const [shipping, setShipping] = useState(0);
   const [equipment, setEquipment] = useState(0);
+  const [pricesLoaded, setPricesLoaded] = useState(false);
+  const [priceCount, setPriceCount] = useState(0);
 
   const [costs, setCosts] = useState<ProjectCosts | null>(null);
+
+  const loadPricingFile = async (file: File) => {
+    try {
+      const XLSX = await import('xlsx');
+      const buffer = await file.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: 'array' });
+
+      let sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows: any[] = XLSX.utils.sheet_to_json(sheet);
+
+      let loaded = 0;
+      for (const row of rows) {
+        const category = String(row['Category'] || row['category'] || row['Division'] || row['Type'] || '').trim();
+        const description = String(row['Description'] || row['description'] || row['Item'] || row['Material'] || '').trim();
+        const unit = String(row['Unit'] || row['unit'] || row['UOM'] || 'EA').trim();
+        const cost = parseFloat(row['Cost'] || row['cost'] || row['Price'] || row['Unit Cost'] || '0');
+
+        if (description && cost > 0) {
+          const key = `${category}::${description}`;
+          pricingDb.setMaterialPrice(key, {
+            category,
+            description,
+            unit,
+            materialCost: cost,
+            vendor: row['Vendor'] || row['vendor'],
+            vendorPartNumber: row['Part Number'] || row['Part #']
+          });
+          loaded++;
+        }
+      }
+
+      setPricesLoaded(true);
+      setPriceCount(loaded);
+      alert(`Successfully loaded ${loaded} material prices!`);
+    } catch (error) {
+      console.error('Error loading pricing file:', error);
+      alert('Failed to load pricing file. Please check the format.');
+    }
+  };
 
   // Calculate costs whenever inputs change
   useEffect(() => {
@@ -137,7 +178,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
       zIndex: 100,
       padding: '20px'
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
         <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold' }}>Pricing & Bidding</h2>
         <button
           onClick={onClose}
@@ -151,6 +192,37 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
         >
           ×
         </button>
+      </div>
+
+      <div style={{ marginBottom: '20px', padding: '12px', background: pricesLoaded ? '#d4edda' : '#fff3cd', borderRadius: '6px', border: pricesLoaded ? '1px solid #c3e6cb' : '1px solid #ffeaa7' }}>
+        <div style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: pricesLoaded ? '#155724' : '#856404' }}>
+          {pricesLoaded ? `✓ ${priceCount} Material Prices Loaded` : '⚠ No Material Pricing Loaded'}
+        </div>
+        <label
+          htmlFor="pricing-upload"
+          style={{
+            display: 'inline-block',
+            padding: '8px 12px',
+            background: '#2e7d32',
+            color: '#fff',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: '500'
+          }}
+        >
+          📁 Upload Pricing Excel
+        </label>
+        <input
+          id="pricing-upload"
+          type="file"
+          accept=".xlsx,.xls"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) loadPricingFile(file);
+          }}
+        />
       </div>
 
       <div style={{ marginBottom: '30px' }}>
@@ -393,10 +465,12 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
         </div>
       )}
 
-      <div style={{ marginTop: '30px', padding: '15px', background: '#fff3cd', borderRadius: '6px', fontSize: '12px', color: '#856404' }}>
-        <strong>Note:</strong> Material costs default to $0 until pricing database is loaded.
-        Upload your SKD Estimating Database to see accurate costs.
-      </div>
+      {!pricesLoaded && (
+        <div style={{ marginTop: '30px', padding: '15px', background: '#fff3cd', borderRadius: '6px', fontSize: '12px', color: '#856404' }}>
+          <strong>Note:</strong> Material costs default to $0 until pricing database is loaded.
+          Click "📁 Upload Pricing Excel\" above to load your material costs.
+        </div>
+      )}
     </div>
   );
 }
