@@ -65,35 +65,37 @@ export async function saveMaterialPricingToSupabase(materials: Omit<MaterialPric
   }
 
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      console.warn('User not authenticated. Cannot save pricing data.');
-      return false;
-    }
+    // Use a default user_id since this app doesn't have authentication
+    const defaultUserId = '00000000-0000-0000-0000-000000000000';
 
     const materialsWithUserId = materials.map(m => ({
       ...m,
-      user_id: user.id,
+      user_id: defaultUserId,
       last_updated: new Date().toISOString()
     }));
 
+    // Delete old pricing for this user
     const { error: deleteError } = await supabase
       .from('material_pricing')
       .delete()
-      .eq('user_id', user.id);
+      .eq('user_id', defaultUserId);
 
     if (deleteError) {
       console.error('Error deleting old pricing:', deleteError);
     }
 
-    const { error: insertError } = await supabase
-      .from('material_pricing')
-      .insert(materialsWithUserId);
+    // Insert new pricing in batches to avoid size limits
+    const batchSize = 100;
+    for (let i = 0; i < materialsWithUserId.length; i += batchSize) {
+      const batch = materialsWithUserId.slice(i, i + batchSize);
+      const { error: insertError } = await supabase
+        .from('material_pricing')
+        .insert(batch);
 
-    if (insertError) {
-      console.error('Error saving material pricing:', insertError);
-      return false;
+      if (insertError) {
+        console.error(`Error saving material pricing batch ${i / batchSize + 1}:`, insertError);
+        return false;
+      }
     }
 
     return true;
@@ -107,14 +109,12 @@ export async function loadCompanySettings(): Promise<CompanySettings | null> {
   if (!supabase) return null;
 
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) return null;
+    const defaultUserId = '00000000-0000-0000-0000-000000000000';
 
     const { data, error } = await supabase
       .from('company_settings')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', defaultUserId)
       .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
@@ -136,13 +136,7 @@ export async function saveCompanySettings(settings: Omit<CompanySettings, 'id' |
   }
 
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      console.warn('User not authenticated. Cannot save settings.');
-      return false;
-    }
-
+    const defaultUserId = '00000000-0000-0000-0000-000000000000';
     const existing = await loadCompanySettings();
 
     if (existing) {
@@ -152,7 +146,7 @@ export async function saveCompanySettings(settings: Omit<CompanySettings, 'id' |
           ...settings,
           updated_at: new Date().toISOString()
         })
-        .eq('user_id', user.id);
+        .eq('user_id', defaultUserId);
 
       if (error) {
         console.error('Error updating company settings:', error);
@@ -163,7 +157,7 @@ export async function saveCompanySettings(settings: Omit<CompanySettings, 'id' |
         .from('company_settings')
         .insert({
           ...settings,
-          user_id: user.id
+          user_id: defaultUserId
         });
 
       if (error) {
@@ -201,9 +195,7 @@ export async function saveProjectEstimate(
   if (!supabase) return null;
 
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) return null;
+    const defaultUserId = '00000000-0000-0000-0000-000000000000';
 
     const { data, error } = await supabase
       .from('project_estimates')
@@ -222,7 +214,7 @@ export async function saveProjectEstimate(
         profit_percentage: costs.profitPercentage,
         profit_amount: costs.profitAmount,
         total_bid_price: costs.totalBidPrice,
-        user_id: user.id,
+        user_id: defaultUserId,
         takeoff_data: takeoffData,
         status: 'draft'
       })
