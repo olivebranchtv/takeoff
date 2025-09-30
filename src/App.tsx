@@ -7,6 +7,8 @@ import TagManager from '@/components/TagManager';
 import { AssemblyPanel } from '@/components/AssemblyPanel';
 import { PricingPanel } from '@/components/PricingPanel';
 import { UserGuide } from '@/components/UserGuide';
+import { AIAnalysisPanel } from '@/components/AIAnalysisPanel';
+import { analyzeDrawingsWithImages, getOpenAIApiKey, setOpenAIApiKey, type ProjectAnalysis } from '@/utils/openaiAnalysis';
 import { useStore } from '@/state/store';
 import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
 import { pathLength } from '@/utils/geometry';
@@ -80,6 +82,9 @@ export default function App() {
   /* ---------- Assembly Panel modal ---------- */
   const [assemblyPanelOpen, setAssemblyPanelOpen] = useState(false);
   const [pricingPanelOpen, setPricingPanelOpen] = useState(false);
+  const [aiAnalysisOpen, setAiAnalysisOpen] = useState(false);
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<ProjectAnalysis | null>(null);
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
 
   /* ---------- File menu ---------- */
   const [fileMenuOpen, setFileMenuOpen] = useState(false);
@@ -306,6 +311,148 @@ export default function App() {
       setProjectName('Untitled Project');
     }
   }, [setFileName, setPages, setPageCount, setPageLabels, setActivePage, setSelectedIds]);
+
+  /* =========================================================================================
+     AI DOCUMENT ANALYSIS
+     ========================================================================================= */
+  const runAIAnalysis = useCallback(async () => {
+    if (!pdf) {
+      alert('Please load a PDF first');
+      return;
+    }
+
+    let apiKey = getOpenAIApiKey();
+    if (!apiKey) {
+      apiKey = prompt('Enter your OpenAI API key:\n\n(Your key will be saved locally and never sent to our servers. It will only be used to call OpenAI directly from your browser.)');
+      if (!apiKey || !apiKey.trim()) {
+        return;
+      }
+      setOpenAIApiKey(apiKey);
+    }
+
+    setAiAnalyzing(true);
+
+    try {
+      const imageDataUrls: string[] = [];
+
+      for (let i = 0; i < Math.min(pdf.numPages, 10); i++) {
+        try {
+          const page = await pdf.getPage(i + 1);
+          const viewport = page.getViewport({ scale: 2.0 });
+
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          if (!context) continue;
+
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+
+          await page.render({
+            canvasContext: context,
+            viewport: viewport
+          }).promise;
+
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          imageDataUrls.push(dataUrl);
+        } catch (pageError) {
+          console.error(`Error rendering page ${i + 1}:`, pageError);
+        }
+      }
+
+      if (imageDataUrls.length === 0) {
+        throw new Error('Could not render any pages from PDF');
+      }
+
+      const analysis = await analyzeDrawingsWithImages(imageDataUrls, apiKey);
+      setAiAnalysisResult(analysis);
+      setAiAnalysisOpen(true);
+    } catch (error: any) {
+      console.error('AI Analysis Error:', error);
+      alert(`Failed to analyze drawings: ${error.message || 'Unknown error'}\n\nPlease check your API key and try again.`);
+    } finally {
+      setAiAnalyzing(false);
+    }
+  }, [pdf]);
+
+  const exportAIAnalysis = useCallback(async () => {
+    if (!aiAnalysisResult) return;
+
+    try {
+      const XLSX = await import('xlsx');
+
+      const data: any[] = [];
+
+      data.push(['AI DOCUMENT ANALYSIS REPORT']);
+      data.push(['Project:', fileName || 'Untitled']);
+      data.push(['Date:', new Date().toLocaleDateString()]);
+      data.push([]);
+
+      if (aiAnalysisResult.assumptions.length > 0) {
+        data.push(['PROJECT ASSUMPTIONS']);
+        aiAnalysisResult.assumptions.forEach(a => data.push(['', a]));
+        data.push([]);
+      }
+
+      data.push(['FIXTURE RESPONSIBILITY']);
+      data.push(['Owner Provided:']);
+      aiAnalysisResult.fixtureResponsibility.ownerProvided.forEach(item => data.push(['', item]));
+      data.push(['Contractor Provided:']);
+      aiAnalysisResult.fixtureResponsibility.contractorProvided.forEach(item => data.push(['', item]));
+      if (aiAnalysisResult.fixtureResponsibility.notes) {
+        data.push(['Notes:', aiAnalysisResult.fixtureResponsibility.notes]);
+      }
+      data.push([]);
+
+      if (aiAnalysisResult.lightingSchedule.length > 0) {
+        data.push(['LIGHTING SCHEDULE']);
+        data.push(['Type', 'Description', 'Manufacturer', 'Model', 'Qty', 'Wattage', 'Voltage', 'Mounting', 'Notes']);
+        aiAnalysisResult.lightingSchedule.forEach(f => {
+          data.push([
+            f.type, f.description, f.manufacturer || '', f.model || '',
+            f.quantity || '', f.wattage || '', f.voltage || '',
+            f.mounting || '', f.notes || ''
+          ]);
+        });
+        data.push([]);
+      }
+
+      if (aiAnalysisResult.panelSchedule.length > 0) {
+        data.push(['PANEL SCHEDULE']);
+        data.push(['Panel ID', 'Location', 'Voltage', 'Phases', 'Main', 'Circuits', 'Fed From', 'Notes']);
+        aiAnalysisResult.panelSchedule.forEach(p => {
+          data.push([
+            p.panelId, p.location || '', p.voltage || '', p.phases || '',
+            p.main || '', p.circuits || '', p.feedFrom || '', p.notes || ''
+          ]);
+        });
+        data.push([]);
+      }
+
+      if (aiAnalysisResult.keyNotes.length > 0) {
+        data.push(['KEY NOTES']);
+        aiAnalysisResult.keyNotes.forEach(n => data.push(['', n]));
+        data.push([]);
+      }
+
+      data.push(['SCOPE OF WORK']);
+      data.push(['Included Work:']);
+      aiAnalysisResult.scope.includedWork.forEach(item => data.push(['', item]));
+      data.push(['Excluded Work:']);
+      aiAnalysisResult.scope.excludedWork.forEach(item => data.push(['', item]));
+
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      ws['!cols'] = [{ wch: 20 }, { wch: 50 }, { wch: 20 }, { wch: 20 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 30 }];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'AI Analysis');
+
+      const filename = `${fileName || 'Project'} - AI Analysis.xlsx`;
+      XLSX.writeFile(wb, filename);
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Failed to export analysis');
+    }
+  }, [aiAnalysisResult, fileName]);
 
   /* =========================================================================================
      SIMPLE SUMMARY (BOM)
@@ -765,6 +912,14 @@ export default function App() {
 
         <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
         <button className="btn" onClick={()=>setAssemblyPanelOpen(true)}>Assemblies</button>
+        <button
+          className="btn"
+          onClick={runAIAnalysis}
+          disabled={!pdf || aiAnalyzing}
+          style={{background: aiAnalyzing ? '#9e9e9e' : '#667eea', color:'#fff', fontWeight:'bold'}}
+        >
+          {aiAnalyzing ? '⏳ Analyzing...' : '🤖 AI Scan Documents'}
+        </button>
         <button className="btn" onClick={()=>setPricingPanelOpen(true)} style={{background:'#2e7d32', color:'#fff', fontWeight:'bold'}}>💰 Pricing & Bidding</button>
         <button className="btn" onClick={exportExcelFull}>Export Excel (Full BOM)</button>
         <button className="btn" onClick={exportFixturesOnly}>Export Lighting Fixtures</button>
@@ -971,6 +1126,14 @@ export default function App() {
 
       {userGuideOpen && (
         <UserGuide onClose={() => setUserGuideOpen(false)} />
+      )}
+
+      {aiAnalysisOpen && aiAnalysisResult && (
+        <AIAnalysisPanel
+          analysis={aiAnalysisResult}
+          onClose={() => setAiAnalysisOpen(false)}
+          onExport={exportAIAnalysis}
+        />
       )}
     </div>
   );
