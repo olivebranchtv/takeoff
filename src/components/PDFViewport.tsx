@@ -101,7 +101,10 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
     })();
 
     return () => { cancelled = true; cleanup?.(); };
-      } finally {
+    } finally {
+      isRenderingRef.current = false;
+    }
+
     return () => { 
       cancelled = true; 
       cleanup?.(); 
