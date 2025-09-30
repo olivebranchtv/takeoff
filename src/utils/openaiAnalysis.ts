@@ -76,14 +76,21 @@ Analyze these electrical drawings and extract the following information in a str
    - Any specific notes about fixture responsibilities
 
 3. LIGHTING SCHEDULE:
-   - Extract complete lighting fixture schedule
+   - Extract EVERY SINGLE ROW from the lighting fixture schedule table
+   - Look for tables with headers like "TYPE", "DESCRIPTION", "LAMP", "VOLT", "WATT", "MANUFACTURER", "MODEL"
+   - Read ALL fixture types listed (L1, L2, EM, EE, EMX, A, B, C, etc.)
    - Include: Type, Description, Manufacturer, Model, Quantity, Wattage, Voltage, Mounting
-   - Format as a structured list
+   - Copy the exact text from each cell - do not paraphrase or summarize
+   - If a cell is empty or has "---", record it as empty
+   - Count ALL rows in the schedule - do not stop early
 
 4. PANEL SCHEDULE:
-   - Extract all panel information
+   - Extract EVERY SINGLE PANEL from the panel schedule
+   - Look for panel schedules with circuit breaker listings
+   - Read ALL panels shown (LP-1, LP-2, PP-1, etc.)
    - Include: Panel ID, Location, Voltage, Phases, Main Breaker, Circuit Count, Fed From
-   - Format as a structured list
+   - Copy the exact information from each panel
+   - Count ALL panels in the schedule - do not stop early
 
 5. KEY NOTES:
    - Important general notes
@@ -156,8 +163,8 @@ Be thorough and extract all available information. If information is not found, 
             content: prompt
           }
         ],
-        max_tokens: 4000,
-        temperature: 0.1 // Low temperature for more consistent/factual responses
+        max_tokens: 8000,
+        temperature: 0.05 // Low temperature for more consistent/factual responses
       })
     });
 
@@ -254,6 +261,17 @@ CRITICAL INSTRUCTIONS:
 - DO NOT guess or infer information not explicitly shown
 - ONLY report what is actually visible in the documents
 
+LIGHTING SCHEDULE EXTRACTION:
+- Read the ENTIRE lighting fixture schedule table from top to bottom
+- Extract EVERY ROW - do not skip any fixture types
+- Common fixture types include: L1, L2, L3, EM, EE, EMX, A, B, C, D, E1, E2, etc.
+- If the schedule has 10 rows, you must extract all 10 fixtures
+- If the schedule has 4 rows (like L1, EM, EE, EMX), you must extract all 4
+- Look carefully at multi-line descriptions - they may span multiple lines
+- Copy manufacturer names exactly as shown (Lithonia, Philips, Cooper, etc.)
+- Record "TBD" or "---" or blank exactly when cells are empty
+- Double-check you extracted every single row before finishing
+
 For each page, identify:
 1. Page type (lighting schedule, panel schedule, floor plan, details, notes, cover)
 2. What information is actually shown
@@ -272,15 +290,22 @@ Extract the following information:
    - Specific notes about fixture responsibilities from the drawings
 
 3. LIGHTING SCHEDULE:
-   - Extract the ACTUAL lighting fixture schedule table from the drawings
+   - Extract EVERY SINGLE ROW from the lighting fixture schedule table
+   - Look for tables with headers like "TYPE", "DESCRIPTION", "LAMP", "VOLT", "WATT", "MANUFACTURER", "MODEL"
+   - Read ALL fixture types listed (L1, L2, EM, EE, EMX, A, B, C, etc.)
    - Include: Type, Description, Manufacturer, Model, Quantity, Wattage, Voltage, Mounting
-   - ONLY include fixtures actually listed in the schedule
+   - Copy the exact text from each cell - do not paraphrase or summarize
+   - If a cell is empty or has "---", record it as empty
+   - Count ALL rows in the schedule - do not stop early
    - If no lighting schedule is found, return empty array
 
 4. PANEL SCHEDULE:
-   - Extract the ACTUAL panel schedule from the drawings
+   - Extract EVERY SINGLE PANEL from the panel schedule
+   - Look for panel schedules with circuit breaker listings
+   - Read ALL panels shown (LP-1, LP-2, PP-1, etc.)
    - Include: Panel ID, Location, Voltage, Phases, Main Breaker, Circuit Count, Fed From
-   - ONLY include panels actually shown in the schedule
+   - Copy the exact information from each panel
+   - Count ALL panels in the schedule - do not stop early
    - If no panel schedule is found, return empty array
 
 5. KEY NOTES:
@@ -309,14 +334,44 @@ Provide the response in valid JSON format following this structure:
     "notes": "details"
   },
   "lightingSchedule": [{
-    "type": "A",
-    "description": "LED Troffer",
-    "manufacturer": "Lithonia",
-    "model": "ABC123",
-    "quantity": 25,
-    "wattage": "40W",
-    "voltage": "120V",
+    "type": "L1",
+    "description": "2X4 RECESSED LED TROFFER LIGHT, DIMMABLE MANUFACTURER TBD",
+    "manufacturer": "",
+    "model": "",
+    "quantity": null,
+    "wattage": "35",
+    "voltage": "120",
     "mounting": "Recessed",
+    "notes": ""
+  }, {
+    "type": "EM",
+    "description": "EMERGENCY LED LIGHT WITH 90 MINUTES BATTERY PACK LITHONIA EU2L (WALL), ELR2 (CEILING), ELAQWP (OUTDOOR) SERIES OR EQUIVALENT",
+    "manufacturer": "Lithonia",
+    "model": "EU2L",
+    "quantity": null,
+    "wattage": "",
+    "voltage": "120",
+    "mounting": "Wall/Ceiling",
+    "notes": ""
+  }, {
+    "type": "EE",
+    "description": "LIGHT FIXTURE WITH 90 MINUTES EMERGENCY BATTERY PACK VERIFY WITH MANUFACTURER FOR OPTION/INVERTER IF NOT AVAILABLE",
+    "manufacturer": "",
+    "model": "",
+    "quantity": null,
+    "wattage": "",
+    "voltage": "120",
+    "mounting": "",
+    "notes": ""
+  }, {
+    "type": "EMX",
+    "description": "COMBINATION EMERGENCY LED LIGHT/EXIT SIGN 90 MINUTES BATTERY PACK LITHONIA ECC SERIES OR EQUIVALENT",
+    "manufacturer": "Lithonia",
+    "model": "ECC",
+    "quantity": null,
+    "wattage": "",
+    "voltage": "120",
+    "mounting": "",
     "notes": ""
   }],
   "panelSchedule": [{
@@ -385,8 +440,8 @@ Provide the response in valid JSON format following this structure:
             ]
           }
         ],
-        max_tokens: 4000,
-        temperature: 0.1
+        max_tokens: 8000,
+        temperature: 0.05
       })
     });
 
