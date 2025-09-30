@@ -22,6 +22,7 @@ type PageRenderInfo = {
 function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
   const [info, setInfo] = useState<PageRenderInfo | null>(null);
   const lastGoodRef = useRef<PageRenderInfo | null>(null);
+  const isRenderingRef = useRef<boolean>(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,10 +34,17 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
       return;
     }
 
+    // If already rendering the same content, don't start a new render
+    if (isRenderingRef.current && lastGoodRef.current?.pageIndex === pageIndex) {
+      return;
+    }
+
     const DPR = Math.max(1, window.devicePixelRatio || 1);
 
     (async () => {
       try {
+        isRenderingRef.current = true;
+        
         if (pageIndex >= pdf.numPages) {
           throw new Error(`Page index ${pageIndex} out of range (0-${pdf.numPages - 1})`);
         }
@@ -93,6 +101,12 @@ function usePageBitmap(pdf: PDFDoc | null, zoom: number, pageIndex: number) {
     })();
 
     return () => { cancelled = true; cleanup?.(); };
+      } finally {
+    return () => { 
+      cancelled = true; 
+      cleanup?.(); 
+      isRenderingRef.current = false;
+    };
   }, [pdf, zoom, pageIndex]);
 
   return info;
@@ -328,6 +342,8 @@ export default function PDFViewport({ pdf }: Props) {
           const feet = input ? parseFloat(input) : NaN;
           if (!isNaN(feet) && feet > 0) {
             setCalibration(activePage, px / feet, 'ft');
+            // Force a repaint after calibration to ensure PDF stays visible
+            setPaintTick(t => t + 1);
           }
         } finally {
           // Clear local calibration state regardless
