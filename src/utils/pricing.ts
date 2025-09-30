@@ -252,10 +252,13 @@ export class PricingDatabase {
       if (normCategory === dbCatLower) return true;
 
       // Map common assembly categories to database categories
-      if (normCategory === 'fittings' && (dbCatLower.includes('flex') || dbCatLower.includes('conduit') || dbCatLower.includes('coupling'))) return true;
-      if (normCategory === 'devices' && (dbCatLower.includes('box') || dbCatLower.includes('plate'))) return true;
-      if (normCategory === 'wire' && dbCatLower.includes('cable')) return true;
-      if (normCategory === 'conduit' && dbCatLower.includes('conduit')) return true;
+      if (normCategory === 'fittings' && (dbCatLower.includes('flex') || dbCatLower.includes('conduit') || dbCatLower.includes('coupling') || dbCatLower.includes('fitting'))) return true;
+      if (normCategory === 'devices' && (dbCatLower.includes('box') || dbCatLower.includes('plate') || dbCatLower.includes('device'))) return true;
+      if (normCategory === 'boxes' && (dbCatLower.includes('box') || dbCatLower.includes('ring'))) return true;
+      if (normCategory === 'plates' && dbCatLower.includes('plate')) return true;
+      if (normCategory === 'wire' && (dbCatLower.includes('cable') || dbCatLower.includes('wire') || dbCatLower.includes('cord'))) return true;
+      if (normCategory === 'conduit' && (dbCatLower.includes('conduit') || dbCatLower.includes('emt') || dbCatLower.includes('tubing'))) return true;
+      if (normCategory === 'grounding' && (dbCatLower.includes('ground') || dbCatLower.includes('wire'))) return true;
 
       return false;
     };
