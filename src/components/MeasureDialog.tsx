@@ -3,27 +3,47 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { MeasureOptions, EMTSize } from '@/types';
 import { useStore } from '@/state/store';
 
-/** EMT sizes list for selects */
+/** EMT sizes for raceway */
 const EMT_SIZES: EMTSize[] = [
   '1/2"', '3/4"', '1"', '1-1/4"', '1-1/2"', '2"',
   '2-1/2"', '3"', '3-1/2"', '4"', ''
-];
+] as const;
 
-/** Keep exactly 3 conductor groups to simplify downstream logic */
+/** Commercial wire sizes commonly used (AWG + kcmil) */
+const WIRE_SIZES = [
+  '18','16','14','12','10','8','6','4','3','2','1','1/0','2/0','3/0','4/0',
+  '250','300','350','400','500','600','750','1000'
+] as const;
+
+/** Conductor insulation types (expand as needed) */
+const INSULATION_TYPES = [
+  'THHN/THWN-2',
+  'XHHW-2',
+  'RHH/RHW-2',
+  'MTW'
+] as const;
+
+/** Wire materials */
+const WIRE_MATERIALS = ['CU','AL'] as const;
+
+/** Keep exactly 3 conductor groups; fill defaults */
 function normalizeConductor3(
   incoming?: MeasureOptions['conductors']
 ): MeasureOptions['conductors'] {
   const base: MeasureOptions['conductors'] = [
-    { count: 0, size: '' },
-    { count: 0, size: '' },
-    { count: 0, size: '' },
+    { count: 0, size: '', insulation: 'THHN/THWN-2', material: 'CU' },
+    { count: 0, size: '', insulation: 'THHN/THWN-2', material: 'CU' },
+    { count: 0, size: '', insulation: 'THHN/THWN-2', material: 'CU' },
   ];
   if (!Array.isArray(incoming)) return base;
-  return [
-    incoming[0] ?? base[0],
-    incoming[1] ?? base[1],
-    incoming[2] ?? base[2],
-  ];
+  const out = [
+    { ...base[0], ...(incoming[0] ?? {}) },
+    { ...base[1], ...(incoming[1] ?? {}) },
+    { ...base[2], ...(incoming[2] ?? {}) },
+  ] as MeasureOptions['conductors'];
+  // sanitize: if count is 0 clear size
+  for (const g of out) if (!g.count) g.size = '';
+  return out;
 }
 
 type Props = {
@@ -52,12 +72,20 @@ export default function MeasureDialog({
   /** Prefill from initial → lastMeasureOptions → hard defaults */
   const seeded: MeasureOptions = useMemo(() => {
     const seed: MeasureOptions = {
+      // raceway
       emtSize: (initial?.emtSize ?? last?.emtSize) as EMTSize | undefined,
       extraRacewayPerPoint: toNum(initial?.extraRacewayPerPoint, last?.extraRacewayPerPoint, 0),
+
+      // conductors
       conductors: normalizeConductor3(initial?.conductors ?? last?.conductors),
+
       extraConductorPerPoint: toNum(initial?.extraConductorPerPoint, last?.extraConductorPerPoint, 0),
       boxesPerPoint: toNum(initial?.boxesPerPoint, last?.boxesPerPoint, 0),
-      wastePct: clamp01(initial?.wastePct ?? last?.wastePct ?? 0),
+
+      // NOTE: store.ts uses wasteFactor (factor like 1.05), not wastePct
+      wasteFactor: clampMin(initial?.wasteFactor ?? last?.wasteFactor ?? 1, 1),
+
+      // display
       lineColor: String(initial?.lineColor ?? last?.lineColor ?? '#000000'),
       pointColor: String(initial?.pointColor ?? last?.pointColor ?? '#000000'),
       lineWeight: toNum(initial?.lineWeight, last?.lineWeight, 2),
@@ -65,7 +93,7 @@ export default function MeasureDialog({
     };
     return seed;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]); // re-seed each time dialog opens
+  }, [open]); // re-seed when opening
 
   const [form, setForm] = useState<MeasureOptions>(seeded);
 
@@ -91,10 +119,12 @@ export default function MeasureDialog({
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleSubmit() {
-    // normalize: ensure 3 groups, coerce empty sizes if count is 0
+    // normalize & sanitize
     const conductors = normalizeConductor3(form.conductors).map(g => ({
       count: clampNonNegInt(g.count),
-      size: (g.count ?? 0) > 0 ? (g.size ?? '') : '',
+      size: (g.count ?? 0) > 0 ? String(g.size ?? '') : '',
+      insulation: (g.count ?? 0) > 0 ? (g.insulation || 'THHN/THWN-2') : 'THHN/THWN-2',
+      material: (g.count ?? 0) > 0 ? (g.material || 'CU') : 'CU',
     }));
 
     const clean: MeasureOptions = {
@@ -102,15 +132,15 @@ export default function MeasureDialog({
       extraRacewayPerPoint: clampNonNeg(form.extraRacewayPerPoint),
       conductors,
       extraConductorPerPoint: clampNonNeg(form.extraConductorPerPoint),
-      boxesPerPoint: clampNonNeg(form.boxesPerPoint),
-      wastePct: clamp01(form.wastePct ?? 0),
+      boxesPerPoint: clampNonNegInt(form.boxesPerPoint),
+      wasteFactor: clampMin(form.wasteFactor ?? 1, 1),
       lineColor: form.lineColor || '#000000',
       pointColor: form.pointColor || '#000000',
       lineWeight: clampNonNeg(form.lineWeight || 1),
       opaquePoints: !!form.opaquePoints,
     };
 
-    // persist as last used for the next run
+    // persist for the next run
     setLast(clean);
     onSubmit(clean);
   }
@@ -119,8 +149,7 @@ export default function MeasureDialog({
 
   return (
     <div style={backdropStyle} onMouseDown={(e) => {
-      // click outside = cancel
-      if (e.target === e.currentTarget) onCancel();
+      if (e.target === e.currentTarget) onCancel(); // click outside = cancel
     }}>
       <div style={panelStyle} onMouseDown={(e)=>e.stopPropagation()}>
         <div style={headerStyle}>
@@ -130,14 +159,13 @@ export default function MeasureDialog({
 
         <div style={bodyStyle}>
           {/* RACEWAY */}
-          <Section title="Raceway">
+          <Section title="Raceway (EMT)">
             <div className="grid">
               <label>EMT Size</label>
               <select
                 value={form.emtSize ?? ''}
                 onChange={(e)=>setForm(f=>({...f, emtSize: e.target.value as EMTSize}))}
               >
-                {/* empty option means "unset" */}
                 <option value="">— Select —</option>
                 {EMT_SIZES.filter(s => s !== '').map(size => (
                   <option key={size} value={size}>{size}</option>
@@ -152,13 +180,12 @@ export default function MeasureDialog({
                 onValue={(v)=>setForm(f=>({...f, extraRacewayPerPoint: v}))}
               />
 
-              <label>Waste (%)</label>
+              <label>Waste Factor</label>
               <NumberInput
-                value={(form.wastePct ?? 0) * 100}
-                min={0}
-                max={100}
-                step={1}
-                onValue={(v)=>setForm(f=>({...f, wastePct: clamp01(v/100)}))}
+                value={form.wasteFactor ?? 1}
+                min={1}
+                step={0.01}
+                onValue={(v)=>setForm(f=>({...f, wasteFactor: clampMin(v, 1)}))}
               />
             </div>
           </Section>
@@ -166,38 +193,71 @@ export default function MeasureDialog({
           {/* CONDUCTORS */}
           <Section title="Conductors (up to 3 groups)">
             <div className="grid">
-              {normalizeConductor3(form.conductors).map((g, i) => (
-                <React.Fragment key={i}>
-                  <label>Group {i+1} — Qty</label>
-                  <NumberInput
-                    value={g.count}
-                    min={0}
-                    step={1}
-                    onValue={(v)=>setForm(f=>{
-                      const list = normalizeConductor3(f.conductors);
-                      list[i] = { ...list[i], count: clampNonNegInt(v) };
-                      // if going to 0, also clear size
-                      if (clampNonNegInt(v) === 0) list[i].size = '';
-                      return { ...f, conductors: list };
-                    })}
-                  />
-                  <label>Size</label>
-                  <select
-                    value={g.size ?? ''}
-                    onChange={(e)=>setForm(f=>{
-                      const list = normalizeConductor3(f.conductors);
-                      list[i] = { ...list[i], size: e.target.value as EMTSize };
-                      return { ...f, conductors: list };
-                    })}
-                    disabled={(g.count ?? 0) <= 0}
-                  >
-                    <option value="">— Select —</option>
-                    {EMT_SIZES.filter(s => s !== '').map(size => (
-                      <option key={size} value={size}>{size}</option>
-                    ))}
-                  </select>
-                </React.Fragment>
-              ))}
+              {normalizeConductor3(form.conductors).map((g, i) => {
+                const disabled = (g.count ?? 0) <= 0;
+                return (
+                  <React.Fragment key={i}>
+                    <label>Group {i+1} — Qty</label>
+                    <NumberInput
+                      value={g.count}
+                      min={0}
+                      step={1}
+                      onValue={(v)=>setForm(f=>{
+                        const list = normalizeConductor3(f.conductors);
+                        const qty = clampNonNegInt(v);
+                        list[i] = {
+                          ...list[i],
+                          count: qty,
+                          size: qty === 0 ? '' : (list[i].size || ''),
+                        };
+                        return { ...f, conductors: list };
+                      })}
+                    />
+
+                    <label>Wire Size</label>
+                    <select
+                      value={g.size ?? ''}
+                      onChange={(e)=>setForm(f=>{
+                        const list = normalizeConductor3(f.conductors);
+                        list[i] = { ...list[i], size: e.target.value as (typeof WIRE_SIZES)[number] | '' };
+                        return { ...f, conductors: list };
+                      })}
+                      disabled={disabled}
+                    >
+                      <option value="">— Select —</option>
+                      {WIRE_SIZES.map(size => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
+
+                    <label>Material</label>
+                    <select
+                      value={g.material ?? 'CU'}
+                      onChange={(e)=>setForm(f=>{
+                        const list = normalizeConductor3(f.conductors);
+                        list[i] = { ...list[i], material: e.target.value as (typeof WIRE_MATERIALS)[number] };
+                        return { ...f, conductors: list };
+                      })}
+                      disabled={disabled}
+                    >
+                      {WIRE_MATERIALS.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+
+                    <label>Insulation</label>
+                    <select
+                      value={g.insulation ?? 'THHN/THWN-2'}
+                      onChange={(e)=>setForm(f=>{
+                        const list = normalizeConductor3(f.conductors);
+                        list[i] = { ...list[i], insulation: e.target.value as (typeof INSULATION_TYPES)[number] };
+                        return { ...f, conductors: list };
+                      })}
+                      disabled={disabled}
+                    >
+                      {INSULATION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </React.Fragment>
+                );
+              })}
 
               <label>Extra per Point (ft) — Each Conductor</label>
               <NumberInput
@@ -250,18 +310,25 @@ export default function MeasureDialog({
         </div>
 
         <div style={footerStyle}>
-          <button className="btn" onClick={() => { resetLast(); setForm({
-            emtSize: '',
-            extraRacewayPerPoint: 0,
-            conductors: normalizeConductor3(),
-            extraConductorPerPoint: 0,
-            boxesPerPoint: 0,
-            wastePct: 0,
-            lineColor: '#000000',
-            pointColor: '#000000',
-            lineWeight: 2,
-            opaquePoints: false,
-          }); }} title="Restore saved defaults">
+          <button
+            className="btn"
+            onClick={() => {
+              resetLast();
+              setForm({
+                emtSize: '',
+                extraRacewayPerPoint: 0,
+                conductors: normalizeConductor3(),
+                extraConductorPerPoint: 0,
+                boxesPerPoint: 0,
+                wasteFactor: 1.05,
+                lineColor: '#000000',
+                pointColor: '#000000',
+                lineWeight: 2,
+                opaquePoints: false,
+              });
+            }}
+            title="Restore saved defaults"
+          >
             Restore Defaults
           </button>
 
@@ -291,9 +358,9 @@ export default function MeasureDialog({
         .btn.primary {
           background: #0d6efd;
           color: #fff;
-          border-color: #0b5ed7;
+          border-color:#0b5ed7;
         }
-        .btn.primary:hover { background: #0b5ed7; }
+        .btn.primary:hover { background:#0b5ed7; }
         input[type="number"], select {
           width: 100%;
           padding: 6px 8px;
@@ -353,12 +420,7 @@ function toNum(a?: number, b?: number, d = 0) {
   const x = typeof a === 'number' ? a : (typeof b === 'number' ? b : d);
   return Number.isFinite(x) ? x : d;
 }
-function clamp01(v: number) {
-  if (!Number.isFinite(v)) return 0;
-  if (v < 0) return 0;
-  if (v > 1) return 1;
-  return v;
-}
+function clampMin(v: number, min = 0) { return Number.isFinite(v) && v >= min ? v : min; }
 function clampNonNeg(v: number) { return Number.isFinite(v) && v >= 0 ? v : 0; }
 function clampNonNegInt(v: number) { return Math.max(0, Math.floor(Number.isFinite(v) ? v : 0)); }
 
@@ -375,7 +437,7 @@ const backdropStyle: React.CSSProperties = {
 };
 
 const panelStyle: React.CSSProperties = {
-  width: 640,
+  width: 680,
   maxWidth: '96vw',
   maxHeight: '90vh',
   overflow: 'auto',
