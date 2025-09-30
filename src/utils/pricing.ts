@@ -224,11 +224,41 @@ export class PricingDatabase {
   }
 
   /**
-   * Get material price by description
+   * Get material price by description (with fuzzy matching)
    */
   getMaterialPrice(category: string, description: string): number | undefined {
-    const key = `${category}::${description}`;
-    return this.materialPrices.get(key)?.materialCost;
+    // Try exact match first
+    const exactKey = `${category}::${description}`;
+    const exact = this.materialPrices.get(exactKey);
+    if (exact && exact.materialCost > 0) {
+      return exact.materialCost;
+    }
+
+    // Fuzzy match - normalize and find similar items
+    const normDesc = description.toLowerCase()
+      .replace(/["']/g, '')
+      .replace(/\s+/g, '')
+      .replace(/-/g, '')
+      .trim();
+
+    const keyTerms = normDesc.split(/[,\/]/).filter(t => t.length > 2);
+
+    // Search for matches in same category
+    for (const [key, price] of this.materialPrices.entries()) {
+      if (price.category !== category || !price.materialCost || price.materialCost <= 0) continue;
+
+      const dbDesc = price.description.toLowerCase()
+        .replace(/["']/g, '')
+        .replace(/\s+/g, '')
+        .replace(/-/g, '');
+
+      // Check if database description contains assembly key terms
+      if (keyTerms.some(term => dbDesc.includes(term))) {
+        return price.materialCost;
+      }
+    }
+
+    return undefined;
   }
 
   /**

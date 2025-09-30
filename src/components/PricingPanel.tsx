@@ -46,20 +46,28 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
 
     const materials = await loadMaterialPricingFromSupabase();
     if (materials && materials.length > 0) {
+      let loadedCount = 0;
       materials.forEach(m => {
         const key = `${m.category}::${m.description}`;
+        // Convert to number explicitly (Postgres may return as string)
+        const materialCost = typeof m.material_cost === 'string' ? parseFloat(m.material_cost) : (m.material_cost || 0);
+        const laborHours = typeof m.labor_hours === 'string' ? parseFloat(m.labor_hours) : (m.labor_hours || 0);
+
         pricingDb.setMaterialPrice(key, {
           category: m.category,
           description: m.description,
           unit: m.unit,
-          materialCost: m.material_cost,
-          laborHours: m.labor_hours,
+          materialCost: isNaN(materialCost) ? 0 : materialCost,
+          laborHours: isNaN(laborHours) ? 0 : laborHours,
           vendor: m.vendor,
           vendorPartNumber: m.vendor_part_number
         });
+
+        if (materialCost > 0) loadedCount++;
       });
       setPricesLoaded(true);
       setPriceCount(materials.length);
+      console.log(`Loaded ${loadedCount} material prices with costs from Supabase`);
     }
 
     setIsLoading(false);
