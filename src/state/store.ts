@@ -186,7 +186,7 @@ export const useStore = create<State>()(
         set((s) => {
           const pages = s.pages.map((p) => 
             p.pageIndex === pageIndex 
-              ? ({ ...p, objects: [...safeObjects(p.objects), obj] }) 
+              ? ({ ...p, objects: [...safeObjects(p.objects), obj as AnyTakeoffObject] }) 
               : p 
           );
           return { pages };

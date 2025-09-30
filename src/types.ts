@@ -16,7 +16,7 @@ export type PageState = {
   canvasWidth?: number;
   canvasHeight?: number;
   pixelsPerFoot?: number;
-  unit?: 'ft' | 'm';
+  unit?: 'ft';
   calibrated: boolean;
   objects: AnyTakeoffObject[];
 };

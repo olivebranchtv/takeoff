@@ -306,7 +306,7 @@ export default function App() {
           byCode.set(code, box);
           continue;
         }
-        const verts = (obj as AnyTakeoffObject).vertices ?? [];
+        const verts = obj.type !== 'count' ? (obj as any).vertices ?? [] : [];
         const lenPx = pathLength(verts);
         const lf = ppf > 0 ? lenPx / ppf : 0;
 
