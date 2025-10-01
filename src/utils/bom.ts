@@ -31,8 +31,8 @@ export type BomRow = {
   conductorLfTotal?: number;
   /** Sum of boxes (boxesPerPoint * points) */
   boxes?: number;
-  /** Up to 3 conductor groups (count + size + insulation + material) copied from measure */
-  conductors?: Array<{ count: number; size: string; insulation: string; material: string }>;
+  /** Up to 3 conductor groups (count + size + insulation + material + construction) copied from measure */
+  conductors?: Array<{ count: number; size: string; insulation: string; material: string; construction: string }>;
 };
 
 /** Helper: compute lineal feet from vertices using page calibration. */
@@ -83,7 +83,8 @@ function computeRacewayStats(
       count: Number(g.count || 0),
       size: String(g.size || ''),
       insulation: String(g.insulation || ''),
-      material: String(g.material || '')
+      material: String(g.material || ''),
+      construction: String(g.construction || 'Str')
     }));
 
   // total conductor LF = sum over groups (count × (racewayLf + extraConductorPerPoint × points))
@@ -154,7 +155,8 @@ export function buildBOMRows(pages: PageState[], mode: BomMode = 'itemized'): Bo
               count: Number(g.count || 0),
               size: String(g.size || ''),
               insulation: String(g.insulation || ''),
-              material: String(g.material || '')
+              material: String(g.material || ''),
+              construction: String(g.construction || 'Str')
             }));
             conductors = mGroups;
 

@@ -9,31 +9,31 @@ const EMT_SIZES: EMTSize[] = [
   '2 1/2"', '3"', '3 1/2"', '4"', ''
 ] as const;
 
-/** Commercial wire sizes - Match database format with # prefix */
+/** Commercial wire sizes - Match database format exactly */
 const WIRE_SIZES = [
   '#14','#12','#10','#8','#6','#4','#2','#1','1/0','2/0','3/0','4/0',
   '250MCM','350MCM','500MCM','600MCM','750MCM'
 ] as const;
 
-/** Conductor insulation types (expand as needed) */
+/** Conductor insulation types - Database only has THHN */
 const INSULATION_TYPES = [
-  'THHN/THWN-2',
-  'XHHW-2',
-  'RHH/RHW-2',
-  'MTW'
+  'THHN',
 ] as const;
 
-/** Wire materials */
-const WIRE_MATERIALS = ['CU','AL'] as const;
+/** Wire materials - Database format */
+const WIRE_MATERIALS = ['Copper'] as const;
+
+/** Wire construction - Database format */
+const WIRE_CONSTRUCTION = ['Str', 'Sol'] as const;
 
 /** Keep exactly 3 conductor groups; fill defaults */
 function normalizeConductor3(
   incoming?: MeasureOptions['conductors']
 ): MeasureOptions['conductors'] {
   const base: MeasureOptions['conductors'] = [
-    { count: 0, size: '', insulation: 'THHN/THWN-2', material: 'CU' },
-    { count: 0, size: '', insulation: 'THHN/THWN-2', material: 'CU' },
-    { count: 0, size: '', insulation: 'THHN/THWN-2', material: 'CU' },
+    { count: 0, size: '', insulation: 'THHN', material: 'Copper', construction: 'Str' },
+    { count: 0, size: '', insulation: 'THHN', material: 'Copper', construction: 'Str' },
+    { count: 0, size: '', insulation: 'THHN', material: 'Copper', construction: 'Str' },
   ];
   if (!Array.isArray(incoming)) return base;
   const out = [
@@ -123,8 +123,9 @@ export default function MeasureDialog({
     const conductors = normalizeConductor3(form.conductors).map(g => ({
       count: clampNonNegInt(g.count),
       size: (g.count ?? 0) > 0 ? String(g.size ?? '') as WireSize : '' as WireSize,
-      insulation: (g.count ?? 0) > 0 ? (g.insulation || 'THHN/THWN-2') : 'THHN/THWN-2',
-      material: (g.count ?? 0) > 0 ? (g.material || 'CU') : 'CU',
+      insulation: (g.count ?? 0) > 0 ? (g.insulation || 'THHN') : 'THHN',
+      material: (g.count ?? 0) > 0 ? (g.material || 'Copper') : 'Copper',
+      construction: (g.count ?? 0) > 0 ? (g.construction || 'Str') : 'Str',
     })) as [ConductorSpec, ConductorSpec, ConductorSpec];
 
     console.log('💾 MeasureDialog saving conductors:', conductors);
@@ -247,7 +248,7 @@ export default function MeasureDialog({
 
                     <label>Insulation</label>
                     <select
-                      value={g.insulation ?? 'THHN/THWN-2'}
+                      value={g.insulation ?? 'THHN'}
                       onChange={(e)=>setForm(f=>{
                         const list = normalizeConductor3(f.conductors);
                         list[i] = { ...list[i], insulation: e.target.value as (typeof INSULATION_TYPES)[number] };
@@ -256,6 +257,19 @@ export default function MeasureDialog({
                       disabled={disabled}
                     >
                       {INSULATION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+
+                    <label>Construction</label>
+                    <select
+                      value={g.construction ?? 'Str'}
+                      onChange={(e)=>setForm(f=>{
+                        const list = normalizeConductor3(f.conductors);
+                        list[i] = { ...list[i], construction: e.target.value as (typeof WIRE_CONSTRUCTION)[number] };
+                        return { ...f, conductors: list };
+                      })}
+                      disabled={disabled}
+                    >
+                      {WIRE_CONSTRUCTION.map(c => <option key={c} value={c}>{c === 'Str' ? 'Stranded' : 'Solid'}</option>)}
                     </select>
                   </React.Fragment>
                 );

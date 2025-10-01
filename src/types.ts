@@ -54,14 +54,16 @@ export type WireSize =
   | '250MCM' | '350MCM' | '500MCM' | '600MCM' | '750MCM'
   | '';
 
-export type WireMaterial = 'CU' | 'AL';
-export type WireInsulation = 'THHN/THWN-2' | 'XHHW-2' | 'MTW' | 'RW90' | 'USE-2' | 'RHH/RHW-2' | 'Other';
+export type WireMaterial = 'Copper' | 'Aluminum';
+export type WireInsulation = 'THHN' | 'XHHW' | 'MTW' | 'RW90' | 'USE-2' | 'RHH/RHW';
+export type WireConstruction = 'Str' | 'Sol'; // Stranded or Solid
 
 export type ConductorSpec = {
-  count: number;              // number of conductors in the group
-  size: WireSize;             // AWG/kcmil
-  insulation: WireInsulation; // insulation type
-  material: WireMaterial;     // copper or aluminum
+  count: number;                   // number of conductors in the group
+  size: WireSize;                  // AWG/kcmil
+  insulation: WireInsulation;      // insulation type (THHN, XHHW, etc.)
+  material: WireMaterial;          // Copper or Aluminum
+  construction: WireConstruction;  // Stranded (Str) or Solid (Sol)
 };
 
 /* ===== Measure options captured per run (persisted + stored on object) ===== */

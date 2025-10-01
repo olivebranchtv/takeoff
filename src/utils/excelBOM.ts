@@ -176,23 +176,16 @@ export function calculateAssemblyMaterials(
         // Format wire description to match database exactly
         // Database format: "#12 THHN Copper Wire,Str"
 
-        // Normalize insulation: "THHN/THWN-2" → "THHN", "XHHW-2" → "XHHW", etc.
-        const insulationRaw = cond.insulation || 'THHN/THWN-2';
-        const insulationNorm = insulationRaw.split('/')[0].replace(/-\d+$/, ''); // "THHN/THWN-2" → "THHN"
+        // Use exact values from conductor spec (already in database format)
+        const insulation = cond.insulation || 'THHN';
+        const material = cond.material || 'Copper';
+        const construction = cond.construction || 'Str';
 
-        // Determine wire construction: Stranded (Str) or Solid (Sol)
-        // Industry standard: #14, #12, #10 typically stranded; #8+ always stranded
-        const wireType = 'Str'; // Default to stranded (most common)
-
-        // Normalize material: "CU" → "Copper", "AL" → "Aluminum"
-        const materialRaw = cond.material || 'CU';
-        const materialNorm = materialRaw === 'AL' ? 'Aluminum' : 'Copper';
-
-        // Ensure size has # prefix to match database format
+        // Ensure size has # prefix if not already present
         const sizeWithHash = cond.size.startsWith('#') ? cond.size : `#${cond.size}`;
 
-        // Build description to match database: "#12 THHN Copper Wire,Str"
-        const wireDesc = `${sizeWithHash} ${insulationNorm} ${materialNorm} Wire,${wireType}`;
+        // Build description to match database exactly: "#12 THHN Copper Wire,Str"
+        const wireDesc = `${sizeWithHash} ${insulation} ${material} Wire,${construction}`;
         const matKey = `wire::${wireDesc}::EA`;
 
         // Map wire size to item code
@@ -215,7 +208,6 @@ export function calculateAssemblyMaterials(
         const itemCode = wireItemCodes[sizeWithHash];
 
         console.log(`  ✅ Generated WIRE material: [${itemCode}] category="wire", desc="${wireDesc}", qty=${totalCondLf}LF`);
-        console.log(`     Raw: insulation="${insulationRaw}", material="${materialRaw}" → Normalized: "${insulationNorm} ${materialNorm} Wire,${wireType}"`);
         const existing = materialAcc.get(matKey);
 
         if (existing) {

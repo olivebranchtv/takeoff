@@ -42,8 +42,9 @@ type HistoryEntry = { pageIndex: number; objects: AnyTakeoffObject[] };
 const DEFAULT_CONDUCTOR = {
   count: 0,
   size: '' as MeasureOptions['conductors'][number]['size'], // '' allowed
-  insulation: 'THHN/THWN-2' as MeasureOptions['conductors'][number]['insulation'],
-  material: 'CU' as MeasureOptions['conductors'][number]['material'],
+  insulation: 'THHN' as MeasureOptions['conductors'][number]['insulation'],
+  material: 'Copper' as MeasureOptions['conductors'][number]['material'],
+  construction: 'Str' as MeasureOptions['conductors'][number]['construction'],
 };
 
 const DEFAULT_MEASURE_OPTIONS: MeasureOptions = {
@@ -53,7 +54,7 @@ const DEFAULT_MEASURE_OPTIONS: MeasureOptions = {
 
   // WIRE: 10% waste standard (pulling slack, cuts, stripping, termination, scrap)
   conductors: [
-    { count: 3, size: '#12', insulation: 'THHN/THWN-2', material: 'CU' },  // Common 3-wire circuit
+    { count: 3, size: '#12', insulation: 'THHN', material: 'Copper', construction: 'Str' },  // Common 3-wire circuit
     { ...DEFAULT_CONDUCTOR },
     { ...DEFAULT_CONDUCTOR }
   ],
