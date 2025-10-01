@@ -637,27 +637,27 @@ export function AssemblyPanel() {
                   {selectedAssembly.description}
                 </p>
               </div>
-              {selectedAssembly.type === 'custom' && (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    onClick={() => startEditAssembly(selectedAssembly)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '8px 12px',
-                      background: '#0066FF',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      fontWeight: 500
-                    }}
-                  >
-                    <Edit2 size={14} />
-                    Edit
-                  </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => startEditAssembly(selectedAssembly)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 12px',
+                    background: '#0066FF',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 500
+                  }}
+                >
+                  <Edit2 size={14} />
+                  Edit
+                </button>
+                {selectedAssembly.type === 'custom' && (
                   <button
                     onClick={() => handleDeleteAssembly(selectedAssembly.id)}
                     style={{
@@ -677,8 +677,8 @@ export function AssemblyPanel() {
                     <Trash2 size={14} />
                     Delete
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             <div style={{ marginBottom: '24px' }}>
