@@ -26,7 +26,7 @@ const WIRE_MATERIALS = ['Copper'] as const;
 /** Wire construction - Database format */
 const WIRE_CONSTRUCTION = ['Str', 'Sol'] as const;
 
-/** Keep exactly 3 conductor groups; fill defaults */
+/** Keep exactly 3 conductor groups; fill defaults and migrate old format */
 function normalizeConductor3(
   incoming?: MeasureOptions['conductors']
 ): MeasureOptions['conductors'] {
@@ -36,13 +36,30 @@ function normalizeConductor3(
     { count: 0, size: '', insulation: 'THHN', material: 'Copper', construction: 'Str' },
   ];
   if (!Array.isArray(incoming)) return base;
+
   const out = [
     { ...base[0], ...(incoming[0] ?? {}) },
     { ...base[1], ...(incoming[1] ?? {}) },
     { ...base[2], ...(incoming[2] ?? {}) },
   ] as MeasureOptions['conductors'];
-  // sanitize: if count is 0 clear size
-  for (const g of out) if (!g.count) g.size = '';
+
+  // Migrate old format to new format
+  for (const g of out) {
+    // Migrate insulation: "THHN/THWN-2" → "THHN"
+    if (g.insulation?.includes('/') || g.insulation?.includes('-')) {
+      g.insulation = g.insulation.split('/')[0].replace(/-\d+$/, '') as any;
+    }
+    // Migrate material: "CU" → "Copper", "AL" → "Aluminum"
+    if (g.material === 'CU' as any) g.material = 'Copper';
+    if (g.material === 'AL' as any) g.material = 'Aluminum';
+    // Add construction if missing
+    if (!(g as any).construction) {
+      (g as any).construction = 'Str';
+    }
+    // sanitize: if count is 0 clear size
+    if (!g.count) g.size = '';
+  }
+
   return out;
 }
 

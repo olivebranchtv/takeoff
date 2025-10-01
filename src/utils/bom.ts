@@ -79,13 +79,28 @@ function computeRacewayStats(
   // conductor groups (up to 3) with full details
   const conductors = (m.conductors ?? [])
     .slice(0, 3)
-    .map(g => ({
-      count: Number(g.count || 0),
-      size: String(g.size || ''),
-      insulation: String(g.insulation || ''),
-      material: String(g.material || ''),
-      construction: String(g.construction || 'Str')
-    }));
+    .map(g => {
+      // Migrate old format to new format
+      let insulation = String(g.insulation || 'THHN');
+      let material = String(g.material || 'Copper');
+      let construction = String((g as any).construction || 'Str');
+
+      // Migrate insulation: "THHN/THWN-2" → "THHN"
+      if (insulation.includes('/') || insulation.includes('-')) {
+        insulation = insulation.split('/')[0].replace(/-\d+$/, '');
+      }
+      // Migrate material: "CU" → "Copper", "AL" → "Aluminum"
+      if (material === 'CU') material = 'Copper';
+      if (material === 'AL') material = 'Aluminum';
+
+      return {
+        count: Number(g.count || 0),
+        size: String(g.size || ''),
+        insulation,
+        material,
+        construction
+      };
+    });
 
   // total conductor LF = sum over groups (count × (racewayLf + extraConductorPerPoint × points))
   let conductorLfTotal = 0;
@@ -151,13 +166,28 @@ export function buildBOMRows(pages: PageState[], mode: BomMode = 'itemized'): Bo
 
             racewayLf = lengthFt + extraRaceway * pts;
 
-            const mGroups = (m.conductors ?? []).slice(0, 3).map(g => ({
-              count: Number(g.count || 0),
-              size: String(g.size || ''),
-              insulation: String(g.insulation || ''),
-              material: String(g.material || ''),
-              construction: String(g.construction || 'Str')
-            }));
+            const mGroups = (m.conductors ?? []).slice(0, 3).map(g => {
+              // Migrate old format to new format
+              let insulation = String(g.insulation || 'THHN');
+              let material = String(g.material || 'Copper');
+              let construction = String((g as any).construction || 'Str');
+
+              // Migrate insulation: "THHN/THWN-2" → "THHN"
+              if (insulation.includes('/') || insulation.includes('-')) {
+                insulation = insulation.split('/')[0].replace(/-\d+$/, '');
+              }
+              // Migrate material: "CU" → "Copper", "AL" → "Aluminum"
+              if (material === 'CU') material = 'Copper';
+              if (material === 'AL') material = 'Aluminum';
+
+              return {
+                count: Number(g.count || 0),
+                size: String(g.size || ''),
+                insulation,
+                material,
+                construction
+              };
+            });
             conductors = mGroups;
 
             let cTotal = 0;
