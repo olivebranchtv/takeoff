@@ -156,6 +156,12 @@ export function calculateAssemblyMaterials(
     }
 
     // Add wire/conductors
+    console.log(`  🔍 CHECKING CONDUCTORS for row "${row.tagCode}":`, {
+      hasConductors: !!row.conductors,
+      isArray: Array.isArray(row.conductors),
+      length: row.conductors?.length,
+      conductors: row.conductors
+    });
     if (row.conductors && Array.isArray(row.conductors) && row.conductors.length > 0) {
       console.log(`  📌 Row "${row.tagCode}" has ${row.conductors.length} conductor configs, racewayLf=${row.racewayLf}`);
       console.log(`  📌 Conductor data:`, JSON.stringify(row.conductors, null, 2));
