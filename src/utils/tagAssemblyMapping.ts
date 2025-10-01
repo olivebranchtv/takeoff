@@ -40,8 +40,9 @@ export function getAssemblyIdForTag(tagCode: string, tagCategory?: string): stri
   // ===== RECEPTACLES =====
   if (code.includes('REC') || category.includes('recept')) {
     if (code.includes('GFCI') || code.includes('GFI')) {
-      // ALL GFCIs use weatherproof assembly (homerun calculated separately: 1 per 6 GFCIs)
-      return 'recep-wp-20a';
+      // REC-WP-GFCI uses weatherproof assembly, REC-GFCI uses regular assembly
+      if (code.includes('WP')) return 'recep-wp-20a';
+      return 'recep-gfci-20a';
     }
     if (code.includes('IG') || code.includes('ISO')) return 'recep-iso-gnd-20a';
     if (code.includes('FLOOR') || code.includes('FLR')) return 'recep-floor-20a';

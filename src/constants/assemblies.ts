@@ -39,6 +39,41 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     ]
   },
   {
+    id: 'recep-gfci-20a',
+    code: 'RECEP-GFCI-20A',
+    name: 'GFCI Receptacle 20A Assembly',
+    description: 'Ground Fault Circuit Interrupter receptacle for wet locations, kitchens, bathrooms per NEC 210.8',
+    type: 'device',
+    isActive: true,
+    items: [
+      // Receptacles & Plates
+      { id: 'recep-20a-single', itemCode: 'RECEP-20A-SINGLE', description: '20A Single Receptacle', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'recep-gfci-20a', itemCode: 'RECEP-GFCI-20A', description: '20A GFCI Receptacle', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'fire-alarm-device', itemCode: 'FIRE-ALARM-DEVICE', description: 'Fire Alarm Devices', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-plastic-1g', itemCode: 'PLATE-PLASTIC-1G', description: 'Single Plastic Receptacle Plate', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+
+      // Boxes
+      { id: 'box-4sq-0.5-0.75', itemCode: 'BOX-4SQ-0.5-0.75', description: '4x4 Box 1/2"-3/4 KO\'s', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'box-4sq-jbox-bracket', itemCode: 'BOX-4SQ-JBOX-BRACKET', description: '4x4 J-Box 1/2"-3/4 KO\'s With Brackets', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'cover-4sq-blank', itemCode: 'COVER-4SQ-BLANK', description: '4" x 4" Blank Cover', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g-plaster', itemCode: 'MUDRING-1G-PLASTER', description: '1-Gang Plaster Ring', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+
+      // Misc
+      { id: 'screws-box', itemCode: 'SCREWS-BOX', description: 'Screws', unit: 'EA', quantityPer: 4, category: 'Fittings', wasteFactor: 1.02 },
+      { id: 'wing-nuts', itemCode: 'WING-NUTS', description: 'Wing Nuts', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.02 },
+      { id: 'ground-wire-to-box', itemCode: 'GROUND-WIRE-TO-BOX', description: 'Ground Wires To Box', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 },
+
+      // Raceways
+      { id: 'emt-0.5', itemCode: 'EMT-0.5', description: '1/2 EMT', unit: 'FT', quantityPer: 10, category: 'Raceways', wasteFactor: 1.05 },
+      { id: 'emt-connector-0.5-screw', itemCode: 'EMT-CONNECTOR-0.5-SCREW', description: '1/2 Emt Steel Set Screw Connectors', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'emt-coupling-0.5-screw', itemCode: 'EMT-COUPLING-0.5-SCREW', description: '1/2 Emt Steel Set Screw Couplings', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'emt-strap-0.5-1hole', itemCode: 'EMT-STRAP-0.5-1HOLE', description: '1/2 One hole strap', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+
+      // Conductors
+      { id: 'wire-12-thhn', itemCode: 'WIRE-12-THHN', description: '12 THHN', unit: 'FT', quantityPer: 30, category: 'Wire', wasteFactor: 1.10 }
+    ]
+  },
+  {
     id: 'recep-iso-gnd-20a',
     code: 'RECEP-IG-20A',
     name: 'Isolated Ground Receptacle 20A Assembly',
