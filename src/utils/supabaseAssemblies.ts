@@ -59,9 +59,36 @@ export async function loadAssembliesFromSupabase(): Promise<Assembly[]> {
       return [];
     }
 
+    // Get all material IDs from all assemblies
+    const materialIds = new Set<string>();
+    data.forEach((row: DbAssembly) => {
+      if (Array.isArray(row.items)) {
+        row.items.forEach((item: any) => {
+          if (item.material_id) {
+            materialIds.add(item.material_id);
+          }
+        });
+      }
+    });
+
+    // Fetch all materials in one query
+    const materialMap = new Map();
+    if (materialIds.size > 0) {
+      const { data: materials } = await client
+        .from('material_pricing')
+        .select('id, item_code, description, category, unit')
+        .in('id', Array.from(materialIds));
+
+      if (materials) {
+        materials.forEach((mat: any) => {
+          materialMap.set(mat.id, mat);
+        });
+      }
+    }
+
     console.log(`✅ Loaded ${data.length} assemblies from Supabase`);
 
-    // Convert database format to Assembly type
+    // Convert database format to Assembly type with enriched items
     return data.map((row: DbAssembly) => ({
       id: row.id,
       code: row.code,
@@ -69,7 +96,19 @@ export async function loadAssembliesFromSupabase(): Promise<Assembly[]> {
       description: row.description || '',
       type: row.type as Assembly['type'],
       isActive: row.is_active,
-      items: Array.isArray(row.items) ? row.items : []
+      items: Array.isArray(row.items) ? row.items.map((item: any) => {
+        const material = materialMap.get(item.material_id);
+        return {
+          id: item.material_id || crypto.randomUUID(),
+          description: material?.description || item.description || 'Unknown material',
+          unit: material?.unit || item.unit || 'EA',
+          quantityPer: item.quantityPer || item.quantity || 1,
+          category: material?.category || item.category || '',
+          wasteFactor: item.wasteFactor || 1.02,
+          itemCode: material?.item_code || item.itemCode || undefined,
+          notes: item.notes || undefined
+        };
+      }) : []
     }));
   } catch (err) {
     console.error('Exception loading assemblies:', err);
