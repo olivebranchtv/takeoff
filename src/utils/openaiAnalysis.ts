@@ -4,7 +4,19 @@
  */
 
 export interface ProjectAnalysis {
-  assumptions: string[];
+  assumptions: {
+    fixtureSupply: string[];
+    electricalScope: string[];
+    lightingScheduleNotes: string[];
+    fixturesList: string[];
+    otherPages: string[];
+    lightingControls: string[];
+    fixtureCountsBasis: string[];
+    wasteFactors: string[];
+    laborRates: string[];
+    qaNotes: string[];
+    other: string[];
+  };
   fixtureResponsibility: {
     ownerProvided: string[];
     contractorProvided: string[];
@@ -74,10 +86,51 @@ CRITICAL RULE: ABSOLUTE ACCURACY - NO GUESSING
 
 Analyze these electrical drawings and extract the following information in a structured format:
 
-1. PROJECT ASSUMPTIONS:
-   - List all key assumptions mentioned in the drawings
-   - Include notes about existing conditions
-   - Any clarifications or questions noted
+1. PROJECT ASSUMPTIONS (DETAILED BREAKDOWN):
+   Create comprehensive assumptions similar to a professional estimator's notes. Include:
+
+   A. Fixture Supply & Responsibility:
+      - Who provides fixtures (Owner vs Contractor)
+      - Specific items like "All light fixtures (A-F), lighting control panel & accessories, occupancy sensors, photocells, ballasts, and site light poles furnished (AutoZone)"
+      - Make it clear and detailed
+
+   B. Electrical Contractor Scope:
+      - What the contractor installs: "Electrical Contractor scope is installation only, including conduit, wire, junction boxes, supports, and terminations"
+      - Detailed work breakdown
+
+   C. Lighting Fixture Schedule:
+      - Where the schedule is located: "The only Lighting Fixture Schedule is located on Sheet E-3 'Lighting Plans and Details'"
+      - Any notes about schedule location or completeness
+
+   D. Fixtures Listed (detailed breakdown):
+      - Type A: 2x4 LED Troffer, 30W
+      - Type B: 2x4 LED Troffer, 20W
+      - Type C: 8' LED Strip, 40W
+      - Include ALL fixture types with descriptions and wattages
+      - Note any special fixtures like emergency packs
+
+   E. Other Pages:
+      - "No other sheets (E-1, E-2, E-4, E-5, E-6) contain fixture schedules"
+      - "They only show plan symbols and control details to be counted"
+
+   F. Lighting Controls (Devices):
+      - "M1 Occupancy Sensors are Owner-furnished and must be counted under devices/controls, not fixtures"
+      - "Recommended labor unit: 0.75-1.0 hrs each for install"
+      - "Photocells and control panel are also Owner-furnished; EC provides wiring and mounting"
+
+   G. Fixture Counts Basis:
+      - "Counts will be based on plan symbols shown on E-1 (Lighting Plan) and E-2 (Power/Lighting Plan)"
+      - "Any discrepancy between schedule and plan will be flagged"
+
+   H. Waste Factors / Labor Basis:
+      - "Wire 10%, conduit 5%, devices 2%"
+      - "Labor rate: $30/hr"
+      - "Labor unit references: [specify]"
+
+   I. QA Notes:
+      - Any quality assurance or review notes
+      - Questions to be resolved
+      - Clarifications needed
 
 2. FIXTURE RESPONSIBILITY - EXTRACT ALL DETAILS:
    - Look for sections titled "OWNER FURNISHED", "BY OWNER", "FURNISHED BY OTHERS", "CONTRACTOR FURNISHED", "BY CONTRACTOR"
@@ -221,7 +274,19 @@ Be thorough and extract all available information. If information is not found, 
 
       const parsed = JSON.parse(jsonContent);
       analysis = {
-        assumptions: parsed.assumptions || [],
+        assumptions: parsed.assumptions || {
+          fixtureSupply: [],
+          electricalScope: [],
+          lightingScheduleNotes: [],
+          fixturesList: [],
+          otherPages: [],
+          lightingControls: [],
+          fixtureCountsBasis: [],
+          wasteFactors: [],
+          laborRates: [],
+          qaNotes: [],
+          other: []
+        },
         fixtureResponsibility: parsed.fixtureResponsibility || {
           ownerProvided: [],
           contractorProvided: [],
@@ -240,7 +305,19 @@ Be thorough and extract all available information. If information is not found, 
     } catch (parseError) {
       // If JSON parsing fails, return structured data from the text response
       analysis = {
-        assumptions: [],
+        assumptions: {
+          fixtureSupply: [],
+          electricalScope: [],
+          lightingScheduleNotes: [],
+          fixturesList: [],
+          otherPages: [],
+          lightingControls: [],
+          fixtureCountsBasis: [],
+          wasteFactors: [],
+          laborRates: [],
+          qaNotes: [],
+          other: []
+        },
         fixtureResponsibility: {
           ownerProvided: [],
           contractorProvided: [],
@@ -324,10 +401,63 @@ For each page, identify:
 
 Extract the following information:
 
-1. PROJECT ASSUMPTIONS:
-   - ONLY list assumptions explicitly stated in the drawings
-   - Include notes about existing conditions if stated
-   - Any clarifications or questions noted in the documents
+1. PROJECT ASSUMPTIONS (DETAILED BREAKDOWN):
+   Create comprehensive assumptions similar to a professional estimator's notes. Organize into these categories:
+
+   A. Fixture Supply & Responsibility:
+      - Who provides fixtures (Owner vs Contractor)
+      - Specific items provided by each party
+      - Example: "All light fixtures (A-F), lighting control panel & accessories, occupancy sensors, photocells, ballasts, and site light poles furnished (AutoZone)"
+
+   B. Electrical Contractor Scope:
+      - What the contractor installs
+      - Example: "Electrical Contractor scope is installation only, including conduit, wire, junction boxes, supports, and terminations"
+
+   C. Lighting Fixture Schedule:
+      - Where the schedule is located
+      - Example: "The only Lighting Fixture Schedule is located on Sheet E-3 'Lighting Plans and Details'"
+
+   D. Fixtures Listed (detailed breakdown with specs):
+      - List each fixture type with full description and wattage
+      - Example:
+        * Type A: 2x4 LED Troffer, 30W
+        * Type B: 2x4 LED Troffer, 20W
+        * Type C: 8' LED Strip, 40W
+        * Type D: LED Downlight, 15W
+        * Type E: Exterior Wall Pack, 50W LED
+        * Type F: Pole-mounted Site Fixture, 150W LED
+        * Type X (emergency pack): "install battery pack in designated fixtures," not a separate fixture line
+
+   E. Other Pages:
+      - Notes about which pages contain schedules vs symbols
+      - Example: "No other sheets (E-1, E-2, E-4, E-5, E-6) contain fixture schedules. They only show plan symbols and control details to be counted"
+
+   F. Lighting Controls (Devices):
+      - Detailed notes about devices, sensors, controls
+      - Owner-furnished vs contractor-furnished
+      - Labor units for each device type
+      - Example: "M1 Occupancy Sensors are Owner-furnished and must be counted under devices/controls, not fixtures. Recommended labor unit: 0.75-1.0 hrs each for install. Photocells and control panel are also Owner-furnished; EC provides wiring and mounting"
+
+   G. Fixture Counts Basis:
+      - Where counts come from (which sheets)
+      - How discrepancies will be handled
+      - Example: "Counts will be based on plan symbols shown on E-1 (Lighting Plan) and E-2 (Power/Lighting Plan). Any discrepancy between schedule and plan will be flagged"
+
+   H. Waste Factors / Labor Basis:
+      - Specific waste percentages
+      - Labor rates
+      - Unit references
+      - Example: "Wire 10%, conduit 5%, devices 2%. Labor rate: $30/hr. Labor unit references: [specify source]"
+
+   I. Labor Rate & Unit References:
+      - Specific labor rates
+      - Source of labor units
+
+   J. QA Notes:
+      - Quality assurance items
+      - Questions to be resolved
+      - Clarifications needed
+      - Items to verify in field
 
 2. FIXTURE RESPONSIBILITY - EXTRACT ALL DETAILS:
    - Look for sections titled "OWNER FURNISHED", "BY OWNER", "FURNISHED BY OTHERS", "CONTRACTOR FURNISHED", "BY CONTRACTOR"
@@ -390,7 +520,19 @@ Extract the following information:
 
 Provide the response in valid JSON format following this structure:
 {
-  "assumptions": ["assumption 1", "assumption 2"],
+  "assumptions": {
+    "fixtureSupply": ["All light fixtures (A-F) furnished by Owner (AutoZone)", "Lighting control panel & accessories furnished by Owner"],
+    "electricalScope": ["Electrical Contractor scope is installation only, including conduit, wire, junction boxes, supports, and terminations"],
+    "lightingScheduleNotes": ["The only Lighting Fixture Schedule is located on Sheet E-3 'Lighting Plans and Details'"],
+    "fixturesList": ["Type A: 2x4 LED Troffer, 30W", "Type B: 2x4 LED Troffer, 20W", "Type C: 8' LED Strip, 40W", "Type D: LED Downlight, 15W"],
+    "otherPages": ["No other sheets (E-1, E-2, E-4, E-5, E-6) contain fixture schedules", "They only show plan symbols and control details to be counted"],
+    "lightingControls": ["M1 Occupancy Sensors are Owner-furnished and must be counted under devices/controls, not fixtures", "Recommended labor unit: 0.75-1.0 hrs each for install", "Photocells and control panel are also Owner-furnished; EC provides wiring and mounting"],
+    "fixtureCountsBasis": ["Counts will be based on plan symbols shown on E-1 (Lighting Plan) and E-2 (Power/Lighting Plan)", "Any discrepancy between schedule and plan will be flagged"],
+    "wasteFactors": ["Wire 10%, conduit 5%, devices 2%"],
+    "laborRates": ["Labor rate: $30/hr", "Labor unit references: NECA Manual of Labor Units"],
+    "qaNotes": ["Verify all fixture types with Owner before ordering", "Confirm control sequence with electrical engineer"],
+    "other": []
+  },
   "fixtureResponsibility": {
     "ownerProvided": ["item 1"],
     "contractorProvided": ["item 1"],
@@ -537,7 +679,19 @@ IMPORTANT NOTES:
 
     const parsed = JSON.parse(jsonContent);
     const analysis: ProjectAnalysis = {
-      assumptions: parsed.assumptions || [],
+      assumptions: parsed.assumptions || {
+        fixtureSupply: [],
+        electricalScope: [],
+        lightingScheduleNotes: [],
+        fixturesList: [],
+        otherPages: [],
+        lightingControls: [],
+        fixtureCountsBasis: [],
+        wasteFactors: [],
+        laborRates: [],
+        qaNotes: [],
+        other: []
+      },
       fixtureResponsibility: parsed.fixtureResponsibility || {
         ownerProvided: [],
         contractorProvided: [],

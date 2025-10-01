@@ -427,10 +427,89 @@ export default function App() {
       data.push(['Date:', new Date().toLocaleDateString()]);
       data.push([]);
 
-      if (aiAnalysisResult.assumptions.length > 0) {
-        data.push(['PROJECT ASSUMPTIONS']);
-        aiAnalysisResult.assumptions.forEach(a => data.push(['', a]));
+      // Export all assumption categories
+      const hasAnyAssumptions =
+        (aiAnalysisResult.assumptions.fixtureSupply && aiAnalysisResult.assumptions.fixtureSupply.length > 0) ||
+        (aiAnalysisResult.assumptions.electricalScope && aiAnalysisResult.assumptions.electricalScope.length > 0) ||
+        (aiAnalysisResult.assumptions.lightingScheduleNotes && aiAnalysisResult.assumptions.lightingScheduleNotes.length > 0) ||
+        (aiAnalysisResult.assumptions.fixturesList && aiAnalysisResult.assumptions.fixturesList.length > 0) ||
+        (aiAnalysisResult.assumptions.otherPages && aiAnalysisResult.assumptions.otherPages.length > 0) ||
+        (aiAnalysisResult.assumptions.lightingControls && aiAnalysisResult.assumptions.lightingControls.length > 0) ||
+        (aiAnalysisResult.assumptions.fixtureCountsBasis && aiAnalysisResult.assumptions.fixtureCountsBasis.length > 0) ||
+        (aiAnalysisResult.assumptions.wasteFactors && aiAnalysisResult.assumptions.wasteFactors.length > 0) ||
+        (aiAnalysisResult.assumptions.laborRates && aiAnalysisResult.assumptions.laborRates.length > 0) ||
+        (aiAnalysisResult.assumptions.qaNotes && aiAnalysisResult.assumptions.qaNotes.length > 0) ||
+        (aiAnalysisResult.assumptions.other && aiAnalysisResult.assumptions.other.length > 0);
+
+      if (hasAnyAssumptions) {
+        data.push(['PROJECT ASSUMPTIONS & CLARIFICATIONS']);
         data.push([]);
+
+        if (aiAnalysisResult.assumptions.fixtureSupply && aiAnalysisResult.assumptions.fixtureSupply.length > 0) {
+          data.push(['Fixture Supply & Responsibility']);
+          aiAnalysisResult.assumptions.fixtureSupply.forEach(a => data.push(['', a]));
+          data.push([]);
+        }
+
+        if (aiAnalysisResult.assumptions.electricalScope && aiAnalysisResult.assumptions.electricalScope.length > 0) {
+          data.push(['Electrical Contractor Scope']);
+          aiAnalysisResult.assumptions.electricalScope.forEach(a => data.push(['', a]));
+          data.push([]);
+        }
+
+        if (aiAnalysisResult.assumptions.lightingScheduleNotes && aiAnalysisResult.assumptions.lightingScheduleNotes.length > 0) {
+          data.push(['Lighting Fixture Schedule']);
+          aiAnalysisResult.assumptions.lightingScheduleNotes.forEach(a => data.push(['', a]));
+          data.push([]);
+        }
+
+        if (aiAnalysisResult.assumptions.fixturesList && aiAnalysisResult.assumptions.fixturesList.length > 0) {
+          data.push(['Fixtures Listed']);
+          aiAnalysisResult.assumptions.fixturesList.forEach(a => data.push(['', a]));
+          data.push([]);
+        }
+
+        if (aiAnalysisResult.assumptions.otherPages && aiAnalysisResult.assumptions.otherPages.length > 0) {
+          data.push(['Other Pages']);
+          aiAnalysisResult.assumptions.otherPages.forEach(a => data.push(['', a]));
+          data.push([]);
+        }
+
+        if (aiAnalysisResult.assumptions.lightingControls && aiAnalysisResult.assumptions.lightingControls.length > 0) {
+          data.push(['Lighting Controls (Devices)']);
+          aiAnalysisResult.assumptions.lightingControls.forEach(a => data.push(['', a]));
+          data.push([]);
+        }
+
+        if (aiAnalysisResult.assumptions.fixtureCountsBasis && aiAnalysisResult.assumptions.fixtureCountsBasis.length > 0) {
+          data.push(['Fixture Counts Basis']);
+          aiAnalysisResult.assumptions.fixtureCountsBasis.forEach(a => data.push(['', a]));
+          data.push([]);
+        }
+
+        if (aiAnalysisResult.assumptions.wasteFactors && aiAnalysisResult.assumptions.wasteFactors.length > 0) {
+          data.push(['Waste Factors / Labor Basis']);
+          aiAnalysisResult.assumptions.wasteFactors.forEach(a => data.push(['', a]));
+          data.push([]);
+        }
+
+        if (aiAnalysisResult.assumptions.laborRates && aiAnalysisResult.assumptions.laborRates.length > 0) {
+          data.push(['Labor Rate & Unit References']);
+          aiAnalysisResult.assumptions.laborRates.forEach(a => data.push(['', a]));
+          data.push([]);
+        }
+
+        if (aiAnalysisResult.assumptions.qaNotes && aiAnalysisResult.assumptions.qaNotes.length > 0) {
+          data.push(['QA Notes']);
+          aiAnalysisResult.assumptions.qaNotes.forEach(a => data.push(['', a]));
+          data.push([]);
+        }
+
+        if (aiAnalysisResult.assumptions.other && aiAnalysisResult.assumptions.other.length > 0) {
+          data.push(['Other Assumptions']);
+          aiAnalysisResult.assumptions.other.forEach(a => data.push(['', a]));
+          data.push([]);
+        }
       }
 
       data.push(['FIXTURE RESPONSIBILITY']);

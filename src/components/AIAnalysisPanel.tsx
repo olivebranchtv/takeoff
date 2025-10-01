@@ -13,10 +13,11 @@ interface AIAnalysisPanelProps {
 }
 
 export function AIAnalysisPanel({ analysis, onClose, onExport }: AIAnalysisPanelProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'lighting' | 'panels' | 'scope' | 'drawings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'assumptions' | 'lighting' | 'panels' | 'scope' | 'drawings'>('overview');
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📋' },
+    { id: 'assumptions', label: 'Assumptions', icon: '📌' },
     { id: 'drawings', label: 'Drawings', icon: '📄' },
     { id: 'lighting', label: 'Lighting', icon: '💡' },
     { id: 'panels', label: 'Panels', icon: '⚡' },
@@ -202,15 +203,12 @@ export function AIAnalysisPanel({ analysis, onClose, onExport }: AIAnalysisPanel
                   border: '1px solid #ffecb3',
                   borderRadius: '8px'
                 }}>
-                  {analysis.assumptions.length > 0 ? (
-                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#5d4037' }}>
-                      {analysis.assumptions.map((item, idx) => (
-                        <li key={idx} style={{ marginBottom: '8px' }}>{item}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p style={{ margin: 0, fontSize: '13px', color: '#666', fontStyle: 'italic' }}>No assumptions found</p>
-                  )}
+                  <p style={{ margin: 0, fontSize: '14px', color: '#5d4037' }}>
+                    View detailed assumptions organized by category in the <strong>Assumptions</strong> tab above.
+                  </p>
+                  <p style={{ margin: '8px 0 0 0', fontSize: '13px', color: '#666' }}>
+                    Includes fixture supply details, electrical scope, lighting controls, waste factors, labor rates, and more.
+                  </p>
                 </div>
               </div>
 
@@ -236,6 +234,269 @@ export function AIAnalysisPanel({ analysis, onClose, onExport }: AIAnalysisPanel
                   )}
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'assumptions' && (
+            <div>
+              <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '24px', color: '#333' }}>
+                📌 Assumptions & Clarifications - Lighting Takeoff
+              </h3>
+
+              {/* Fixture Supply & Responsibility */}
+              {analysis.assumptions.fixtureSupply && analysis.assumptions.fixtureSupply.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: '#667eea' }}>
+                    Fixture Supply & Responsibility
+                  </h4>
+                  <div style={{
+                    padding: '16px',
+                    background: '#f0f4ff',
+                    border: '1px solid #c7d2fe',
+                    borderRadius: '8px'
+                  }}>
+                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', color: '#333' }}>
+                      {analysis.assumptions.fixtureSupply.map((item, idx) => (
+                        <li key={idx} style={{ marginBottom: '8px' }}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Electrical Contractor Scope */}
+              {analysis.assumptions.electricalScope && analysis.assumptions.electricalScope.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: '#667eea' }}>
+                    Electrical Contractor Scope
+                  </h4>
+                  <div style={{
+                    padding: '16px',
+                    background: '#f0f4ff',
+                    border: '1px solid #c7d2fe',
+                    borderRadius: '8px'
+                  }}>
+                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', color: '#333' }}>
+                      {analysis.assumptions.electricalScope.map((item, idx) => (
+                        <li key={idx} style={{ marginBottom: '8px' }}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Lighting Schedule Notes */}
+              {analysis.assumptions.lightingScheduleNotes && analysis.assumptions.lightingScheduleNotes.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: '#667eea' }}>
+                    Lighting Fixture Schedule
+                  </h4>
+                  <div style={{
+                    padding: '16px',
+                    background: '#f0f4ff',
+                    border: '1px solid #c7d2fe',
+                    borderRadius: '8px'
+                  }}>
+                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', color: '#333' }}>
+                      {analysis.assumptions.lightingScheduleNotes.map((item, idx) => (
+                        <li key={idx} style={{ marginBottom: '8px' }}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Fixtures Listed */}
+              {analysis.assumptions.fixturesList && analysis.assumptions.fixturesList.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: '#667eea' }}>
+                    Fixtures Listed
+                  </h4>
+                  <div style={{
+                    padding: '16px',
+                    background: '#fffbeb',
+                    border: '1px solid #fde68a',
+                    borderRadius: '8px'
+                  }}>
+                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', color: '#333' }}>
+                      {analysis.assumptions.fixturesList.map((item, idx) => (
+                        <li key={idx} style={{ marginBottom: '8px' }}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Other Pages */}
+              {analysis.assumptions.otherPages && analysis.assumptions.otherPages.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: '#667eea' }}>
+                    Other Pages
+                  </h4>
+                  <div style={{
+                    padding: '16px',
+                    background: '#f0f4ff',
+                    border: '1px solid #c7d2fe',
+                    borderRadius: '8px'
+                  }}>
+                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', color: '#333' }}>
+                      {analysis.assumptions.otherPages.map((item, idx) => (
+                        <li key={idx} style={{ marginBottom: '8px' }}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Lighting Controls */}
+              {analysis.assumptions.lightingControls && analysis.assumptions.lightingControls.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: '#667eea' }}>
+                    Lighting Controls (Devices)
+                  </h4>
+                  <div style={{
+                    padding: '16px',
+                    background: '#f0fdfa',
+                    border: '1px solid #99f6e4',
+                    borderRadius: '8px'
+                  }}>
+                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', color: '#333' }}>
+                      {analysis.assumptions.lightingControls.map((item, idx) => (
+                        <li key={idx} style={{ marginBottom: '8px' }}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Fixture Counts Basis */}
+              {analysis.assumptions.fixtureCountsBasis && analysis.assumptions.fixtureCountsBasis.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: '#667eea' }}>
+                    Fixture Counts
+                  </h4>
+                  <div style={{
+                    padding: '16px',
+                    background: '#f0f4ff',
+                    border: '1px solid #c7d2fe',
+                    borderRadius: '8px'
+                  }}>
+                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', color: '#333' }}>
+                      {analysis.assumptions.fixtureCountsBasis.map((item, idx) => (
+                        <li key={idx} style={{ marginBottom: '8px' }}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Waste Factors / Labor Basis */}
+              {analysis.assumptions.wasteFactors && analysis.assumptions.wasteFactors.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: '#667eea' }}>
+                    Waste Factors / Labor Basis
+                  </h4>
+                  <div style={{
+                    padding: '16px',
+                    background: '#fef3c7',
+                    border: '1px solid #fde68a',
+                    borderRadius: '8px'
+                  }}>
+                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', color: '#333' }}>
+                      {analysis.assumptions.wasteFactors.map((item, idx) => (
+                        <li key={idx} style={{ marginBottom: '8px' }}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Labor Rates */}
+              {analysis.assumptions.laborRates && analysis.assumptions.laborRates.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: '#667eea' }}>
+                    Labor Rate & Unit References
+                  </h4>
+                  <div style={{
+                    padding: '16px',
+                    background: '#fef3c7',
+                    border: '1px solid #fde68a',
+                    borderRadius: '8px'
+                  }}>
+                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', color: '#333' }}>
+                      {analysis.assumptions.laborRates.map((item, idx) => (
+                        <li key={idx} style={{ marginBottom: '8px' }}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* QA Notes */}
+              {analysis.assumptions.qaNotes && analysis.assumptions.qaNotes.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: '#667eea' }}>
+                    QA Notes
+                  </h4>
+                  <div style={{
+                    padding: '16px',
+                    background: '#ffedd5',
+                    border: '1px solid #fed7aa',
+                    borderRadius: '8px'
+                  }}>
+                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', color: '#333' }}>
+                      {analysis.assumptions.qaNotes.map((item, idx) => (
+                        <li key={idx} style={{ marginBottom: '8px' }}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Other Assumptions */}
+              {analysis.assumptions.other && analysis.assumptions.other.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: '#667eea' }}>
+                    Other Assumptions
+                  </h4>
+                  <div style={{
+                    padding: '16px',
+                    background: '#f0f4ff',
+                    border: '1px solid #c7d2fe',
+                    borderRadius: '8px'
+                  }}>
+                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6', color: '#333' }}>
+                      {analysis.assumptions.other.map((item, idx) => (
+                        <li key={idx} style={{ marginBottom: '8px' }}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Show message if no assumptions */}
+              {(!analysis.assumptions.fixtureSupply || analysis.assumptions.fixtureSupply.length === 0) &&
+               (!analysis.assumptions.electricalScope || analysis.assumptions.electricalScope.length === 0) &&
+               (!analysis.assumptions.lightingScheduleNotes || analysis.assumptions.lightingScheduleNotes.length === 0) &&
+               (!analysis.assumptions.fixturesList || analysis.assumptions.fixturesList.length === 0) &&
+               (!analysis.assumptions.otherPages || analysis.assumptions.otherPages.length === 0) &&
+               (!analysis.assumptions.lightingControls || analysis.assumptions.lightingControls.length === 0) &&
+               (!analysis.assumptions.fixtureCountsBasis || analysis.assumptions.fixtureCountsBasis.length === 0) &&
+               (!analysis.assumptions.wasteFactors || analysis.assumptions.wasteFactors.length === 0) &&
+               (!analysis.assumptions.laborRates || analysis.assumptions.laborRates.length === 0) &&
+               (!analysis.assumptions.qaNotes || analysis.assumptions.qaNotes.length === 0) &&
+               (!analysis.assumptions.other || analysis.assumptions.other.length === 0) && (
+                <div style={{
+                  padding: '48px',
+                  textAlign: 'center',
+                  background: '#f9f9f9',
+                  borderRadius: '8px',
+                  color: '#666'
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📌</div>
+                  <p style={{ margin: 0, fontSize: '14px' }}>No assumptions extracted from drawings</p>
+                </div>
+              )}
             </div>
           )}
 
