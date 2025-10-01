@@ -736,6 +736,50 @@ export async function exportProfessionalBOM(
     })
     .sort((a, b) => a['Tag Code'].localeCompare(b['Tag Code']));
 
+  // Calculate totals by category
+  const categoryTotals: Record<string, number> = {};
+  for (const row of deviceRows) {
+    const cat = row.Category || 'Uncategorized';
+    categoryTotals[cat] = (categoryTotals[cat] || 0) + row.Quantity;
+  }
+
+  // Add spacing and total rows
+  deviceRows.push({
+    'Tag Code': '',
+    'Tag Name': '',
+    'Category': '',
+    'Quantity': '' as any,
+    'Assembly': ''
+  });
+
+  // Add category subtotals
+  for (const [category, total] of Object.entries(categoryTotals).sort((a, b) => a[0].localeCompare(b[0]))) {
+    deviceRows.push({
+      'Tag Code': '',
+      'Tag Name': `TOTAL ${category.toUpperCase()}`,
+      'Category': category,
+      'Quantity': total,
+      'Assembly': ''
+    });
+  }
+
+  // Add grand total
+  const grandTotal = Object.values(categoryTotals).reduce((sum, val) => sum + val, 0);
+  deviceRows.push({
+    'Tag Code': '',
+    'Tag Name': '',
+    'Category': '',
+    'Quantity': '' as any,
+    'Assembly': ''
+  });
+  deviceRows.push({
+    'Tag Code': '',
+    'Tag Name': 'GRAND TOTAL ALL DEVICES',
+    'Category': '',
+    'Quantity': grandTotal,
+    'Assembly': ''
+  });
+
   const deviceSheet = XLSX.utils.json_to_sheet(deviceRows);
   deviceSheet['!cols'] = [{ wch: 12 }, { wch: 40 }, { wch: 25 }, { wch: 10 }, { wch: 15 }];
   XLSX.utils.book_append_sheet(wb, deviceSheet, 'Device Counts');
