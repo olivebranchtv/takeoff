@@ -561,7 +561,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                 >
                   <option value="">— No Assembly —</option>
                   {assemblies && assemblies.filter((a: any) => a.isActive).map((assembly: any) => (
-                    <option key={assembly.id} value={assembly.id}>
+                    <option key={assembly.id} value={assembly.code}>
                       {assembly.code} - {assembly.name} ({assembly.items.length} items)
                     </option>
                   ))}
@@ -620,7 +620,10 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                       </td>
                     </tr>
                     {group.items.map((t: Tag) => {
-                      const assembly = (t as any).assemblyId ? assemblies?.find((a: any) => a.id === (t as any).assemblyId) : null;
+                      // Look up assembly by ID first, then by CODE (for compatibility)
+                      const assembly = (t as any).assemblyId
+                        ? assemblies?.find((a: any) => a.id === (t as any).assemblyId || a.code === (t as any).assemblyId)
+                        : null;
                       return (
                       <tr key={t.id} style={{ height:32 }}>
                         <td>
