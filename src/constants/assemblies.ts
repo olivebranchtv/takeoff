@@ -1950,5 +1950,24 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     items: [
       { id: 'label-engraved', itemCode: 'LABEL-ENGRAVED', description: 'Engraved label, 2x4"', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.05 }
     ]
+  },
+
+  // ============================================================================
+  // HOMERUN ASSEMBLY
+  // ============================================================================
+  {
+    id: 'light-homerun',
+    code: 'HOMERUN-100FT',
+    name: 'Lighting Homerun Assembly',
+    description: '100ft homerun for lights and GFCI circuits - 3/4" EMT with 10 AWG conductors',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'emt-3/4-100ft', itemCode: 'EMT-3/4', description: '3/4" EMT Conduit', unit: 'FT', quantityPer: 100, category: 'Raceways', wasteFactor: 1.10 },
+      { id: 'wire-10-thhn-100ft', itemCode: 'WIRE-10-THHN', description: '10 AWG THHN Copper Wire', unit: 'FT', quantityPer: 550, category: 'Wire', wasteFactor: 1.10, notes: '5 conductors x 110ft with waste' },
+      { id: 'emt-connector-3/4-hr', itemCode: 'EMT-CONNECTOR-3/4', description: '3/4" EMT Connector', unit: 'EA', quantityPer: 10, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'emt-coupling-3/4-hr', itemCode: 'EMT-COUPLING-3/4', description: '3/4" EMT Coupling', unit: 'EA', quantityPer: 10, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'emt-strap-3/4-hr', itemCode: 'EMT-STRAP-3/4', description: '3/4" EMT Strap', unit: 'EA', quantityPer: 10, category: 'Fittings', wasteFactor: 1.05 }
+    ]
   }
 ];
