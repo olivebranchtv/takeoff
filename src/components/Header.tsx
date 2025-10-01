@@ -34,7 +34,11 @@ export const Header: React.FC = () => {
         borderBottom: '1px solid #142034'
       }}
     >
-      <div style={{ fontWeight: 700 }}>SKD Services</div>
+      <img
+        src="/SKD Logo.png"
+        alt="SKD Services"
+        style={{ height: 40, width: 'auto' }}
+      />
       <div style={{ opacity: 0.6 }}>·</div>
       {!editing ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
