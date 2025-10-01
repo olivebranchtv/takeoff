@@ -14,6 +14,7 @@ export interface MaterialLine {
   quantity: number;
   wasteFactor: number;
   totalQty: number;
+  itemCode?: string;  // Unique code for exact database matching
   assemblyCode?: string;
   assemblyName?: string;
   notes?: string;
@@ -118,7 +119,22 @@ export function calculateAssemblyMaterials(
       // Database format uses actual double-quote character: 1/2"EMT Conduit
       const emtDesc = `${row.emtSize}EMT Conduit`;
       const matKey = `EMT CONDUIT::${emtDesc}::EA`;
-      console.log(`📦 Generated EMT material: category="EMT CONDUIT", desc="${emtDesc}", qty=${row.racewayLf}LF`);
+
+      // Map EMT size to item code
+      const emtItemCodes: Record<string, string> = {
+        '1/2"': 'ITEM-0448',
+        '3/4"': 'ITEM-0453',
+        '1"': 'ITEM-0447',
+        '1 1/4"': 'ITEM-0446',
+        '1 1/2"': 'ITEM-0445',
+        '2"': 'ITEM-0450',
+        '2 1/2"': 'ITEM-0449',
+        '3"': 'ITEM-0452',
+        '4"': 'ITEM-0454'
+      };
+      const itemCode = emtItemCodes[row.emtSize];
+
+      console.log(`📦 Generated EMT material: [${itemCode}] category="EMT CONDUIT", desc="${emtDesc}", qty=${row.racewayLf}LF`);
       const existing = materialAcc.get(matKey);
 
       if (existing) {
@@ -132,6 +148,7 @@ export function calculateAssemblyMaterials(
           quantity: row.racewayLf,
           wasteFactor: 1.05,
           totalQty: row.racewayLf * 1.05,
+          itemCode,
           assemblyCode: 'RACEWAY',
           assemblyName: 'Conduit Run'
         });
@@ -164,7 +181,27 @@ export function calculateAssemblyMaterials(
         const sizeWithHash = cond.size.startsWith('#') ? cond.size : `#${cond.size}`;
         const wireDesc = `${sizeWithHash} THHN Copper Wire,${wireType}`;
         const matKey = `wire::${wireDesc}::EA`;
-        console.log(`  ✅ Generated WIRE material: category="wire", desc="${wireDesc}", qty=${totalCondLf}LF (${cond.count} conductors × ${condLf}LF)`);
+
+        // Map wire size to item code
+        const wireItemCodes: Record<string, string> = {
+          '#14': 'ITEM-0895',
+          '#12': 'ITEM-0893',
+          '#10': 'ITEM-0891',
+          '#8': 'ITEM-0900',
+          '#6': 'ITEM-0899',
+          '#4': 'ITEM-0898',
+          '#2': 'ITEM-0896',
+          '#1': 'ITEM-0889',
+          '1/0': 'ITEM-0901',
+          '2/0': 'ITEM-0913',
+          '3/0': 'ITEM-0915',
+          '4/0': 'ITEM-0922',
+          '250': 'ITEM-0914',
+          '500': 'ITEM-0925'
+        };
+        const itemCode = wireItemCodes[sizeWithHash];
+
+        console.log(`  ✅ Generated WIRE material: [${itemCode}] category="wire", desc="${wireDesc}", qty=${totalCondLf}LF (${cond.count} conductors × ${condLf}LF)`);
         const existing = materialAcc.get(matKey);
 
         if (existing) {
@@ -179,6 +216,7 @@ export function calculateAssemblyMaterials(
             quantity: totalCondLf,
             wasteFactor: 1.10,
             totalQty: totalCondLf * 1.10,
+            itemCode,
             assemblyCode: 'WIRE',
             assemblyName: 'Conductor Pull'
           });

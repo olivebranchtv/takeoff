@@ -59,6 +59,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
           unit: m.unit,
           materialCost: isNaN(materialCost) ? 0 : materialCost,
           laborHours: isNaN(laborHours) ? 0 : laborHours,
+          itemCode: (m as any).item_code,  // Include item code from database
           vendor: m.vendor,
           vendorPartNumber: m.vendor_part_number
         });

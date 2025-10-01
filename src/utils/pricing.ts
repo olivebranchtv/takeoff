@@ -12,6 +12,7 @@ export interface MaterialPrice {
   unit: string;
   materialCost: number;
   laborHours?: number;
+  itemCode?: string;  // Unique identifier for exact matching
   vendor?: string;
   vendorPartNumber?: string;
 }
@@ -238,10 +239,21 @@ export class PricingDatabase {
   }
 
   /**
-   * Get material price by description (with fuzzy matching)
+   * Get material price by item code, category, or description
+   * Priority: item_code > exact match > case-insensitive > fuzzy
    */
-  getMaterialPrice(category: string, description: string): number | undefined {
-    // Try exact match first (case-sensitive)
+  getMaterialPrice(category: string, description: string, itemCode?: string): number | undefined {
+    // 1. Try item code first (most reliable)
+    if (itemCode) {
+      for (const price of this.materialPrices.values()) {
+        if (price.itemCode === itemCode && price.materialCost > 0) {
+          console.log(`🔍 ✓ ITEM CODE [${itemCode}] "${description}" → $${price.materialCost}`);
+          return price.materialCost;
+        }
+      }
+    }
+
+    // 2. Try exact match (case-sensitive)
     const exactKey = `${category}::${description}`;
     const exact = this.materialPrices.get(exactKey);
     if (exact && exact.materialCost > 0) {
@@ -249,7 +261,7 @@ export class PricingDatabase {
       return exact.materialCost;
     }
 
-    // Try case-insensitive exact match
+    // 3. Try case-insensitive exact match
     for (const [key, price] of this.materialPrices.entries()) {
       const [dbCat, dbDesc] = key.split('::');
       if (dbCat.toLowerCase() === category.toLowerCase() &&
@@ -368,16 +380,26 @@ export class PricingDatabase {
 
   /**
    * Get labor hours per unit for a material (e.g., wire, conduit)
+   * Priority: item_code > exact match > case-insensitive
    */
-  getMaterialLaborHours(category: string, description: string): number {
-    // Try exact match first
+  getMaterialLaborHours(category: string, description: string, itemCode?: string): number {
+    // 1. Try item code first
+    if (itemCode) {
+      for (const price of this.materialPrices.values()) {
+        if (price.itemCode === itemCode && price.laborHours && price.laborHours > 0) {
+          return price.laborHours;
+        }
+      }
+    }
+
+    // 2. Try exact match
     const exactKey = `${category}::${description}`;
     const exact = this.materialPrices.get(exactKey);
     if (exact && exact.laborHours && exact.laborHours > 0) {
       return exact.laborHours;
     }
 
-    // Try case-insensitive match
+    // 3. Try case-insensitive match
     for (const [key, price] of this.materialPrices.entries()) {
       const [dbCat, dbDesc] = key.split('::');
       if (dbCat.toLowerCase() === category.toLowerCase() &&
@@ -450,11 +472,11 @@ export function calculateProjectCosts(
   // Calculate material costs
   let materialCostTotal = 0;
   for (const mat of materials) {
-    const price = pricingDb.getMaterialPrice(mat.category, mat.description);
+    const price = pricingDb.getMaterialPrice(mat.category, mat.description, mat.itemCode);
     if (price) {
       materialCostTotal += mat.totalQty * price;
     } else {
-      console.log(`⚠️ No price found for: ${mat.category}::${mat.description} (qty: ${mat.totalQty})`);
+      console.log(`⚠️ No price found for: ${mat.itemCode || ''} ${mat.category}::${mat.description} (qty: ${mat.totalQty})`);
     }
   }
 
@@ -467,8 +489,8 @@ export function calculateProjectCosts(
 
   // Add all materials to divisions (wire, conduit, boxes, devices, etc.)
   for (const mat of materials) {
-    const laborPerUnit = pricingDb.getMaterialLaborHours(mat.category, mat.description);
-    const price = pricingDb.getMaterialPrice(mat.category, mat.description) || 0;
+    const laborPerUnit = pricingDb.getMaterialLaborHours(mat.category, mat.description, mat.itemCode);
+    const price = pricingDb.getMaterialPrice(mat.category, mat.description, mat.itemCode) || 0;
     const matCost = mat.totalQty * price;
     const materialLaborHours = laborPerUnit * mat.totalQty;
 
