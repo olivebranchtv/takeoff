@@ -284,7 +284,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
         ['Labor Cost', formatCurrency(costs.laborCostTotal)],
         [''],
         ['Equipment', formatCurrency(costs.equipmentCostTotal)],
-        ['Lighting Package (Customer-Supplied)', formatCurrency(costs.lightingPackageCost)],
+        ['Lighting Package (By Contractor)', formatCurrency(costs.lightingPackageCost)],
         [''],
         ['SUBTOTAL', formatCurrency(costs.subtotal)],
         [''],
@@ -515,7 +515,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
 
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: '500' }}>
-            Lighting Package Cost $ <span style={{ fontSize: '12px', color: '#666' }}>(customer-supplied fixtures)</span>
+            Lighting Package Cost $ <span style={{ fontSize: '12px', color: '#666' }}>(supplied by contractor)</span>
           </label>
           <input
             type="number"
@@ -531,7 +531,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
             }}
           />
           <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-            💡 Add the cost of customer-supplied lighting fixtures here (e.g., AutoZone fixture package)
+            💡 Add the cost of lighting fixtures supplied by contractor (if purchasing and providing fixtures)
           </div>
         </div>
       </div>
@@ -584,11 +584,11 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
           {costs.lightingPackageCost > 0 && (
             <div style={{ background: '#fef3c7', padding: '15px', borderRadius: '6px', marginBottom: '15px', border: '1px solid #fbbf24' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                <span>💡 Lighting Package (Customer-Supplied):</span>
+                <span>💡 Lighting Package (By Contractor):</span>
                 <strong>{formatCurrency(costs.lightingPackageCost)}</strong>
               </div>
               <div style={{ fontSize: '12px', color: '#92400e', marginTop: '6px' }}>
-                Cost of fixtures supplied by customer (e.g., AutoZone lighting package)
+                Cost of fixtures supplied by contractor (when contractor purchases and provides fixtures)
               </div>
             </div>
           )}
