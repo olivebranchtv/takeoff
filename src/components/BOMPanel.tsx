@@ -12,6 +12,10 @@ type Summary = {
   countsByCode: { code: string; count: number }[];
   calibratedPages: number;
   totalPages: number;
+  totalRacewayLF: number;
+  totalConductorLF: number;
+  totalBoxes: number;
+  wireBySizeAndMaterial: { size: string; material: string; lengthFt: number }[];
 };
 
 export default function BomPanel({ open, onToggle }: Props) {
@@ -22,6 +26,10 @@ export default function BomPanel({ open, onToggle }: Props) {
     let segLF = 0, plLF = 0, ffLF = 0;
     const counts = new Map<string, number>();
     let calibratedPages = 0;
+    let totalRacewayLF = 0;
+    let totalConductorLF = 0;
+    let totalBoxes = 0;
+    const wireMap = new Map<string, number>(); // key: "size::material"
 
     for (const pg of pages) {
       const ppf = pg.pixelsPerFoot;
@@ -38,6 +46,26 @@ export default function BomPanel({ open, onToggle }: Props) {
           if (obj.type === 'segment') segLF += lf;
           else if (obj.type === 'polyline') plLF += lf;
           else if (obj.type === 'freeform') ffLF += lf;
+
+          // Add raceway/conductor calculations if measureResult exists
+          const measureResult = (obj as any).measureResult;
+          if (measureResult) {
+            if (measureResult.raceway?.lengthFt) {
+              totalRacewayLF += measureResult.raceway.lengthFt;
+            }
+            if (measureResult.conductors) {
+              for (const cond of measureResult.conductors) {
+                if (cond.lengthFt > 0) {
+                  totalConductorLF += cond.lengthFt;
+                  const wireKey = `${cond.size}::${cond.material}`;
+                  wireMap.set(wireKey, (wireMap.get(wireKey) || 0) + cond.lengthFt);
+                }
+              }
+            }
+            if (measureResult.boxes) {
+              totalBoxes += measureResult.boxes;
+            }
+          }
         }
       }
     }
@@ -46,13 +74,24 @@ export default function BomPanel({ open, onToggle }: Props) {
       .map(([code, count]) => ({ code, count }))
       .sort((a, b) => a.code.localeCompare(b.code));
 
+    const wireBySizeAndMaterial = Array.from(wireMap.entries())
+      .map(([key, lengthFt]) => {
+        const [size, material] = key.split('::');
+        return { size, material, lengthFt };
+      })
+      .sort((a, b) => a.size.localeCompare(b.size));
+
     return {
       totalTags,
       totalLF: segLF + plLF + ffLF,
       byType: { segment: segLF, polyline: plLF, freeform: ffLF },
       countsByCode,
       calibratedPages,
-      totalPages: pages.length
+      totalPages: pages.length,
+      totalRacewayLF,
+      totalConductorLF,
+      totalBoxes,
+      wireBySizeAndMaterial
     };
   }, [pages]);
 
@@ -64,6 +103,15 @@ export default function BomPanel({ open, onToggle }: Props) {
     rows.push(['Segment LF', data.byType.segment.toFixed(2)]);
     rows.push(['Polyline LF', data.byType.polyline.toFixed(2)]);
     rows.push(['Freeform LF', data.byType.freeform.toFixed(2)]);
+    rows.push([]);
+    rows.push(['Raceway LF', data.totalRacewayLF.toFixed(2)]);
+    rows.push(['Conductor LF', data.totalConductorLF.toFixed(2)]);
+    rows.push(['Total Boxes', String(data.totalBoxes)]);
+    rows.push([]);
+    rows.push(['Wire Size', 'Material', 'Length (LF)']);
+    for (const w of data.wireBySizeAndMaterial) {
+      rows.push([w.size, w.material, w.lengthFt.toFixed(2)]);
+    }
     rows.push([]);
     rows.push(['Code', 'Count']);
     for (const row of data.countsByCode) rows.push([row.code, String(row.count)]);
@@ -110,6 +158,29 @@ export default function BomPanel({ open, onToggle }: Props) {
                 <div>Segment: {data.byType.segment.toFixed(2)}</div>
                 <div>Polyline: {data.byType.polyline.toFixed(2)}</div>
                 <div>Freeform: {data.byType.freeform.toFixed(2)}</div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:12}}>
+            <div className="card">
+              <div className="label" style={{marginBottom:6}}>Raceways & Wire</div>
+              <div style={{fontSize:14}}>
+                <div><strong>Raceway LF:</strong> {data.totalRacewayLF.toFixed(2)}</div>
+                <div><strong>Conductor LF:</strong> {data.totalConductorLF.toFixed(2)}</div>
+                <div><strong>Boxes:</strong> {data.totalBoxes}</div>
+              </div>
+            </div>
+            <div className="card">
+              <div className="label" style={{marginBottom:6}}>Wire Summary</div>
+              <div style={{fontSize:13, maxHeight:100, overflow:'auto'}}>
+                {data.wireBySizeAndMaterial.length === 0 ? (
+                  <div style={{color:'#666'}}>No wire measured</div>
+                ) : (
+                  data.wireBySizeAndMaterial.map((w, i) => (
+                    <div key={i}>{w.size} {w.material}: {w.lengthFt.toFixed(0)} LF</div>
+                  ))
+                )}
               </div>
             </div>
           </div>
