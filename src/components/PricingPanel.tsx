@@ -213,8 +213,13 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
     return () => clearTimeout(saveSettingsDebounced);
   }, [overheadPct, profitPct, taxRate]);
 
-  // Calculate costs whenever inputs change
+  // Calculate costs whenever inputs change (including when prices finish loading)
   useEffect(() => {
+    // Only calculate if prices are loaded or if we have some data
+    if (!pricesLoaded && priceCount === 0) {
+      return;
+    }
+
     try {
       const calculated = calculateProjectCosts(
         pages,
@@ -233,7 +238,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
     } catch (error) {
       console.error('Error calculating costs:', error);
     }
-  }, [pages, tags, assemblies, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment]);
+  }, [pages, tags, assemblies, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment, pricesLoaded, priceCount]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
