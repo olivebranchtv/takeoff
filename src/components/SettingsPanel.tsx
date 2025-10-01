@@ -5,6 +5,8 @@
 
 import { useState, useEffect } from 'react';
 import { getOpenAIApiKey, setOpenAIApiKey } from '@/utils/openaiAnalysis';
+import * as XLSX from 'xlsx';
+import { supabase } from '@/utils/supabasePricing';
 
 interface SettingsPanelProps {
   onClose: () => void;
@@ -14,6 +16,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const [apiKey, setApiKeyState] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [exportingDB, setExportingDB] = useState(false);
+  const [importingDB, setImportingDB] = useState(false);
+  const [dbMessage, setDbMessage] = useState('');
 
   useEffect(() => {
     const key = getOpenAIApiKey();
@@ -42,6 +47,131 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   };
 
   const maskedKey = apiKey ? apiKey.substring(0, 7) + '•'.repeat(Math.max(0, apiKey.length - 11)) + apiKey.substring(apiKey.length - 4) : '';
+
+  const handleExportDatabase = async () => {
+    setExportingDB(true);
+    setDbMessage('');
+
+    try {
+      if (!supabase) {
+        setDbMessage('Database not configured');
+        setExportingDB(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('material_pricing')
+        .select('*')
+        .order('category', { ascending: true })
+        .order('description', { ascending: true });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        setDbMessage('No pricing data found');
+        setExportingDB(false);
+        return;
+      }
+
+      const exportData = data.map(item => ({
+        'Category': item.category,
+        'Description': item.description,
+        'Unit': item.unit,
+        'Material Cost': item.material_cost,
+        'Labor Hours': item.labor_hours,
+        'Vendor': item.vendor || '',
+        'Notes': item.notes || ''
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      ws['!cols'] = [
+        { wch: 25 },
+        { wch: 60 },
+        { wch: 8 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 20 },
+        { wch: 30 }
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Master Pricing Database');
+
+      const timestamp = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `Master_Pricing_Database_${timestamp}.xlsx`);
+
+      setDbMessage(`✓ Exported ${data.length} items successfully!`);
+      setTimeout(() => setDbMessage(''), 3000);
+    } catch (error) {
+      console.error('Export error:', error);
+      setDbMessage('Error exporting database');
+      setTimeout(() => setDbMessage(''), 3000);
+    } finally {
+      setExportingDB(false);
+    }
+  };
+
+  const handleImportDatabase = async (file: File) => {
+    setImportingDB(true);
+    setDbMessage('');
+
+    try {
+      if (!supabase) {
+        setDbMessage('Database not configured');
+        setImportingDB(false);
+        return;
+      }
+
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      if (!jsonData || jsonData.length === 0) {
+        setDbMessage('No data found in file');
+        setImportingDB(false);
+        return;
+      }
+
+      const items = jsonData.map((row: any) => ({
+        category: String(row['Category'] || row['category'] || ''),
+        description: String(row['Description'] || row['description'] || ''),
+        unit: String(row['Unit'] || row['unit'] || 'EA'),
+        material_cost: parseFloat(String(row['Material Cost'] || row['material_cost'] || row['Cost'] || '0')),
+        labor_hours: parseFloat(String(row['Labor Hours'] || row['labor_hours'] || '0')),
+        vendor: row['Vendor'] || row['vendor'] || null,
+        notes: row['Notes'] || row['notes'] || null
+      })).filter(item => item.category && item.description);
+
+      if (items.length === 0) {
+        setDbMessage('No valid items found in file');
+        setImportingDB(false);
+        return;
+      }
+
+      const { error: deleteError } = await supabase
+        .from('material_pricing')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      if (deleteError) throw deleteError;
+
+      const { error: insertError } = await supabase
+        .from('material_pricing')
+        .insert(items);
+
+      if (insertError) throw insertError;
+
+      setDbMessage(`✓ Imported ${items.length} items successfully!`);
+      setTimeout(() => setDbMessage(''), 3000);
+    } catch (error) {
+      console.error('Import error:', error);
+      setDbMessage('Error importing database');
+      setTimeout(() => setDbMessage(''), 3000);
+    } finally {
+      setImportingDB(false);
+    }
+  };
 
   return (
     <div style={{
@@ -269,6 +399,123 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               OpenAI GPT-4 Vision costs approximately $0.01 per page analyzed.
               A typical 10-page drawing set costs about $0.10 to analyze.
             </p>
+          </div>
+
+          <div style={{
+            marginTop: '32px',
+            paddingTop: '32px',
+            borderTop: '2px solid #e0e0e0'
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px', color: '#1e3a8a' }}>
+              💾 Master Pricing Database
+            </h3>
+
+            <div style={{
+              padding: '16px',
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              borderRadius: '8px',
+              marginBottom: '16px',
+              fontSize: '13px',
+              color: '#1e40af'
+            }}>
+              <strong>What is this?</strong>
+              <p style={{ margin: '8px 0 0 0' }}>
+                Export your complete pricing database (800+ items) to Excel for backup or editing.
+                You can update prices in Excel and re-import to update the database.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+              <button
+                onClick={handleExportDatabase}
+                disabled={exportingDB}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: exportingDB ? '#9ca3af' : '#10b981',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: exportingDB ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+              >
+                {exportingDB ? '⏳ Exporting...' : '📥 Export Database to Excel'}
+              </button>
+
+              <label
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: importingDB ? '#9ca3af' : '#3b82f6',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: importingDB ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  textAlign: 'center'
+                }}
+              >
+                {importingDB ? '⏳ Importing...' : '📤 Import Database from Excel'}
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleImportDatabase(file);
+                      e.target.value = '';
+                    }
+                  }}
+                  disabled={importingDB}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
+
+            {dbMessage && (
+              <div style={{
+                padding: '12px',
+                background: dbMessage.includes('✓') ? '#dcfce7' : '#fee2e2',
+                border: `1px solid ${dbMessage.includes('✓') ? '#86efac' : '#fca5a5'}`,
+                borderRadius: '6px',
+                fontSize: '13px',
+                color: dbMessage.includes('✓') ? '#166534' : '#991b1b',
+                fontWeight: 600
+              }}>
+                {dbMessage}
+              </div>
+            )}
+
+            <div style={{
+              marginTop: '16px',
+              padding: '12px',
+              background: '#fef3c7',
+              border: '1px solid #fde047',
+              borderRadius: '6px',
+              fontSize: '12px',
+              color: '#92400e'
+            }}>
+              <strong>⚠️ Important Notes:</strong>
+              <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
+                <li>Export creates a backup of all {'>'}800 pricing items</li>
+                <li>Import REPLACES the entire database with your Excel file</li>
+                <li>Required columns: Category, Description, Unit, Material Cost, Labor Hours</li>
+                <li>Optional columns: Vendor, Notes</li>
+                <li>Always backup before importing</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
