@@ -13,7 +13,11 @@ export function getAssemblyIdForTag(tagCode: string, tagCategory?: string): stri
 
   // ===== LIGHTS =====
   if (category.includes('light')) {
-    // Specific fixture types
+    // Letter codes A-Z for lights (customer-supplied) - NO ASSEMBLY
+    // These should use the pricing database only, not assemblies
+    if (code.match(/^[A-Z]$/) || code.match(/^[A-Z]\d+$/)) return undefined;
+
+    // Specific fixture types (only assign assemblies for descriptive codes)
     if (code.includes('2X4') || code === 'LT-2X4') return 'light-troffer-2x4-led';
     if (code.includes('2X2') || code === 'LT-2X2') return 'light-troffer-2x2-led';
     if (code.includes('1X4') || code === 'LT-1X4') return 'light-troffer-2x4-led';
@@ -29,11 +33,8 @@ export function getAssemblyIdForTag(tagCode: string, tagCategory?: string): stri
     if (code.includes('CANOPY') || code === 'LT-CANOPY') return 'light-troffer-2x4-led';
     if (code.includes('STEP') || code === 'LT-STEP') return 'bollard-light';
 
-    // Letter codes A-Z for lights
-    if (code.match(/^[A-Z]$/) || code.match(/^[A-Z]\d+$/)) return 'light-troffer-2x4-led';
-
-    // Default light
-    return 'light-troffer-2x4-led';
+    // No assembly for generic light tags - use pricing DB only
+    return undefined;
   }
 
   // ===== EMERGENCY & EXIT =====

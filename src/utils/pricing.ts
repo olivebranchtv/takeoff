@@ -105,8 +105,9 @@ export interface ProjectCosts {
   laborRate: number;
   laborCostTotal: number;
 
-  // Equipment
+  // Equipment & Lighting Package
   equipmentCostTotal: number;
+  lightingPackageCost: number;
 
   // Subtotal before markup
   subtotal: number;
@@ -530,6 +531,7 @@ export function calculateProjectCosts(
     materialTaxRate?: number;
     materialShipping?: number;
     equipmentCost?: number;
+    lightingPackageCost?: number;
   } = {}
 ): ProjectCosts {
   const {
@@ -538,6 +540,7 @@ export function calculateProjectCosts(
     materialTaxRate = 0.085,
     materialShipping = 0,
     equipmentCost = 0,
+    lightingPackageCost = 0,
   } = options;
 
   // Get material breakdown
@@ -657,8 +660,8 @@ export function calculateProjectCosts(
   const laborRate = pricingDb.getDefaultLaborRate();
   const laborCostTotal = laborHoursTotal * laborRate;
 
-  // Calculate subtotal
-  const subtotal = materialSubtotal + laborCostTotal + equipmentCost;
+  // Calculate subtotal (includes material, labor, equipment, and lighting package)
+  const subtotal = materialSubtotal + laborCostTotal + equipmentCost + lightingPackageCost;
 
   // Calculate overhead
   const overheadAmount = subtotal * (overheadPercentage / 100);
@@ -700,6 +703,7 @@ export function calculateProjectCosts(
     laborRate,
     laborCostTotal,
     equipmentCostTotal: equipmentCost,
+    lightingPackageCost,
     subtotal,
     overheadPercentage,
     overheadAmount,

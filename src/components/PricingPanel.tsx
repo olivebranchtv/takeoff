@@ -24,6 +24,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
   const [taxRate, setTaxRate] = useState(9.5);
   const [shipping, setShipping] = useState(0);
   const [equipment, setEquipment] = useState(0);
+  const [lightingPackage, setLightingPackage] = useState(0);
   const [pricesLoaded, setPricesLoaded] = useState(false);
   const [priceCount, setPriceCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -241,14 +242,15 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
           profitPercentage: profitPct,
           materialTaxRate: taxRate / 100,
           materialShipping: shipping,
-          equipmentCost: equipment
+          equipmentCost: equipment,
+          lightingPackageCost: lightingPackage
         }
       );
       setCosts(calculated);
     } catch (error) {
       console.error('Error calculating costs:', error);
     }
-  }, [pages, tags, assemblies, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment, pricesLoaded, priceCount]);
+  }, [pages, tags, assemblies, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment, lightingPackage, pricesLoaded, priceCount]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -282,6 +284,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
         ['Labor Cost', formatCurrency(costs.laborCostTotal)],
         [''],
         ['Equipment', formatCurrency(costs.equipmentCostTotal)],
+        ['Lighting Package (Customer-Supplied)', formatCurrency(costs.lightingPackageCost)],
         [''],
         ['SUBTOTAL', formatCurrency(costs.subtotal)],
         [''],
@@ -509,6 +512,28 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
             }}
           />
         </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: '500' }}>
+            Lighting Package Cost $ <span style={{ fontSize: '12px', color: '#666' }}>(customer-supplied fixtures)</span>
+          </label>
+          <input
+            type="number"
+            value={lightingPackage}
+            onChange={(e) => setLightingPackage(parseFloat(e.target.value) || 0)}
+            step="100"
+            style={{
+              width: '100%',
+              padding: '8px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '14px'
+            }}
+          />
+          <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+            💡 Add the cost of customer-supplied lighting fixtures here (e.g., AutoZone fixture package)
+          </div>
+        </div>
       </div>
 
       {costs && (
@@ -552,6 +577,18 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
                 <span>Equipment:</span>
                 <strong>{formatCurrency(costs.equipmentCostTotal)}</strong>
+              </div>
+            </div>
+          )}
+
+          {costs.lightingPackageCost > 0 && (
+            <div style={{ background: '#fef3c7', padding: '15px', borderRadius: '6px', marginBottom: '15px', border: '1px solid #fbbf24' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                <span>💡 Lighting Package (Customer-Supplied):</span>
+                <strong>{formatCurrency(costs.lightingPackageCost)}</strong>
+              </div>
+              <div style={{ fontSize: '12px', color: '#92400e', marginTop: '6px' }}>
+                Cost of fixtures supplied by customer (e.g., AutoZone lighting package)
               </div>
             </div>
           )}
