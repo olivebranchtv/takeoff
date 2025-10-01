@@ -290,40 +290,72 @@ export async function exportProfessionalBOM(
     // Normalize for fuzzy matching
     const normDesc = description.toLowerCase()
       .replace(/["']/g, '')
-      .replace(/\s+/g, '')
+      .replace(/\s+/g, ' ')
       .replace(/-/g, '')
       .trim();
 
-    // Find matches using category mapping + description matching
-    const keyTerms = normDesc.split(/[,\/]/).filter(t => t.length > 2);
-    console.log(`   Key terms: [${keyTerms.join(', ')}]`);
+    // Extract key product identifiers (more aggressive matching)
+    // Split into words and extract meaningful terms
+    const words = normDesc.split(/[\s,\/]+/).filter(w => w.length >= 2);
 
-    // First check: how many DB items match our category?
-    const categoryMatchCount = pricingArray.filter(p => categoryMatches(category, p.category)).length;
-    console.log(`   Category matches: ${categoryMatchCount} items in DB match category "${category}"`);
+    // Score-based matching: find best match in same category
+    const categoryItems = pricingArray.filter(p => categoryMatches(category, p.category));
+    console.log(`   Searching ${categoryItems.length} items in matching categories`);
 
-    const candidates = pricingArray.filter(p => {
-      // Use category mapper instead of strict equality
-      if (!categoryMatches(category, p.category)) return false;
+    let bestMatch: { item: typeof categoryItems[0]; score: number } | null = null;
 
-      const dbDesc = p.description.toLowerCase().replace(/["']/g, '').replace(/\s+/g, '').replace(/-/g, '');
-      // Check if database description contains assembly key terms
-      return keyTerms.some(term => dbDesc.includes(term));
-    });
+    for (const dbItem of categoryItems) {
+      if (dbItem.cost === 0 && dbItem.laborHours === 0) continue; // Skip items without pricing
 
-    console.log(`   Description candidates: ${candidates.length} items matched`);
-    if (candidates.length > 0) {
-      console.log(`   First 3 candidates:`, candidates.slice(0, 3).map(c => c.description));
+      const dbDesc = dbItem.description.toLowerCase()
+        .replace(/["']/g, '')
+        .replace(/\s+/g, ' ')
+        .replace(/-/g, '')
+        .trim();
+
+      const dbWords = dbDesc.split(/[\s,\/]+/).filter(w => w.length >= 2);
+
+      // Calculate match score: count how many words overlap
+      let score = 0;
+
+      // Check for key product identifiers (size, type, material)
+      for (const word of words) {
+        // Exact word match = 3 points
+        if (dbWords.includes(word)) {
+          score += 3;
+        }
+        // Partial match (one contains the other) = 1 point
+        else if (dbWords.some(dbWord => dbWord.includes(word) || word.includes(dbWord))) {
+          score += 1;
+        }
+      }
+
+      // Bonus points for specific product identifiers
+      // Size matching (e.g., "3/4", "1/2")
+      const sizeMatch = description.match(/\d+\/\d+|\d+\s*\d*\/\d+/);
+      if (sizeMatch && dbItem.description.includes(sizeMatch[0])) {
+        score += 5; // Size is critical for electrical materials
+      }
+
+      // Type matching (EMT, connector, coupling, etc.)
+      const types = ['emt', 'connector', 'coupling', 'box', 'conduit', 'wire', 'cable', 'plate', 'ring', 'mud'];
+      for (const type of types) {
+        if (normDesc.includes(type) && dbDesc.includes(type)) {
+          score += 2;
+        }
+      }
+
+      if (score > (bestMatch?.score || 0)) {
+        bestMatch = { item: dbItem, score };
+      }
     }
 
-    // Return first match with pricing
-    const match = candidates.find(c => c.cost > 0 || c.laborHours > 0);
-    if (match) {
-      console.log(`✅ FUZZY MATCH: "${description}" → "${match.description}" (${match.category}) = $${match.cost}, ${match.laborHours}hrs`);
-      return { cost: match.cost, laborHours: match.laborHours };
+    if (bestMatch && bestMatch.score >= 3) { // Require minimum score of 3
+      console.log(`✅ FUZZY MATCH (score ${bestMatch.score}): "${description}" → "${bestMatch.item.description}" = $${bestMatch.item.cost}, ${bestMatch.item.laborHours}hrs`);
+      return { cost: bestMatch.item.cost, laborHours: bestMatch.item.laborHours };
     }
 
-    console.error(`❌❌❌ NO MATCH: "${description}" (category: "${category}") - ${candidates.length} candidates but none had pricing`);
+    console.error(`❌ NO MATCH: "${description}" (category: "${category}") - best score: ${bestMatch?.score || 0}`);
     return { cost: 0, laborHours: 0 };
   }
 
