@@ -637,7 +637,8 @@ const S: Record<string, React.CSSProperties> = {
     background:'#fff',
     width: 1200,
     maxWidth:'96vw',
-    maxHeight:'96vh',
+    height: '90vh',
+    maxHeight:'90vh',
     overflow:'hidden',
     borderRadius:12,
     boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
@@ -660,11 +661,11 @@ const S: Record<string, React.CSSProperties> = {
 
   content: { flex:1, display:'flex', flexDirection:'column', overflow:'hidden' },
 
-  card:   { padding:'10px 14px', borderBottom:'1px solid #f2f2f2', background:'#fff' },
+  card:   { padding:'8px 14px 10px', borderBottom:'1px solid #f2f2f2', background:'#fff' },
   formRow: { display:'grid', gridTemplateColumns:'232px 1fr auto', gap:14, alignItems:'start' },
-  label:  { fontSize:12, fontWeight:600, color:'#444', marginBottom:6 },
+  label:  { fontSize:12, fontWeight:600, color:'#444', marginBottom:4 },
   input:  { width:'100%', padding:'10px 12px', border:'1px solid #ccc', borderRadius:8, fontSize:14, lineHeight:'20px', boxSizing:'border-box', minWidth:0 },
-  colorGrid: { display:'grid', gridTemplateColumns:'repeat(auto-fill, 28px)', gap:8, maxHeight: 140, overflowY:'auto', paddingRight: 4 },
+  colorGrid: { display:'grid', gridTemplateColumns:'repeat(auto-fill, 28px)', gap:6, maxHeight: 110, overflowY:'auto', paddingRight: 4 },
   swatch: { width:24, height:24, borderRadius:4, cursor:'pointer' },
   error:  { marginTop:8, color:'#b00020', fontSize:13, fontWeight:600 },
 
