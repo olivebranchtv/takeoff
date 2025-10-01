@@ -731,10 +731,16 @@ export async function exportProfessionalBOM(
         'Tag Name': r.tagName || tag?.name || '',
         'Category': r.category || tag?.category || '',
         'Quantity': r.qty,
-        'Assembly': tag?.assemblyId ? assemblies.find(a => a.id === tag.assemblyId)?.code || '' : ''
+        'Assembly': tag?.assemblyId ? assemblies.find(a => a.id === tag.assemblyId)?.code || '' : '',
+        'Order': tag?.order ?? 9999 // Use tag order if available, otherwise put at end
       };
     })
-    .sort((a, b) => a['Tag Code'].localeCompare(b['Tag Code']));
+    .sort((a, b) => {
+      // Sort by Order field first, then by Tag Code
+      if (a.Order !== b.Order) return a.Order - b.Order;
+      return a['Tag Code'].localeCompare(b['Tag Code']);
+    })
+    .map(({ Order, ...rest }) => rest); // Remove Order field from final output
 
   // Calculate totals by category
   const categoryTotals: Record<string, number> = {};

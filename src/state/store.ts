@@ -213,6 +213,7 @@ type State = {
   removeProjectTag: (id: string) => void;
   hasProjectTag: (id: string) => boolean;
   getProjectTags: () => Tag[];
+  reorderProjectTags: (tagIds: string[]) => void;
 
   getProjectName: () => string;
 
@@ -620,7 +621,27 @@ export const useStore = create<State>()(
       hasProjectTag: (id) => get().projectTagIds.includes(id),
       getProjectTags: () => {
         const { tags, projectTagIds } = get();
-        return tags.filter(t => projectTagIds.includes(t.id));
+        const projectTags = tags.filter(t => projectTagIds.includes(t.id));
+        // Sort by order field, then by code
+        return projectTags.sort((a, b) => {
+          if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+          if (a.order !== undefined) return -1;
+          if (b.order !== undefined) return 1;
+          return a.code.localeCompare(b.code);
+        });
+      },
+      reorderProjectTags: (tagIds: string[]) => {
+        set(s => {
+          // Update order for all tags based on their position in the array
+          const updatedTags = s.tags.map(tag => {
+            const index = tagIds.indexOf(tag.id);
+            if (index !== -1) {
+              return { ...tag, order: index };
+            }
+            return tag;
+          });
+          return { tags: updatedTags };
+        });
       },
 
       getProjectName: () => {

@@ -7,18 +7,25 @@ import { useState, useEffect } from 'react';
 import { getOpenAIApiKey, setOpenAIApiKey } from '@/utils/openaiAnalysis';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/utils/supabasePricing';
+import { useStore } from '@/state/store';
+import { GripVertical } from 'lucide-react';
 
 interface SettingsPanelProps {
   onClose: () => void;
 }
 
 export function SettingsPanel({ onClose }: SettingsPanelProps) {
+  const { getProjectTags, reorderProjectTags } = useStore();
+  const projectTags = getProjectTags();
+
   const [apiKey, setApiKeyState] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [saved, setSaved] = useState(false);
   const [exportingDB, setExportingDB] = useState(false);
   const [importingDB, setImportingDB] = useState(false);
   const [dbMessage, setDbMessage] = useState('');
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const key = getOpenAIApiKey();
@@ -47,6 +54,27 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   };
 
   const maskedKey = apiKey ? apiKey.substring(0, 7) + '•'.repeat(Math.max(0, apiKey.length - 11)) + apiKey.substring(apiKey.length - 4) : '';
+
+  // Drag and drop handlers for reordering tags
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      const reorderedTags = [...projectTags];
+      const [movedTag] = reorderedTags.splice(draggedIndex, 1);
+      reorderedTags.splice(dragOverIndex, 0, movedTag);
+      reorderProjectTags(reorderedTags.map(t => t.id));
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
 
   const handleExportDatabase = async () => {
     setExportingDB(true);
@@ -403,6 +431,103 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               A typical 10-page drawing set costs about $0.10 to analyze.
             </p>
           </div>
+
+          {/* Project Tags Order Section */}
+          {projectTags.length > 0 && (
+            <div style={{
+              marginTop: '32px',
+              paddingTop: '32px',
+              borderTop: '2px solid #e0e0e0'
+            }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px', color: '#1e3a8a' }}>
+                📋 Lighting Schedule Order
+              </h3>
+              <p style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
+                Drag and drop tags to match your lighting schedule order for vendor reports
+              </p>
+
+              <div style={{
+                background: '#f8f9fa',
+                border: '1px solid #dee2e6',
+                borderRadius: '8px',
+                padding: '12px',
+                maxHeight: '300px',
+                overflowY: 'auto'
+              }}>
+                {projectTags.map((tag, index) => (
+                  <div
+                    key={tag.id}
+                    draggable
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragEnd={handleDragEnd}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '10px 12px',
+                      marginBottom: '8px',
+                      background: draggedIndex === index ? '#e3f2fd' : '#fff',
+                      border: dragOverIndex === index ? '2px dashed #0066FF' : '1px solid #e0e0e0',
+                      borderRadius: '6px',
+                      cursor: 'move',
+                      transition: 'all 0.2s ease',
+                      opacity: draggedIndex === index ? 0.5 : 1
+                    }}
+                  >
+                    <GripVertical size={20} style={{ color: '#999', flexShrink: 0 }} />
+                    <div
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '6px',
+                        background: tag.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff',
+                        fontWeight: 700,
+                        fontSize: '14px',
+                        flexShrink: 0
+                      }}
+                    >
+                      {tag.code}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: '14px', color: '#333' }}>
+                        {tag.name}
+                      </div>
+                      {tag.category && (
+                        <div style={{ fontSize: '12px', color: '#666' }}>
+                          {tag.category}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#999',
+                      fontWeight: 600,
+                      flexShrink: 0
+                    }}>
+                      #{index + 1}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{
+                marginTop: '12px',
+                padding: '10px',
+                background: '#e3f2fd',
+                border: '1px solid #90caf9',
+                borderRadius: '6px',
+                fontSize: '12px',
+                color: '#1565c0'
+              }}>
+                💡 <strong>Tip:</strong> This order will be used when exporting the Device Counts sheet in Excel
+              </div>
+            </div>
+          )}
 
           <div style={{
             marginTop: '32px',

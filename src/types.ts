@@ -14,6 +14,7 @@ export type Tag = {
   color: string;
   category?: string;
   assemblyId?: string; // Optional link to a standard assembly
+  order?: number; // Optional sort order for project tags (lighting schedule order)
 };
 
 /* ===== Assembly System (Standard Material Kits) ===== */
