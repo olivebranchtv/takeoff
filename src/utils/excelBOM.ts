@@ -552,7 +552,9 @@ export async function exportProfessionalBOM(
       return a.description.localeCompare(b.description);
     })
     .map(mat => {
+      console.log(`💰 Pricing lookup for: category="${mat.category}", description="${mat.description}"`);
       const pricing = findPrice(mat.category, mat.description);
+      console.log(`   → Result: $${pricing.cost}, ${pricing.laborHours}hrs`);
       const unitCost = pricing.cost;
       const laborPerUnit = pricing.laborHours;
       const extendedCost = unitCost * mat.totalQty;
