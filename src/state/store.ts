@@ -13,6 +13,7 @@ import type {
 import { STANDARD_ASSEMBLIES } from '@/constants/assemblies';
 import { autoAssignAssembly } from '@/utils/tagAssemblyMapping';
 import { saveTagsToSupabase } from '@/utils/supabasePricing';
+import type { ProjectAnalysis } from '@/utils/openaiAnalysis';
 
 type HistoryEntry = { pageIndex: number; objects: AnyTakeoffObject[] };
 
@@ -151,6 +152,9 @@ type State = {
   // ASSEMBLY DATABASE (standard material kits)
   assemblies: Assembly[];
 
+  // AI ANALYSIS RESULTS (persisted)
+  aiAnalysisResult: ProjectAnalysis | null;
+
   // setters & actions
   setFileName: (n: string) => void;
   setProjectName: (n: string) => void;
@@ -210,6 +214,10 @@ type State = {
   setLastMeasureOptions: (opts: Partial<MeasureOptions>) => void;
   resetLastMeasureOptions: () => void;
   getLastMeasureOptions: () => MeasureOptions;
+
+  // AI analysis helpers
+  setAiAnalysisResult: (result: ProjectAnalysis | null) => void;
+  getAiAnalysisResult: () => ProjectAnalysis | null;
 };
 
 export const useStore = create<State>()(
@@ -241,6 +249,9 @@ export const useStore = create<State>()(
 
       // initialize assemblies with standard kits
       assemblies: STANDARD_ASSEMBLIES,
+
+      // initialize AI analysis result as null
+      aiAnalysisResult: null,
 
       setFileName: (n) => set({ fileName: n, projectName: get().projectName || baseNameNoExt(n) }),
       setProjectName: (n) => set({ projectName: n || 'Untitled Project' }),
@@ -587,17 +598,22 @@ export const useStore = create<State>()(
       })),
       resetLastMeasureOptions: () => set({ lastMeasureOptions: DEFAULT_MEASURE_OPTIONS }),
       getLastMeasureOptions: () => get().lastMeasureOptions,
+
+      /** ===== AI Analysis helpers ===== */
+      setAiAnalysisResult: (result) => set({ aiAnalysisResult: result }),
+      getAiAnalysisResult: () => get().aiAnalysisResult,
     }),
     {
       name: 'skd.mastertags.v1',
       storage: createJSONStorage(() => localStorage),
       version: 1,
-      // persist master DB, palette, overrides, AND lastMeasureOptions
+      // persist master DB, palette, overrides, lastMeasureOptions, AND aiAnalysisResult
       partialize: (s) => ({
         tags: s.tags,
         palette: s.palette,
         colorOverrides: s.colorOverrides,
         lastMeasureOptions: s.lastMeasureOptions,
+        aiAnalysisResult: s.aiAnalysisResult,
       }),
     }
   )

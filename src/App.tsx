@@ -86,8 +86,11 @@ export default function App() {
   const [assemblyPanelOpen, setAssemblyPanelOpen] = useState(false);
   const [pricingPanelOpen, setPricingPanelOpen] = useState(false);
   const [aiAnalysisOpen, setAiAnalysisOpen] = useState(false);
-  const [aiAnalysisResult, setAiAnalysisResult] = useState<ProjectAnalysis | null>(null);
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
+
+  // Get AI analysis result from store (persisted)
+  const aiAnalysisResult = useStore(s => s.aiAnalysisResult);
+  const setAiAnalysisResult = useStore(s => s.setAiAnalysisResult);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   /* ---------- File menu ---------- */
@@ -933,6 +936,16 @@ export default function App() {
           >
             {aiAnalyzing ? '⏳ Analyzing...' : '🤖 AI Scan Documents'}
           </button>
+          {aiAnalysisResult && (
+            <button
+              className="btn"
+              onClick={() => setAiAnalysisOpen(true)}
+              style={{background:'#8b5cf6', color:'#fff', fontWeight:'bold', whiteSpace:'nowrap'}}
+              title="View previous AI scan results"
+            >
+              📊 View AI Results
+            </button>
+          )}
           <button className="btn" onClick={()=>setPricingPanelOpen(true)} style={{background:'#2e7d32', color:'#fff', fontWeight:'bold', whiteSpace:'nowrap'}}>💰 Pricing & Bidding</button>
           <button className="btn" onClick={exportExcelFull} style={{whiteSpace:'nowrap'}}>Export Excel (Full BOM)</button>
           <button className="btn" onClick={exportFixturesOnly} style={{whiteSpace:'nowrap'}}>Export Lighting Fixtures</button>
