@@ -135,12 +135,11 @@ export function calculateAssemblyMaterials(
   // ============================================================================
   // ADD 100FT HOMERUN ASSEMBLIES
   // - 1 per 8 lighting fixtures (minimum 1 if any lights)
-  // - 1 per 6 GFI receptacles (minimum 1 if any GFIs)
+  // - GFCI homeruns are now built into RECEP-GFCI-20A-HOMERUN assembly
   // ============================================================================
 
-  // Count total lighting fixtures and GFI receptacles
+  // Count total lighting fixtures
   let totalLightingFixtures = 0;
-  let totalGFIReceptacles = 0;
 
   for (const row of bomRows) {
     const tag = tagMap.get(row.tagCode);
@@ -148,19 +147,15 @@ export function calculateAssemblyMaterials(
       if (tag.category?.toLowerCase().includes('light')) {
         totalLightingFixtures += row.qty;
       }
-      if (row.tagCode === 'REC-GFCI' || row.tagCode === 'REC-WP-GFCI') {
-        totalGFIReceptacles += row.qty;
-      }
     }
   }
 
-  // Calculate number of homeruns needed
+  // Calculate number of homeruns needed (only for lights now)
   const lightHomeruns = totalLightingFixtures > 0 ? Math.ceil(totalLightingFixtures / 8) : 0;
-  const gfiHomeruns = totalGFIReceptacles > 0 ? Math.ceil(totalGFIReceptacles / 6) : 0;
-  const totalHomerunsNeeded = lightHomeruns + gfiHomeruns;
+  const totalHomerunsNeeded = lightHomeruns;
 
   if (totalHomerunsNeeded > 0) {
-    console.log(`🔌 Adding ${totalHomerunsNeeded} 100ft homerun assemblies: ${lightHomeruns} for ${totalLightingFixtures} lights, ${gfiHomeruns} for ${totalGFIReceptacles} GFIs`);
+    console.log(`🔌 Adding ${totalHomerunsNeeded} 100ft homerun assemblies for ${totalLightingFixtures} lighting fixtures (GFCI homeruns built into assembly)`);
 
     // Find the 100ft homerun assembly by code
     const homerunAssembly = Array.from(assemblyMap.values()).find(a => a.code === 'HOMERUN-100FT');
@@ -197,7 +192,7 @@ export function calculateAssemblyMaterials(
             itemCode: item.itemCode,
             assemblyCode: homerunAssembly.code,
             assemblyName: homerunAssembly.name,
-            notes: `Auto-added: ${lightHomeruns} for lights, ${gfiHomeruns} for GFIs`
+            notes: `Auto-added: ${lightHomeruns} homerun(s) for lighting fixtures`
           });
         }
 
@@ -210,7 +205,7 @@ export function calculateAssemblyMaterials(
           wasteFactor: item.wasteFactor,
           totalQty,
           itemCode: item.itemCode,
-          notes: `Auto-added: ${lightHomeruns} for lights, ${gfiHomeruns} for GFIs`
+          notes: `Auto-added: ${lightHomeruns} homerun(s) for lighting fixtures`
         });
       }
 
