@@ -1,4 +1,5 @@
 import type { ProjectSave, Tag } from '@/types';
+import { saveProjectToSupabase, loadProjectFromSupabase } from './supabasePricing';
 
 const KEY = 'takeoff_project_v2';
 
@@ -14,11 +15,21 @@ export function importJSON(s: string): ProjectSave {
   return obj as ProjectSave;
 }
 
-export function saveProject(project: ProjectSave) {
+export async function saveProject(project: ProjectSave) {
+  // Save to Supabase
+  await saveProjectToSupabase(project);
+  // Also save to localStorage as backup
   localStorage.setItem(KEY, exportJSON(project));
 }
 
-export function loadProject(): ProjectSave | null {
+export async function loadProject(): Promise<ProjectSave | null> {
+  // Try loading from Supabase first
+  const supabaseProject = await loadProjectFromSupabase();
+  if (supabaseProject) {
+    return supabaseProject;
+  }
+
+  // Fallback to localStorage
   const s = localStorage.getItem(KEY);
   if (!s) return null;
   try { return importJSON(s); } catch { return null; }

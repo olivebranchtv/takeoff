@@ -13,6 +13,7 @@ import { analyzeDrawingsWithImages, getOpenAIApiKey, setOpenAIApiKey, type Proje
 import { useStore } from '@/state/store';
 import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
 import { pathLength } from '@/utils/geometry';
+import { useAutoSave } from '@/hooks/useAutoSave';
 
 /* NEW: raceway BOM helpers */
 import {
@@ -100,6 +101,9 @@ export default function App() {
 
   /* ---------- sidebar collapse ---------- */
   const [leftOpen, setLeftOpen] = useState<boolean>(true);
+
+  /* ---------- Auto-save to Supabase ---------- */
+  useAutoSave();
 
   /* ---------- store ---------- */
   const {

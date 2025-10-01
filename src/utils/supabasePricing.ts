@@ -232,3 +232,169 @@ export async function saveProjectEstimate(
     return null;
   }
 }
+
+export async function saveProjectToSupabase(projectData: any): Promise<boolean> {
+  if (!supabase) return false;
+
+  try {
+    const defaultUserId = '00000000-0000-0000-0000-000000000000';
+
+    // First, deactivate all projects for this user
+    await supabase
+      .from('project_data')
+      .update({ is_active: false })
+      .eq('user_id', defaultUserId);
+
+    // Check if project already exists
+    const { data: existing } = await supabase
+      .from('project_data')
+      .select('id')
+      .eq('user_id', defaultUserId)
+      .eq('project_name', projectData.name || projectData.projectName || 'Untitled Project')
+      .maybeSingle();
+
+    if (existing) {
+      // Update existing project
+      const { error } = await supabase
+        .from('project_data')
+        .update({
+          file_name: projectData.fileName,
+          project_data: projectData,
+          updated_at: new Date().toISOString(),
+          is_active: true
+        })
+        .eq('id', existing.id);
+
+      if (error) {
+        console.error('Error updating project:', error);
+        return false;
+      }
+    } else {
+      // Insert new project
+      const { error } = await supabase
+        .from('project_data')
+        .insert({
+          user_id: defaultUserId,
+          project_name: projectData.name || projectData.projectName || 'Untitled Project',
+          file_name: projectData.fileName,
+          project_data: projectData,
+          is_active: true
+        });
+
+      if (error) {
+        console.error('Error inserting project:', error);
+        return false;
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error saving project:', error);
+    return false;
+  }
+}
+
+export async function loadProjectFromSupabase(): Promise<any | null> {
+  if (!supabase) return null;
+
+  try {
+    const defaultUserId = '00000000-0000-0000-0000-000000000000';
+
+    const { data, error } = await supabase
+      .from('project_data')
+      .select('project_data')
+      .eq('user_id', defaultUserId)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error loading project:', error);
+      return null;
+    }
+
+    return data?.project_data || null;
+  } catch (error) {
+    console.error('Error loading project:', error);
+    return null;
+  }
+}
+
+export async function saveTagsToSupabase(tags: any[], colorOverrides: any): Promise<boolean> {
+  if (!supabase) return false;
+
+  try {
+    const defaultUserId = '00000000-0000-0000-0000-000000000000';
+
+    // Check if tag library exists
+    const { data: existing } = await supabase
+      .from('tag_library')
+      .select('id')
+      .eq('user_id', defaultUserId)
+      .maybeSingle();
+
+    if (existing) {
+      // Update existing
+      const { error } = await supabase
+        .from('tag_library')
+        .update({
+          tags,
+          color_overrides: colorOverrides,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existing.id);
+
+      if (error) {
+        console.error('Error updating tags:', error);
+        return false;
+      }
+    } else {
+      // Insert new
+      const { error } = await supabase
+        .from('tag_library')
+        .insert({
+          user_id: defaultUserId,
+          tags,
+          color_overrides: colorOverrides
+        });
+
+      if (error) {
+        console.error('Error inserting tags:', error);
+        return false;
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error saving tags:', error);
+    return false;
+  }
+}
+
+export async function loadTagsFromSupabase(): Promise<{ tags: any[]; colorOverrides: any } | null> {
+  if (!supabase) return null;
+
+  try {
+    const defaultUserId = '00000000-0000-0000-0000-000000000000';
+
+    const { data, error } = await supabase
+      .from('tag_library')
+      .select('tags, color_overrides')
+      .eq('user_id', defaultUserId)
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error loading tags:', error);
+      return null;
+    }
+
+    if (!data) return null;
+
+    return {
+      tags: data.tags || [],
+      colorOverrides: data.color_overrides || {}
+    };
+  } catch (error) {
+    console.error('Error loading tags:', error);
+    return null;
+  }
+}

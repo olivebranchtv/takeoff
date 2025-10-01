@@ -199,6 +199,20 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
     alert(`Loaded ${loaded} demo material prices!\n\nNote: This is sample data for demonstration purposes.\nNot saved to database.`);
   };
 
+  // Auto-save settings to Supabase whenever they change
+  useEffect(() => {
+    const saveSettingsDebounced = setTimeout(async () => {
+      await saveCompanySettings({
+        default_overhead_percentage: overheadPct,
+        default_profit_percentage: profitPct,
+        default_labor_rate: 30.0,
+        material_tax_rate: taxRate / 100
+      });
+    }, 1000);
+
+    return () => clearTimeout(saveSettingsDebounced);
+  }, [overheadPct, profitPct, taxRate]);
+
   // Calculate costs whenever inputs change
   useEffect(() => {
     try {
