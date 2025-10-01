@@ -106,6 +106,11 @@ export function calculateAssemblyMaterials(
   // ============================================================================
   const racewayRows = buildBOMRows(pages, 'summarized').filter(r => r.shape !== 'count');
 
+  console.log(`🚀 Processing ${racewayRows.length} raceway rows for home run materials`);
+
+  let rowsWithoutConductors = 0;
+  let totalRacewayLfWithoutWire = 0;
+
   for (const row of racewayRows) {
     // Add conduit/raceway if EMT size specified
     if (row.emtSize && row.racewayLf && row.racewayLf > 0) {
@@ -134,15 +139,22 @@ export function calculateAssemblyMaterials(
     }
 
     // Add wire/conductors
-    if (row.conductors && Array.isArray(row.conductors)) {
+    if (row.conductors && Array.isArray(row.conductors) && row.conductors.length > 0) {
+      console.log(`  📌 Row has ${row.conductors.length} conductor configs, racewayLf=${row.racewayLf}`);
       for (const cond of row.conductors) {
-        if (!cond.count || !cond.size || cond.count === 0) continue;
+        if (!cond.count || !cond.size || cond.count === 0) {
+          console.log(`  ⚠️ Skipping conductor: count=${cond.count}, size=${cond.size}`);
+          continue;
+        }
 
         // Calculate conductor length for this group
         const condLf = row.racewayLf || 0;
         const totalCondLf = cond.count * condLf;
 
-        if (totalCondLf <= 0) continue;
+        if (totalCondLf <= 0) {
+          console.log(`  ⚠️ Skipping conductor: totalCondLf=${totalCondLf} (count=${cond.count} × racewayLf=${condLf})`);
+          continue;
+        }
 
         // Format wire description to match database exactly
         // Standard: #14, #12, #10 use Stranded for flexibility; #8+ always Stranded
@@ -152,12 +164,13 @@ export function calculateAssemblyMaterials(
         const sizeWithHash = cond.size.startsWith('#') ? cond.size : `#${cond.size}`;
         const wireDesc = `${sizeWithHash} THHN Copper Wire,${wireType}`;
         const matKey = `wire::${wireDesc}::EA`;
-        console.log(`📦 Generated WIRE material: category="wire", desc="${wireDesc}", qty=${totalCondLf}LF`);
+        console.log(`  ✅ Generated WIRE material: category="wire", desc="${wireDesc}", qty=${totalCondLf}LF (${cond.count} conductors × ${condLf}LF)`);
         const existing = materialAcc.get(matKey);
 
         if (existing) {
           existing.quantity += totalCondLf;
           existing.totalQty += totalCondLf * existing.wasteFactor;
+          console.log(`    📈 Added to existing wire entry, new totalQty=${existing.totalQty}LF`);
         } else {
           materialAcc.set(matKey, {
             category: 'wire',
@@ -169,9 +182,42 @@ export function calculateAssemblyMaterials(
             assemblyCode: 'WIRE',
             assemblyName: 'Conductor Pull'
           });
+          console.log(`    🆕 Created new wire entry, totalQty=${totalCondLf * 1.10}LF`);
         }
       }
+    } else {
+      // Track rows without conductor info
+      rowsWithoutConductors++;
+      totalRacewayLfWithoutWire += (row.racewayLf || 0);
+      console.log(`  ⚠️ Row "${row.tagCode}" has conduit (${row.racewayLf}LF) but NO CONDUCTOR INFO - wire cost/labor will be $0!`);
     }
+  }
+
+  // Show prominent warning if conductors are missing
+  if (rowsWithoutConductors > 0) {
+    console.warn(`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  MISSING WIRE/CONDUCTOR DATA ⚠️
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${rowsWithoutConductors} home run(s) have conduit specified but NO WIRE/CONDUCTOR information!
+
+Total conduit without wire: ${totalRacewayLfWithoutWire} LF
+
+This means:
+  ❌ NO wire material cost
+  ❌ NO wire pulling labor hours
+  ❌ Your estimate is INCOMPLETE and UNDER-PRICED!
+
+TO FIX:
+  1. Click on each home run line/polyline
+  2. Fill out the "Conductors" section in the measurement dialog
+  3. Specify: count, wire size (e.g., #12), insulation type
+  4. Example: 3 conductors, #12, THHN
+  5. Re-calculate pricing after updating
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    `);
   }
 
   return {

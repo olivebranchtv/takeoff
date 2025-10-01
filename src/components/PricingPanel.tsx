@@ -634,6 +634,36 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
             ⚙️ Save Settings as Default
           </button>
 
+          {/* WARNING: Missing wire data */}
+          {costs.divisionBreakdown.length > 0 && (
+            costs.divisionBreakdown.find(d => d.division === 'EMT CONDUIT') &&
+            !costs.divisionBreakdown.find(d => d.division === 'wire')
+          ) && (
+            <div style={{
+              marginTop: '20px',
+              padding: '16px',
+              background: '#fff3cd',
+              border: '2px solid #ffc107',
+              borderRadius: '6px',
+              fontSize: '14px',
+              lineHeight: '1.6'
+            }}>
+              <div style={{ fontWeight: 'bold', color: '#856404', marginBottom: '8px', fontSize: '15px' }}>
+                ⚠️ MISSING WIRE COST & LABOR
+              </div>
+              <div style={{ color: '#856404', marginBottom: '8px' }}>
+                Your estimate shows conduit but <strong>NO wire materials or labor</strong>!
+              </div>
+              <div style={{ color: '#666', fontSize: '13px', marginLeft: '16px' }}>
+                • Click each home run line/polyline on the drawing<br />
+                • Fill out the "Conductors" section in the measurement dialog<br />
+                • Specify conductor count, wire size, and insulation type<br />
+                • Example: 3 conductors, #12, THHN<br />
+                • Re-calculate pricing after updating all home runs
+              </div>
+            </div>
+          )}
+
           {costs.divisionBreakdown.length > 0 && (
             <div style={{ marginTop: '30px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px', color: '#0d3b66' }}>
