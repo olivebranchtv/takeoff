@@ -388,9 +388,31 @@ export const useStore = create<State>()(
 
         const tags = [...s.tags];
         if (idx >= 0) {
-          tags[idx] = { ...tags[idx], code: codeKey, name: t.name || '', category: incomingCat, color: incomingColor, assemblyId: finalAssemblyId };
+          // Update existing tag - only include assemblyId if defined
+          const updatedTag: Tag = {
+            ...tags[idx],
+            code: codeKey,
+            name: t.name || '',
+            category: incomingCat,
+            color: incomingColor,
+          };
+          if (finalAssemblyId !== undefined) {
+            updatedTag.assemblyId = finalAssemblyId;
+          }
+          tags[idx] = updatedTag;
         } else {
-          tags.push({ id: nextId(), code: codeKey, name: t.name || '', category: incomingCat, color: incomingColor, assemblyId: finalAssemblyId });
+          // Add new tag - only include assemblyId if defined
+          const newTag: Tag = {
+            id: nextId(),
+            code: codeKey,
+            name: t.name || '',
+            category: incomingCat,
+            color: incomingColor,
+          };
+          if (finalAssemblyId !== undefined) {
+            newTag.assemblyId = finalAssemblyId;
+          }
+          tags.push(newTag);
         }
 
         const overrides = { ...s.colorOverrides };
@@ -426,15 +448,31 @@ export const useStore = create<State>()(
         // Merge into canonical if code collides with another
         const canonicalIdx = tags.findIndex(t => norm(t.code) === nextCode);
         if (canonicalIdx >= 0 && canonicalIdx !== currentIdx) {
-          const updatedTag = { ...tags[canonicalIdx], code: nextCode, name: nextName, category: nextCat, color: nextColor, assemblyId: nextAssemblyId };
-          // Remove assemblyId if explicitly set to undefined or is light category
-          if (nextAssemblyId === undefined) delete (updatedTag as any).assemblyId;
+          // Create new tag object - only include assemblyId if it's defined
+          const updatedTag: Tag = {
+            id: tags[canonicalIdx].id,
+            code: nextCode,
+            name: nextName,
+            category: nextCat,
+            color: nextColor,
+          };
+          if (nextAssemblyId !== undefined) {
+            updatedTag.assemblyId = nextAssemblyId;
+          }
           tags[canonicalIdx] = updatedTag;
           tags.splice(currentIdx, 1);
         } else {
-          const updatedTag = { ...tags[currentIdx], code: nextCode, name: nextName, category: nextCat, color: nextColor, assemblyId: nextAssemblyId };
-          // Remove assemblyId if explicitly set to undefined or is light category
-          if (nextAssemblyId === undefined) delete (updatedTag as any).assemblyId;
+          // Create new tag object - only include assemblyId if it's defined
+          const updatedTag: Tag = {
+            id: tags[currentIdx].id,
+            code: nextCode,
+            name: nextName,
+            category: nextCat,
+            color: nextColor,
+          };
+          if (nextAssemblyId !== undefined) {
+            updatedTag.assemblyId = nextAssemblyId;
+          }
           tags[currentIdx] = updatedTag;
         }
 
@@ -476,25 +514,43 @@ export const useStore = create<State>()(
           const isLightCategory = incomingCat?.toLowerCase().includes('light');
 
           // Auto-assign assembly if not already set (but skip Lights)
-          const tagWithAssembly = isLightCategory ? { assemblyId: undefined } : autoAssignAssembly({
-            code: (raw as any).code,
-            category: incomingCat,
-            assemblyId: (raw as any).assemblyId
-          });
+          let finalAssemblyId = (raw as any).assemblyId;
 
-          const t = {
+          if (!isLightCategory && !finalAssemblyId) {
+            const tagWithAssembly = autoAssignAssembly({
+              code: (raw as any).code,
+              category: incomingCat,
+              assemblyId: (raw as any).assemblyId
+            });
+            finalAssemblyId = tagWithAssembly.assemblyId;
+          } else if (isLightCategory) {
+            finalAssemblyId = undefined;
+          }
+
+          // Create tag object - only include assemblyId if defined
+          const t: Tag = {
             id: (raw as Tag).id || nextId(),
             code: (raw as any).code,
             name: (raw as any).name || '',
             category: incomingCat,
             color: (raw as any).color || ORANGE,
-            assemblyId: tagWithAssembly.assemblyId,
-          } as Tag;
+          };
+          if (finalAssemblyId !== undefined) {
+            t.assemblyId = finalAssemblyId;
+          }
 
           const key = norm(t.code);
           const idx = merged.findIndex(x => norm(x.code) === key);
-          if (idx >= 0) merged[idx] = { ...merged[idx], ...t, code: key };
-          else merged.push({ ...t, code: key });
+          if (idx >= 0) {
+            const updatedTag: Tag = { ...merged[idx], ...t, code: key };
+            // Remove assemblyId if it was set to undefined
+            if (finalAssemblyId === undefined && merged[idx].assemblyId !== undefined) {
+              delete (updatedTag as any).assemblyId;
+            }
+            merged[idx] = updatedTag;
+          } else {
+            merged.push({ ...t, code: key });
+          }
 
           if (isLights(t.category)) {
             if (t.color && t.color.toUpperCase() !== ORANGE.toUpperCase()) overrides[key] = t.color;
