@@ -1,7 +1,7 @@
 import React from 'react';
 import { useStore } from '@/state/store';
 import type { Assembly, Tag, AssemblyItem } from '@/types';
-import { Plus, Save, X, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Save, X, Trash2, CreditCard as Edit2 } from 'lucide-react';
 
 export function AssemblyPanel() {
   const { assemblies, tags, addAssembly, updateAssembly, deleteAssembly } = useStore();
