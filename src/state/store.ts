@@ -158,7 +158,7 @@ type State = {
   addAssembly: (assembly: Assembly) => void;
   updateAssembly: (id: string, assembly: Assembly) => void;
   deleteAssembly: (id: string) => void;
-  loadAssembliesFromDatabase: () => Promise<void>;
+  setAssemblies: (assemblies: Assembly[]) => void;
   saveAssemblyToDatabase: (assembly: Assembly) => Promise<boolean>;
 
   // AI ANALYSIS RESULTS (persisted)
@@ -731,37 +731,9 @@ export const useStore = create<State>()(
         };
       }),
 
-      /** Load custom assemblies from Supabase and merge with standard assemblies */
-      loadAssembliesFromDatabase: async () => {
-        try {
-          const customAssemblies = await loadAssembliesFromSupabase();
-
-          if (customAssemblies.length > 0) {
-            set((s) => {
-              // Create a map of custom assemblies by ID
-              const customMap = new Map(customAssemblies.map(a => [a.id, a]));
-
-              // Merge: custom assemblies override standard ones with same ID
-              const merged = STANDARD_ASSEMBLIES.map(std =>
-                customMap.has(std.id) ? customMap.get(std.id)! : std
-              );
-
-              // Add any custom assemblies that aren't overrides
-              customAssemblies.forEach(custom => {
-                if (!STANDARD_ASSEMBLIES.find(std => std.id === custom.id)) {
-                  merged.push(custom);
-                }
-              });
-
-              console.log(`✅ Loaded ${customAssemblies.length} custom assemblies, total: ${merged.length}`);
-              return { assemblies: merged };
-            });
-          } else {
-            console.log('No custom assemblies found, using standard assemblies');
-          }
-        } catch (err) {
-          console.error('Failed to load assemblies from database:', err);
-        }
+      /** Set assemblies (replaces all assemblies in the store) */
+      setAssemblies: (assemblies: Assembly[]) => {
+        set({ assemblies });
       },
 
       /** Save an assembly to Supabase */
@@ -789,15 +761,14 @@ export const useStore = create<State>()(
     {
       name: 'skd.mastertags.v1',
       storage: createJSONStorage(() => localStorage),
-      version: 2,
-      // persist master DB, palette, overrides, lastMeasureOptions, aiAnalysisResult, AND assemblies
+      version: 3,
+      // persist master DB, palette, overrides, lastMeasureOptions, aiAnalysisResult (NOT assemblies - they come from Supabase)
       partialize: (s) => ({
         tags: s.tags,
         palette: s.palette,
         colorOverrides: s.colorOverrides,
         lastMeasureOptions: s.lastMeasureOptions,
         aiAnalysisResult: s.aiAnalysisResult,
-        assemblies: s.assemblies,
       }),
       migrate: (persistedState: any, version: number) => {
         // Migration from version 1 to 2: Add itemCode to assembly items
@@ -816,6 +787,10 @@ export const useStore = create<State>()(
               return assembly;
             });
           }
+        }
+        // Migration from version 2 to 3: Remove assemblies from localStorage (now in Supabase)
+        if (version === 2 && persistedState.assemblies) {
+          delete persistedState.assemblies;
         }
         return persistedState;
       },

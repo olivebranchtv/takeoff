@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useStore } from '@/state/store';
 import { loadTagsFromSupabase } from '@/utils/supabasePricing';
+import { syncStandardAssembliesToDatabase, loadAssembliesFromSupabase } from '@/utils/supabaseAssemblies';
+import { STANDARD_ASSEMBLIES } from '@/constants/assemblies';
 
 export function useInitialize() {
   const importTags = useStore(s => s.importTags);
   const setTagColorOverride = useStore(s => s.setTagColorOverride);
-  const loadAssembliesFromDatabase = useStore(s => s.loadAssembliesFromDatabase);
+  const setAssemblies = useStore(s => s.setAssemblies);
   const hasInitialized = useRef(false);
 
   useEffect(() => {
@@ -42,17 +44,32 @@ export function useInitialize() {
         console.log('ℹ️ Falling back to localStorage tags');
       }
 
-      // Load custom assemblies from Supabase
-      console.log('🔄 Loading assemblies from Supabase...');
+      // Sync standard assemblies to Supabase (only if database is empty)
+      console.log('🔄 Syncing standard assemblies to Supabase...');
       try {
-        await loadAssembliesFromDatabase();
-        console.log('✅ Assemblies loaded successfully');
+        await syncStandardAssembliesToDatabase(STANDARD_ASSEMBLIES);
+      } catch (error) {
+        console.error('❌ Failed to sync standard assemblies:', error);
+      }
+
+      // Load ALL assemblies from Supabase (standard + custom)
+      console.log('🔄 Loading all assemblies from Supabase...');
+      try {
+        const assemblies = await loadAssembliesFromSupabase();
+        if (assemblies && assemblies.length > 0) {
+          console.log(`✅ Loaded ${assemblies.length} assemblies from Supabase`);
+          setAssemblies(assemblies);
+        } else {
+          console.log('⚠️ No assemblies in database, using standard assemblies from code');
+          setAssemblies(STANDARD_ASSEMBLIES);
+        }
       } catch (error) {
         console.error('❌ Failed to load assemblies from Supabase:', error);
-        console.log('ℹ️ Using standard assemblies only');
+        console.log('ℹ️ Using standard assemblies from code');
+        setAssemblies(STANDARD_ASSEMBLIES);
       }
     }
 
     initialize();
-  }, [importTags, setTagColorOverride, loadAssembliesFromDatabase]);
+  }, [importTags, setTagColorOverride, setAssemblies]);
 }

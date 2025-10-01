@@ -33,7 +33,7 @@ interface DbAssembly {
 }
 
 /**
- * Load all custom and edited assemblies from Supabase
+ * Load ALL assemblies from Supabase (standard and custom)
  */
 export async function loadAssembliesFromSupabase(): Promise<Assembly[]> {
   const client = getSupabaseClient();
@@ -55,11 +55,11 @@ export async function loadAssembliesFromSupabase(): Promise<Assembly[]> {
     }
 
     if (!data || data.length === 0) {
-      console.log('No custom assemblies found in database');
+      console.log('No assemblies found in database');
       return [];
     }
 
-    console.log(`✅ Loaded ${data.length} custom assemblies from Supabase`);
+    console.log(`✅ Loaded ${data.length} assemblies from Supabase`);
 
     // Convert database format to Assembly type
     return data.map((row: DbAssembly) => ({
@@ -172,7 +172,7 @@ export async function deleteAssemblyFromSupabase(assemblyId: string): Promise<bo
 /**
  * Save multiple assemblies in batch
  */
-export async function saveAssembliesBatch(assemblies: Assembly[]): Promise<boolean> {
+export async function saveAssembliesBatch(assemblies: Assembly[], isCustom: boolean = true): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) {
     console.warn('Supabase not configured - cannot save assemblies');
@@ -187,7 +187,7 @@ export async function saveAssembliesBatch(assemblies: Assembly[]): Promise<boole
       description: assembly.description || null,
       type: assembly.type,
       is_active: assembly.isActive,
-      is_custom: true,
+      is_custom: isCustom,
       items: assembly.items
     }));
 
@@ -204,6 +204,46 @@ export async function saveAssembliesBatch(assemblies: Assembly[]): Promise<boole
     return true;
   } catch (err) {
     console.error('Exception batch saving assemblies:', err);
+    return false;
+  }
+}
+
+/**
+ * Sync standard assemblies to database (only if they don't exist)
+ * This ensures all team members have access to the same standard assemblies
+ */
+export async function syncStandardAssembliesToDatabase(standardAssemblies: Assembly[]): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) {
+    console.warn('Supabase not configured - cannot sync standard assemblies');
+    return false;
+  }
+
+  try {
+    // Check how many assemblies exist in the database
+    const { count, error: countError } = await client
+      .from('assemblies')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) {
+      console.error('Error checking assembly count:', countError);
+      return false;
+    }
+
+    // If database is empty or has very few assemblies, sync all standard assemblies
+    if (count === null || count < standardAssemblies.length / 2) {
+      console.log(`🔄 Syncing ${standardAssemblies.length} standard assemblies to database...`);
+      const success = await saveAssembliesBatch(standardAssemblies, false); // false = not custom
+      if (success) {
+        console.log('✅ Standard assemblies synced to database');
+      }
+      return success;
+    } else {
+      console.log('ℹ️ Standard assemblies already in database');
+      return true;
+    }
+  } catch (err) {
+    console.error('Exception syncing standard assemblies:', err);
     return false;
   }
 }
