@@ -11,7 +11,7 @@ import { calculateAssemblyMaterials, type MaterialLine, type AssemblyUsage } fro
  * Used when database pricing is not available
  */
 const FALLBACK_PRICES: Record<string, { price: number; laborHours: number }> = {
-  // Lighting Fixtures - Customer supplied get $0 cost but we still need labor
+  // Lighting Fixtures - Customer supplied get $0 cost but we still need labor (1.0 hour per fixture)
   'light': { price: 0.00, laborHours: 1.0 },
   'fixture': { price: 0.00, laborHours: 1.0 },
   'led': { price: 180.00, laborHours: 1.0 },
@@ -73,11 +73,12 @@ function getFallbackPrice(category: string, description: string): { price: numbe
 
   // Check if this is a generic fixture (e.g., "Fixture A", "Fixture B", "Fixture J")
   // These are owner-supplied fixtures from lighting schedules
+  // Changed to 1.0 hour per fixture for labor
   if (desc.match(/^fixture\s+[a-z0-9]+$/i) ||
       (cat.includes('light') && desc.startsWith('fixture')) ||
       (cat === 'lights' && desc.match(/^fixture/i))) {
-    console.log(`💡 Generic light fixture "${description}" (category: "${category}") → $0.00 (owner-provided), 1.5hr labor`);
-    return { price: 0.00, laborHours: 1.5 };
+    console.log(`💡 Generic light fixture "${description}" (category: "${category}") → $0.00 (owner-provided), 1.0hr labor`);
+    return { price: 0.00, laborHours: 1.0 };
   }
 
   // Try exact match first
@@ -198,13 +199,14 @@ export class PricingDatabase {
       { code: 'SW-OCC', name: 'Occupancy Sensor Switch', hours: 0.50 },
       { code: 'SW-TIMER', name: 'Timer Switch', hours: 0.50 },
 
-      // Lighting
-      { code: 'LIGHT-2X4', name: '2x4 LED Troffer', hours: 0.75 },
-      { code: 'LIGHT-2X2', name: '2x2 LED Troffer', hours: 0.65 },
-      { code: 'LIGHT-HIGHBAY', name: 'LED High-Bay', hours: 1.25 },
-      { code: 'LIGHT-6IN', name: '6" LED Downlight', hours: 0.60 },
-      { code: 'LIGHT-EMER', name: 'Emergency Light', hours: 0.85 },
-      { code: 'LIGHT-EXIT', name: 'Exit Sign', hours: 0.50 },
+      // Lighting - Standard installation is 1.0 hour per fixture
+      { code: 'LIGHT-STD-INSTALL', name: 'Standard Lighting Fixture Installation', hours: 1.0 },
+      { code: 'LIGHT-2X4', name: '2x4 LED Troffer', hours: 1.0 },
+      { code: 'LIGHT-2X2', name: '2x2 LED Troffer', hours: 1.0 },
+      { code: 'LIGHT-HIGHBAY', name: 'LED High-Bay', hours: 1.0 },
+      { code: 'LIGHT-6IN', name: '6" LED Downlight', hours: 1.0 },
+      { code: 'LIGHT-EMER', name: 'Emergency Light', hours: 1.0 },
+      { code: 'LIGHT-EXIT', name: 'Exit Sign', hours: 1.0 },
 
       // Junction Boxes
       { code: 'JBOX-4SQ', name: '4" Square J-Box', hours: 0.25 },

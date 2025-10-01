@@ -20,9 +20,9 @@ export function getAssemblyIdForTag(tagCode: string, tagCategory?: string): stri
   }
 
   // ===== LIGHTS =====
+  // ALL lighting tags get the standard installation assembly
+  // This includes boxes, raceway, conductors, flex, and hardware
   if (category.includes('light')) {
-    // ALL lighting tags now get the standard installation assembly
-    // This includes boxes, raceway, conductors, flex, and hardware
     return 'light-standard-install';
   }
 

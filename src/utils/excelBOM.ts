@@ -56,7 +56,7 @@ export function calculateAssemblyMaterials(
 
       // For generic light fixtures without assemblies, add as a material line with labor hours
       const isLight = tag.category?.toLowerCase().includes('light');
-      const laborHours = isLight ? 1.5 : 0.5; // 1.5 hrs for lights, 0.5 hrs for other items
+      const laborHours = isLight ? 1.0 : 0.5; // 1.0 hrs for lights, 0.5 hrs for other items
 
       const matKey = `${tag.category || 'Lights'}::Fixture ${row.tagCode}::EA`;
       const existing = materialAcc.get(matKey);
