@@ -62,13 +62,22 @@ const FALLBACK_PRICES: Record<string, { price: number; laborHours: number }> = {
  * Get fallback pricing for items not in database
  */
 function getFallbackPrice(category: string, description: string): { price: number; laborHours: number } {
-  const desc = description.toLowerCase();
-  const cat = category.toLowerCase();
+  // Handle null/undefined values
+  if (!description || !category) {
+    console.warn(`⚠️ Missing description or category - description: "${description}", category: "${category}"`);
+    return FALLBACK_PRICES.default;
+  }
 
-  // Check if this is a generic fixture (e.g., "Fixture A", "Fixture B")
-  if (desc.match(/^fixture [a-z0-9]+$/i) || cat.includes('light')) {
-    console.log(`💡 Generic light fixture "${description}" → $0.00 (owner-provided), 1.0hr labor`);
-    return { price: 0.00, laborHours: 1.0 };
+  const desc = String(description).toLowerCase();
+  const cat = String(category).toLowerCase();
+
+  // Check if this is a generic fixture (e.g., "Fixture A", "Fixture B", "Fixture J")
+  // These are owner-supplied fixtures from lighting schedules
+  if (desc.match(/^fixture\s+[a-z0-9]+$/i) ||
+      (cat.includes('light') && desc.startsWith('fixture')) ||
+      (cat === 'lights' && desc.match(/^fixture/i))) {
+    console.log(`💡 Generic light fixture "${description}" (category: "${category}") → $0.00 (owner-provided), 1.5hr labor`);
+    return { price: 0.00, laborHours: 1.5 };
   }
 
   // Try exact match first
@@ -322,6 +331,12 @@ export class PricingDatabase {
    * Priority: item_code > exact match > case-insensitive > fuzzy
    */
   getMaterialPrice(category: string, description: string, itemCode?: string): number | undefined {
+    // Handle null/undefined values
+    if (!description || !category) {
+      console.warn(`⚠️ getMaterialPrice: Missing description or category - description: "${description}", category: "${category}"`);
+      return undefined;
+    }
+
     // 1. Try item code first (most reliable)
     if (itemCode) {
       for (const price of this.materialPrices.values()) {
@@ -349,8 +364,9 @@ export class PricingDatabase {
     // 3. Try case-insensitive exact match
     for (const [key, price] of this.materialPrices.entries()) {
       const [dbCat, dbDesc] = key.split('::');
-      if (dbCat.toLowerCase() === category.toLowerCase() &&
-          dbDesc.toLowerCase() === description.toLowerCase() &&
+      if (dbCat && dbDesc &&
+          dbCat.toLowerCase() === String(category).toLowerCase() &&
+          dbDesc.toLowerCase() === String(description).toLowerCase() &&
           price.materialCost > 0) {
         console.log(`🔍 ✓ CASE-INSENSITIVE [${category}] "${description}" → $${price.materialCost}`);
         return price.materialCost;
@@ -358,7 +374,7 @@ export class PricingDatabase {
     }
 
     // Fuzzy match - normalize and find similar items
-    const normDesc = description.toLowerCase()
+    const normDesc = String(description).toLowerCase()
       .replace(/["']/g, '')
       .replace(/\s+/g, '')
       .replace(/-/g, '')
@@ -369,7 +385,7 @@ export class PricingDatabase {
 
     // Category mapping for fuzzy matching
     // This MUST match ALL 28 categories in the Supabase database EXACTLY
-    const normCategory = category.toLowerCase().replace(/[&\s]/g, '');
+    const normCategory = String(category).toLowerCase().replace(/[&\s]/g, '');
     const categoryMatches = (dbCat: string): boolean => {
       const dbCatLower = dbCat.toLowerCase().replace(/[&\s]/g, '');
 
