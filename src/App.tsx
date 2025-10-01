@@ -1277,12 +1277,23 @@ export default function App() {
               }}
             >
               <div style={{marginBottom:12, fontSize:16, fontWeight:700, color:'#0d3b66'}}>Add Tag from Database</div>
+              {pickerGroups.length === 0 ? (
+                <div style={{padding: '16px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 6, marginBottom: 12}}>
+                  <div style={{fontSize: 14, color: '#0369a1', marginBottom: 8}}>
+                    ℹ️ All tags from your database are already in this project.
+                  </div>
+                  <div style={{fontSize: 13, color: '#075985'}}>
+                    Open <strong>Tag Database</strong> (wrench icon) to create new tags or manage existing ones.
+                  </div>
+                </div>
+              ) : null}
               <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
                 <select
                   className="btn"
                   value={pickerSel}
                   onChange={(e)=>setPickerSel(e.target.value)}
                   style={{flex:'1 1 200px', minWidth:200}}
+                  disabled={pickerGroups.length === 0}
                 >
                   <option value="">— Select tag —</option>
                   {pickerGroups.map(g => (
@@ -1305,6 +1316,7 @@ export default function App() {
                     setPickerOpen(false);
                   }}
                   style={{background:'#0d6efd', color:'#fff', fontWeight:600}}
+                  disabled={!pickerSel || pickerGroups.length === 0}
                 >
                   Add
                 </button>
