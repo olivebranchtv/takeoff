@@ -133,37 +133,51 @@ export function calculateAssemblyMaterials(
   }
 
   // ============================================================================
-  // ADD LIGHTING HOMERUN ASSEMBLIES (1 per 8 fixtures)
+  // ADD 100FT HOMERUN ASSEMBLIES
+  // - 1 per 8 lighting fixtures (minimum 1 if any lights)
+  // - 1 per 6 GFI receptacles (minimum 1 if any GFIs)
   // ============================================================================
-  // Count total lighting fixtures
+
+  // Count total lighting fixtures and GFI receptacles
   let totalLightingFixtures = 0;
+  let totalGFIReceptacles = 0;
+
   for (const row of bomRows) {
     const tag = tagMap.get(row.tagCode);
-    if (tag && tag.category?.toLowerCase().includes('light')) {
-      totalLightingFixtures += row.qty;
+    if (tag) {
+      if (tag.category?.toLowerCase().includes('light')) {
+        totalLightingFixtures += row.qty;
+      }
+      if (row.tagCode === 'REC-GFCI' || row.tagCode === 'REC-WP-GFCI') {
+        totalGFIReceptacles += row.qty;
+      }
     }
   }
 
-  // Calculate number of homeruns needed (1 per 8 fixtures)
-  const homerunsNeeded = Math.ceil(totalLightingFixtures / 8);
+  // Calculate number of homeruns needed
+  const lightHomeruns = totalLightingFixtures > 0 ? Math.ceil(totalLightingFixtures / 8) : 0;
+  const gfiHomeruns = totalGFIReceptacles > 0 ? Math.ceil(totalGFIReceptacles / 6) : 0;
+  const totalHomerunsNeeded = lightHomeruns + gfiHomeruns;
 
-  if (homerunsNeeded > 0) {
-    console.log(`🔌 Adding ${homerunsNeeded} lighting homerun assemblies for ${totalLightingFixtures} total fixtures`);
+  if (totalHomerunsNeeded > 0) {
+    console.log(`🔌 Adding ${totalHomerunsNeeded} 100ft homerun assemblies: ${lightHomeruns} for ${totalLightingFixtures} lights, ${gfiHomeruns} for ${totalGFIReceptacles} GFIs`);
 
-    const homerunAssembly = assemblyMap.get('light-homerun');
+    // Find the 100ft homerun assembly by code
+    const homerunAssembly = Array.from(assemblyMap.values()).find(a => a.code === 'HOMERUN-100FT');
+
     if (homerunAssembly && homerunAssembly.isActive) {
       // Track homerun assembly usage
       const homerunUsage: AssemblyUsage = {
         code: homerunAssembly.code,
         name: homerunAssembly.name,
         description: homerunAssembly.description,
-        count: homerunsNeeded,
+        count: totalHomerunsNeeded,
         materials: []
       };
 
       // Add homerun materials
       for (const item of homerunAssembly.items) {
-        const baseQty = item.quantityPer * homerunsNeeded;
+        const baseQty = item.quantityPer * totalHomerunsNeeded;
         const totalQty = baseQty * item.wasteFactor;
 
         const matKey = `${item.category}::${item.description}::${item.unit}`;
@@ -183,7 +197,7 @@ export function calculateAssemblyMaterials(
             itemCode: item.itemCode,
             assemblyCode: homerunAssembly.code,
             assemblyName: homerunAssembly.name,
-            notes: item.notes
+            notes: `Auto-added: ${lightHomeruns} for lights, ${gfiHomeruns} for GFIs`
           });
         }
 
@@ -196,11 +210,13 @@ export function calculateAssemblyMaterials(
           wasteFactor: item.wasteFactor,
           totalQty,
           itemCode: item.itemCode,
-          notes: item.notes
+          notes: `Auto-added: ${lightHomeruns} for lights, ${gfiHomeruns} for GFIs`
         });
       }
 
       assemblyUsage.push(homerunUsage);
+    } else {
+      console.warn('⚠️ 100ft Homerun Assembly (HOMERUN-100FT) not found or inactive');
     }
   }
 

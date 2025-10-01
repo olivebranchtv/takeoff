@@ -37,7 +37,8 @@ export function getAssemblyIdForTag(tagCode: string, tagCategory?: string): stri
   if (code.includes('REC') || category.includes('recept')) {
     if (code.includes('GFCI') || code.includes('GFI')) {
       if (code.includes('WP') || code.includes('WEATHER')) return 'recep-wp-20a';
-      return 'recep-gfci-20a';
+      // Map to new Standard GFI Receptacle Assembly (database ID)
+      return '836a6abd-8fc1-4a10-92fb-7273b9d12615';
     }
     if (code.includes('IG') || code.includes('ISO')) return 'recep-iso-gnd-20a';
     if (code.includes('FLOOR') || code.includes('FLR')) return 'recep-floor-20a';
