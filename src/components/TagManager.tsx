@@ -14,10 +14,26 @@ type Props = {
 type Draft = Omit<Tag, 'id'>;
 const emptyDraft: Draft = { code: '', name: '', category: '', color: '#FFA500' };
 
+// Tag categories for organizing electrical symbols on drawings (NOT material categories)
+// These categories represent types of electrical devices/equipment shown on plans
 const MASTER_CATEGORY_ORDER = [
-  'Lights','Receptacles','Switches','Stub-Ups','Fire Alarm','Breakers','Panels','Disconnects',
-  'Raceways & Pathways','Conductors & Feeders','Data/Communications','Security','AV / Sound',
-  'BAS/Controls','Site Power','Demolition / Temporary','Miscellaneous',
+  'Lights',
+  'Receptacles',
+  'Switches',
+  'Stub-Ups',
+  'Fire Alarm',
+  'Breakers',
+  'Panels',
+  'Disconnects',
+  'Raceways & Pathways',
+  'Conductors & Feeders',
+  'Data/Communications',
+  'Security',
+  'AV / Sound',
+  'BAS/Controls',
+  'Site Power',
+  'Demolition / Temporary',
+  'Miscellaneous',
 ];
 const CUSTOM_CAT_VALUE = '__CUSTOM__';
 
