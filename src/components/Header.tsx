@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useStore } from '@/state/store';
 import { Pencil } from 'lucide-react';
+import skdLogo from '@/assets/skd-logo.png';
 
 export const Header: React.FC = () => {
   const name = useStore(s => s.projectName);
@@ -35,7 +36,7 @@ export const Header: React.FC = () => {
       }}
     >
       <img
-        src="/SKD Logo.png"
+        src={skdLogo}
         alt="SKD Services"
         style={{ height: 40, width: 'auto' }}
       />
