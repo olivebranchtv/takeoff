@@ -6,6 +6,60 @@
 import type { Assembly, Tag, PageState } from '@/types';
 import { calculateAssemblyMaterials, type MaterialLine, type AssemblyUsage } from './excelBOM';
 
+/**
+ * Industry-standard fallback prices for common electrical items
+ * Used when database pricing is not available
+ */
+const FALLBACK_PRICES: Record<string, { price: number; laborHours: number }> = {
+  // Fittings - EMT Connectors
+  'emt connector': { price: 2.50, laborHours: 0.05 },
+  'compression connector': { price: 3.00, laborHours: 0.05 },
+  'set screw connector': { price: 1.50, laborHours: 0.05 },
+
+  // Fittings - Couplings
+  'emt coupling': { price: 1.50, laborHours: 0.03 },
+  'compression coupling': { price: 2.00, laborHours: 0.03 },
+  'set screw coupling': { price: 1.00, laborHours: 0.03 },
+
+  // Fittings - Box Connectors
+  'box connector': { price: 2.00, laborHours: 0.05 },
+  'knockout connector': { price: 1.75, laborHours: 0.05 },
+
+  // Weatherproof Fittings
+  'foam gasket': { price: 0.50, laborHours: 0.02 },
+  'gasket': { price: 0.50, laborHours: 0.02 },
+  'weatherproof': { price: 3.50, laborHours: 0.08 },
+
+  // Grounding
+  'ground rod': { price: 15.00, laborHours: 0.5 },
+  'ground clamp': { price: 3.00, laborHours: 0.08 },
+  'grounding bushing': { price: 4.00, laborHours: 0.08 },
+  'bonding bushing': { price: 4.50, laborHours: 0.08 },
+
+  // Default fallback for any unknown item
+  'default': { price: 2.00, laborHours: 0.05 }
+};
+
+/**
+ * Get fallback pricing for items not in database
+ */
+function getFallbackPrice(category: string, description: string): { price: number; laborHours: number } {
+  const desc = description.toLowerCase();
+  const cat = category.toLowerCase();
+
+  // Try exact match first
+  for (const [key, value] of Object.entries(FALLBACK_PRICES)) {
+    if (desc.includes(key) || cat.includes(key)) {
+      console.log(`💡 Using fallback price for "${description}": $${value.price}, ${value.laborHours}hrs`);
+      return value;
+    }
+  }
+
+  // Use default
+  console.log(`💡 Using default fallback price for "${description}": $${FALLBACK_PRICES.default.price}, ${FALLBACK_PRICES.default.laborHours}hrs`);
+  return FALLBACK_PRICES.default;
+}
+
 export interface MaterialPrice {
   category: string;
   description: string;
@@ -500,8 +554,17 @@ export function calculateProjectCosts(
       console.log(`🔍 Looking up WIRE: category="${mat.category}", desc="${mat.description}", itemCode="${mat.itemCode}", qty=${mat.totalQty}`);
     }
 
-    const laborPerUnit = pricingDb.getMaterialLaborHours(mat.category, mat.description, mat.itemCode);
-    const price = pricingDb.getMaterialPrice(mat.category, mat.description, mat.itemCode) || 0;
+    // Try database lookup first
+    let laborPerUnit = pricingDb.getMaterialLaborHours(mat.category, mat.description, mat.itemCode);
+    let price = pricingDb.getMaterialPrice(mat.category, mat.description, mat.itemCode);
+
+    // If no price found, use fallback
+    if (!price || price === 0) {
+      const fallback = getFallbackPrice(mat.category, mat.description);
+      price = fallback.price;
+      laborPerUnit = fallback.laborHours;
+    }
+
     const matCost = mat.totalQty * price;
     const materialLaborHours = laborPerUnit * mat.totalQty;
 
