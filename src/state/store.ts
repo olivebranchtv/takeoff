@@ -83,7 +83,6 @@ const DEFAULT_TAGS: Tag[] = [
   { id: crypto.randomUUID(), code: 'A1',  name: 'Fixture A1',     category: 'Lights',      color: '#FF9900' },
   { id: crypto.randomUUID(), code: 'EM',  name: 'Emergency',      category: 'Emergency',   color: '#CC0000', assemblyId: 'light-emergency-led' },
   { id: crypto.randomUUID(), code: 'SP',  name: 'Switch',         category: 'Switches',    color: '#0066FF', assemblyId: 'switch-sp-20a' },
-  { id: crypto.randomUUID(), code: 'GFCI',name: 'GFCI Recept.',   category: 'Receptacles', color: '#2E8B57', assemblyId: 'recep-gfci-20a' },
   { id: crypto.randomUUID(), code: 'HW',  name: 'Hard Wire',      category: 'Wiring',      color: '#8B00FF' },
 ];
 
