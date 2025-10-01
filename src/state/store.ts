@@ -433,17 +433,24 @@ export const useStore = create<State>()(
         const currentIdx = tags.findIndex(t => t.id === id);
         if (currentIdx < 0) return {};
 
+        console.log('[Store] updateTag - patch:', patch);
+        console.log('[Store] updateTag - has assemblyId property:', 'assemblyId' in patch);
+        console.log('[Store] updateTag - current tag:', tags[currentIdx]);
+
         const nextCode = patch.code ? norm(patch.code) : norm(tags[currentIdx].code);
         const nextCat  = (patch.category ?? (tags[currentIdx].category || '')).trim();
         const nextName = patch.name ?? tags[currentIdx].name;
         const nextColor= patch.color ?? tags[currentIdx].color;
-        let nextAssemblyId = patch.assemblyId !== undefined ? patch.assemblyId : tags[currentIdx].assemblyId;
+        // CRITICAL: Check if assemblyId property EXISTS in patch, not just if it's undefined
+        let nextAssemblyId = 'assemblyId' in patch ? patch.assemblyId : tags[currentIdx].assemblyId;
 
         // NEVER allow assemblies on Lights category
         const isLightCategory = nextCat?.toLowerCase().includes('light');
         if (isLightCategory) {
           nextAssemblyId = undefined;
         }
+
+        console.log('[Store] updateTag - nextAssemblyId:', nextAssemblyId);
 
         // Merge into canonical if code collides with another
         const canonicalIdx = tags.findIndex(t => norm(t.code) === nextCode);
@@ -459,6 +466,7 @@ export const useStore = create<State>()(
           if (nextAssemblyId !== undefined) {
             updatedTag.assemblyId = nextAssemblyId;
           }
+          console.log('[Store] updateTag - final updatedTag (canonical):', updatedTag);
           tags[canonicalIdx] = updatedTag;
           tags.splice(currentIdx, 1);
         } else {
@@ -473,6 +481,7 @@ export const useStore = create<State>()(
           if (nextAssemblyId !== undefined) {
             updatedTag.assemblyId = nextAssemblyId;
           }
+          console.log('[Store] updateTag - final updatedTag:', updatedTag);
           tags[currentIdx] = updatedTag;
         }
 

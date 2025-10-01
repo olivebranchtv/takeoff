@@ -140,15 +140,23 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     const codeKey = norm(next.code);
     const existing = (tags as Tag[]).find(t => norm(t.code) === codeKey);
 
+    console.log('[TagManager] upsertByCode - next.assemblyId:', next.assemblyId);
+    console.log('[TagManager] upsertByCode - has assemblyId property:', 'assemblyId' in next);
+
     if (existing) {
       // Update the canonical record (existing)
-      updateTag(existing.id, {
+      const patch: any = {
         code: codeKey,
         name: next.name || '',
         category: (next.category || '').trim(),
         color: next.color || '#FFA500',
-        assemblyId: next.assemblyId || undefined,
-      });
+      };
+      // Only include assemblyId if it's explicitly set in next
+      if ('assemblyId' in next) {
+        patch.assemblyId = next.assemblyId;
+      }
+      console.log('[TagManager] upsertByCode - calling updateTag with patch:', patch);
+      updateTag(existing.id, patch);
 
       // If user was editing a different duplicate record, remove it to avoid twins
       if (currentEditId && currentEditId !== existing.id) {
@@ -157,13 +165,18 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       return existing.id;
     } else {
       // No canonical record yet → add new
-      addTag({
+      const newTag: any = {
         code: codeKey,
         name: next.name || '',
         category: (next.category || '').trim(),
         color: next.color || '#FFA500',
-        assemblyId: next.assemblyId || undefined,
-      });
+      };
+      // Only include assemblyId if it's explicitly set in next
+      if ('assemblyId' in next) {
+        newTag.assemblyId = next.assemblyId;
+      }
+      console.log('[TagManager] upsertByCode - calling addTag with:', newTag);
+      addTag(newTag);
       return null;
     }
   }
@@ -243,6 +256,9 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     const next: Draft = { ...draft, code: draft.code.trim().toUpperCase(), category };
     const msg = validate(next);
     if (msg) { setError(msg); return; }
+
+    console.log('[TagManager] saveEdit - draft.assemblyId:', draft.assemblyId);
+    console.log('[TagManager] saveEdit - next:', next);
 
     const canonicalId = upsertByCode(next, editId);
     if (category) scrollToCategory(category);
