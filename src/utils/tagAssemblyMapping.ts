@@ -41,8 +41,8 @@ export function getAssemblyIdForTag(tagCode: string, tagCategory?: string): stri
   if (code.includes('REC') || category.includes('recept')) {
     if (code.includes('GFCI') || code.includes('GFI')) {
       if (code.includes('WP') || code.includes('WEATHER')) return 'recep-wp-20a';
-      // Map to Standard GFI Receptacle Assembly
-      return 'gfi-standard';
+      // Map to GFCI with Homerun (every 6 GFCIs = 1 homerun automatically)
+      return 'RECEP-GFCI-20A-HOMERUN';
     }
     if (code.includes('IG') || code.includes('ISO')) return 'recep-iso-gnd-20a';
     if (code.includes('FLOOR') || code.includes('FLR')) return 'recep-floor-20a';
