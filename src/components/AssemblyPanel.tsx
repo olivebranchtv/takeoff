@@ -60,6 +60,10 @@ export function AssemblyPanel() {
     setSelectedAssembly(assembly);
   };
 
+  const [searchingItemCode, setSearchingItemCode] = React.useState<string | null>(null);
+  const [pricingSearchResults, setPricingSearchResults] = React.useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = React.useState('');
+
   const addItemToAssembly = () => {
     if (!editingAssembly) return;
     const newItem: AssemblyItem = {
@@ -69,12 +73,59 @@ export function AssemblyPanel() {
       quantityPer: 1,
       category: '',
       wasteFactor: 1.02,
+      itemCode: '',
       notes: ''
     };
     setEditingAssembly({
       ...editingAssembly,
       items: [...(editingAssembly.items || []), newItem]
     });
+  };
+
+  const searchPricingDatabase = async (query: string) => {
+    if (!query || query.length < 2) {
+      setPricingSearchResults([]);
+      return;
+    }
+
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY
+      );
+
+      const { data, error } = await supabase
+        .from('material_pricing')
+        .select('item_code, description, category, unit, material_cost, labor_hours')
+        .or(`description.ilike.%${query}%,item_code.ilike.%${query}%,category.ilike.%${query}%`)
+        .limit(20);
+
+      if (error) throw error;
+      setPricingSearchResults(data || []);
+    } catch (err) {
+      console.error('Error searching pricing database:', err);
+      setPricingSearchResults([]);
+    }
+  };
+
+  const selectPricingItem = (itemId: string, pricingItem: any) => {
+    if (!editingAssembly) return;
+    setEditingAssembly({
+      ...editingAssembly,
+      items: (editingAssembly.items || []).map(item =>
+        item.id === itemId ? {
+          ...item,
+          itemCode: pricingItem.item_code,
+          description: pricingItem.description,
+          category: pricingItem.category,
+          unit: pricingItem.unit || 'EA'
+        } : item
+      )
+    });
+    setSearchingItemCode(null);
+    setPricingSearchResults([]);
+    setSearchQuery('');
   };
 
   const removeItemFromAssembly = (itemId: string) => {
@@ -347,6 +398,11 @@ export function AssemblyPanel() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                     <div style={{ fontSize: '13px', fontWeight: 600, color: '#666' }}>
                       Material {idx + 1}
+                      {item.itemCode && (
+                        <span style={{ fontSize: '12px', fontWeight: 400, color: '#10b981', marginLeft: '8px' }}>
+                          ✓ Linked to pricing
+                        </span>
+                      )}
                     </div>
                     <button
                       onClick={() => removeItemFromAssembly(item.id)}
@@ -367,6 +423,69 @@ export function AssemblyPanel() {
                       Remove
                     </button>
                   </div>
+
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>
+                      Item Code (link to pricing database)
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        value={searchingItemCode === item.id ? searchQuery : (item.itemCode || '')}
+                        onFocus={() => setSearchingItemCode(item.id)}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          searchPricingDatabase(e.target.value);
+                        }}
+                        placeholder="Search pricing database..."
+                        style={{
+                          width: '100%',
+                          padding: '6px',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          fontSize: '13px'
+                        }}
+                      />
+                      {searchingItemCode === item.id && pricingSearchResults.length > 0 && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          right: 0,
+                          maxHeight: '200px',
+                          overflow: 'auto',
+                          background: 'white',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          marginTop: '2px',
+                          zIndex: 1000,
+                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                        }}>
+                          {pricingSearchResults.map((result) => (
+                            <div
+                              key={result.item_code}
+                              onClick={() => selectPricingItem(item.id, result)}
+                              style={{
+                                padding: '8px',
+                                cursor: 'pointer',
+                                borderBottom: '1px solid #eee',
+                                fontSize: '12px'
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                            >
+                              <div style={{ fontWeight: 600 }}>{result.item_code}</div>
+                              <div style={{ color: '#666', marginTop: '2px' }}>{result.description}</div>
+                              <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>
+                                {result.category} • ${result.material_cost || '0'} • {result.labor_hours || '0'} hrs
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                     <div>
                       <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>
@@ -578,6 +697,7 @@ export function AssemblyPanel() {
               <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid #ddd', textAlign: 'left' }}>
+                    <th style={{ padding: '8px', fontWeight: 600, width: '120px' }}>Item Code</th>
                     <th style={{ padding: '8px', fontWeight: 600 }}>Description</th>
                     <th style={{ padding: '8px', fontWeight: 600, width: '80px' }}>Qty</th>
                     <th style={{ padding: '8px', fontWeight: 600, width: '60px' }}>Unit</th>
@@ -588,6 +708,13 @@ export function AssemblyPanel() {
                 <tbody>
                   {selectedAssembly.items.map(item => (
                     <tr key={item.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{ padding: '10px' }}>
+                        {item.itemCode ? (
+                          <div style={{ fontSize: '12px', fontWeight: 600, color: '#10b981' }}>{item.itemCode}</div>
+                        ) : (
+                          <div style={{ fontSize: '12px', color: '#999' }}>Not linked</div>
+                        )}
+                      </td>
                       <td style={{ padding: '10px' }}>
                         <div>{item.description}</div>
                         {item.notes && (

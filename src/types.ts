@@ -25,6 +25,7 @@ export type AssemblyItem = {
   quantityPer: number;    // Quantity per assembly instance
   category: string;       // e.g., "Boxes", "Devices", "Fittings", "Wire"
   wasteFactor: number;    // e.g., 1.02 for 2% waste
+  itemCode?: string;      // Optional link to material_pricing.item_code for cost/labor lookup
   notes?: string;
 };
 
