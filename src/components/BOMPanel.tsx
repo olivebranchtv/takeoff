@@ -114,7 +114,18 @@ export default function BomPanel({ open, onToggle }: Props) {
     }
     rows.push([]);
     rows.push(['Code', 'Count']);
-    for (const row of data.countsByCode) rows.push([row.code, String(row.count)]);
+
+    // Calculate total for fixture counts
+    let totalCount = 0;
+    for (const row of data.countsByCode) {
+      rows.push([row.code, String(row.count)]);
+      totalCount += row.count;
+    }
+
+    // Add total row
+    rows.push([]);
+    rows.push(['TOTAL', String(totalCount)]);
+
     const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
