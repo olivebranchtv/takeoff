@@ -1485,5 +1485,441 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
       { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
       { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
+  },
+
+  // ============================================================================
+  // SURGE PROTECTION
+  // ============================================================================
+  {
+    id: 'surge-protector-panel',
+    code: 'SPD',
+    name: 'Surge Protection Device (Panel Mount)',
+    description: 'Type 2 SPD for panel installation - 120/240V single phase or 120/208V 3-phase',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'spd-type2', description: 'Surge Protection Device, Type 2, 140kA', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'breaker-2p-30a', description: 'Circuit Breaker, 2-pole, 30A', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
+    ]
+  },
+
+  // ============================================================================
+  // WIREMOLD / SURFACE RACEWAY
+  // ============================================================================
+  {
+    id: 'wiremold-3000-10ft',
+    code: 'WM-3000',
+    name: 'Wiremold 3000 Series (per 10 FT)',
+    description: 'Surface metal raceway with base, cover, couplings, and fittings',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'wm-3000-base', description: 'Wiremold 3000 base, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.10 },
+      { id: 'wm-3000-cover', description: 'Wiremold 3000 cover, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.10 },
+      { id: 'wm-coupling', description: 'Wiremold coupling', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+    ]
+  },
+  {
+    id: 'wiremold-4000-10ft',
+    code: 'WM-4000',
+    name: 'Wiremold 4000 Series (per 10 FT)',
+    description: 'Large surface metal raceway with base, cover, couplings, and fittings',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'wm-4000-base', description: 'Wiremold 4000 base, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.10 },
+      { id: 'wm-4000-cover', description: 'Wiremold 4000 cover, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.10 },
+      { id: 'wm-coupling-lg', description: 'Wiremold coupling large', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+    ]
+  },
+
+  // ============================================================================
+  // DATA CENTER / RACK ACCESSORIES
+  // ============================================================================
+  {
+    id: 'data-rack-2post-7ft',
+    code: 'RACK-2P',
+    name: '2-Post Server Rack 7FT',
+    description: 'Open frame 2-post telecom rack with mounting rails',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'rack-2post-42u', description: '2-Post Rack, 42U, 7 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'cage-nuts-50', description: 'Cage nuts and screws, pkg of 50', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+    ]
+  },
+  {
+    id: 'data-rack-4post-7ft',
+    code: 'RACK-4P',
+    name: '4-Post Server Rack 7FT',
+    description: 'Enclosed 4-post equipment rack with side panels and doors',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'rack-4post-42u', description: '4-Post Enclosed Rack, 42U, 7 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'cage-nuts-100', description: 'Cage nuts and screws, pkg of 100', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'rack-pdu-basic', description: 'Basic rack PDU, 20A', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'patch-panel-24port',
+    code: 'PATCH-24',
+    name: 'Patch Panel 24-Port Cat6',
+    description: '24-port 1U patch panel with cable management',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'patch-24-cat6', description: 'Patch Panel, 24-port, Cat6, 1U', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'cable-mgmt-1u', description: 'Cable management, 1U horizontal', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'patch-panel-48port',
+    code: 'PATCH-48',
+    name: 'Patch Panel 48-Port Cat6',
+    description: '48-port 2U patch panel with cable management',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'patch-48-cat6', description: 'Patch Panel, 48-port, Cat6, 2U', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'cable-mgmt-2u', description: 'Cable management, 2U horizontal', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'jhook-2in',
+    code: 'JHOOK-2',
+    name: 'J-Hook 2" (per hook)',
+    description: 'Cable support J-hook for data cabling',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'jhook-2', description: 'J-Hook, 2", galvanized', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.05 },
+      { id: 'threaded-rod-clip', description: 'Beam clamp or rod clip', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+    ]
+  },
+  {
+    id: 'ladder-rack-12in-10ft',
+    code: 'LAD-RACK-12',
+    name: 'Ladder Rack 12" (per 10 FT)',
+    description: '12" wide cable ladder rack with supports',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'ladder-rack-12', description: 'Ladder Rack, 12" wide, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.05 },
+      { id: 'rack-splice-plate', description: 'Splice plate for ladder rack', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'trapeze-hanger', description: 'Trapeze hanger with hardware', unit: 'EA', quantityPer: 0.4, category: 'Fittings', wasteFactor: 1.05 }
+    ]
+  },
+  {
+    id: 'ladder-rack-18in-10ft',
+    code: 'LAD-RACK-18',
+    name: 'Ladder Rack 18" (per 10 FT)',
+    description: '18" wide cable ladder rack with supports',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'ladder-rack-18', description: 'Ladder Rack, 18" wide, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.05 },
+      { id: 'rack-splice-plate', description: 'Splice plate for ladder rack', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'trapeze-hanger', description: 'Trapeze hanger with hardware', unit: 'EA', quantityPer: 0.4, category: 'Fittings', wasteFactor: 1.05 }
+    ]
+  },
+
+  // ============================================================================
+  // SECURITY ACCESSORIES
+  // ============================================================================
+  {
+    id: 'security-nvr-16ch',
+    code: 'NVR',
+    name: 'Network Video Recorder 16-CH',
+    description: 'NVR with 16 camera inputs and storage',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'nvr-16ch', description: 'NVR, 16-channel, 4TB storage', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'recep-20a-125v', description: 'Duplex Receptacle, 20A, 125V', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'cat6-cable', description: 'Cat6 cable for network connection, 25 FT', unit: 'EA', quantityPer: 1, category: 'wire', wasteFactor: 1.10 }
+    ]
+  },
+  {
+    id: 'security-rex-button',
+    code: 'REX',
+    name: 'Request-to-Exit Button',
+    description: 'REX button with stainless steel plate',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'rex-button', description: 'Request-to-Exit button, NO/NC', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'box-1g-ss', description: 'Single-gang box with stainless plate', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'security-power-supply',
+    code: 'SEC-PS',
+    name: 'Security Power Supply 12VDC',
+    description: 'Regulated 12VDC power supply for access control',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'ps-12v-5a', description: 'Power Supply, 12VDC, 5A with battery backup', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'enclosure-12x12', description: 'Enclosure, 12x12, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+    ]
+  },
+
+  // ============================================================================
+  // AV EQUIPMENT
+  // ============================================================================
+  {
+    id: 'av-volume-control',
+    code: 'VOL',
+    name: 'Volume Control Wall Plate',
+    description: '70V speaker volume control with wall plate',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'vol-control-70v', description: 'Volume Control, 70V, 100W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'box-1g', description: 'Single-gang box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'plate-ny-1g', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'av-motorized-screen',
+    code: 'SCRN',
+    name: 'Motorized Projection Screen 100"',
+    description: 'Electric projection screen with wall switch control',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'screen-motor-100', description: 'Motorized Screen, 100" diagonal', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'switch-mom-1g', description: 'Momentary switch for screen control', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'av-dsp-amplifier',
+    code: 'DSP-AMP',
+    name: 'DSP Amplifier 8-Channel',
+    description: 'Digital signal processor and amplifier for AV system',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'dsp-amp-8ch', description: 'DSP Amplifier, 8-channel, 500W', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'recep-20a-125v', description: 'Duplex Receptacle, 20A, 125V', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'av-hdbaset-txrx',
+    code: 'HDBaseT',
+    name: 'HDBaseT Transmitter/Receiver Pair',
+    description: 'HDBaseT extender set for AV over Cat6',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'hdbaset-tx', description: 'HDBaseT Transmitter', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'hdbaset-rx', description: 'HDBaseT Receiver', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'poe-injector', description: 'PoE injector for HDBaseT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'av-rack-wall-12u',
+    code: 'AV-RACK',
+    name: 'AV Equipment Rack 12U Wall Mount',
+    description: 'Wall mount AV rack with shelf and cable management',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'rack-wall-12u', description: 'Wall Mount Rack, 12U', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'rack-shelf', description: 'Rack shelf for equipment', unit: 'EA', quantityPer: 2, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'fan-unit-1u', description: 'Cooling fan unit, 1U', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
+    ]
+  },
+
+  // ============================================================================
+  // BAS / CONTROLS
+  // ============================================================================
+  {
+    id: 'bas-thermostat',
+    code: 'STAT',
+    name: 'Digital Thermostat Programmable',
+    description: 'Programmable thermostat with 24VAC control',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'tstat-digital', description: 'Thermostat, programmable, 24VAC', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'box-1g', description: 'Single-gang box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'bas-temp-sensor',
+    code: 'TSENS',
+    name: 'Temperature Sensor',
+    description: 'Wall or duct mount temperature sensor',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'temp-sensor', description: 'Temperature Sensor, 0-10VDC output', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'box-1g', description: 'Single-gang box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'bas-humidity-sensor',
+    code: 'HSENS',
+    name: 'Humidity Sensor',
+    description: 'Wall mount humidity sensor',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'humidity-sensor', description: 'Humidity Sensor, 0-10VDC output', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'box-1g', description: 'Single-gang box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'bas-co2-sensor',
+    code: 'CO2',
+    name: 'CO2 Sensor',
+    description: 'Wall mount CO2 sensor for demand ventilation',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'co2-sensor', description: 'CO2 Sensor, 0-2000ppm, 0-10VDC', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'box-1g', description: 'Single-gang box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'bas-ddc-controller',
+    code: 'DDC',
+    name: 'DDC Controller Panel',
+    description: 'Direct digital controller with I/O points',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'ddc-panel-16io', description: 'DDC Controller, 16 I/O points', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'enclosure-12x12', description: 'Enclosure, 12x12, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'bas-vav-controller',
+    code: 'VAV-CTRL',
+    name: 'VAV Box Controller',
+    description: 'VAV box controller with damper actuator',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'vav-controller', description: 'VAV Controller with actuator', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'temp-sensor', description: 'Temperature Sensor for VAV', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'bas-power-supply',
+    code: 'BAS-PS',
+    name: 'BAS Power Supply 24VAC',
+    description: 'Transformer and power supply for BAS devices',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'ps-24vac-100va', description: 'Power Supply, 24VAC, 100VA', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'box-4x4', description: '4x4 box for power supply', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+    ]
+  },
+
+  // ============================================================================
+  // SITE POWER ACCESSORIES
+  // ============================================================================
+  {
+    id: 'site-pole-head',
+    code: 'SITE-LP-HEAD',
+    name: 'Site Pole Light Head/Fixture',
+    description: 'LED area light fixture for mounting on pole',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'pole-head-led-150w', description: 'LED Area Light, 150W, Type III', unit: 'EA', quantityPer: 1, category: 'Lighting', wasteFactor: 1.02 },
+      { id: 'photocell-twist', description: 'Photocell, twist-lock', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'site-handhole',
+    code: 'SITE-HH',
+    name: 'Site Handhole 24x36',
+    description: 'Polymer concrete handhole with cover',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'handhole-24x36', description: 'Handhole, 24x36, polymer concrete', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'hh-cover-traffic', description: 'Handhole cover, traffic rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+    ]
+  },
+
+  // ============================================================================
+  // DEMOLITION
+  // ============================================================================
+  {
+    id: 'demo-light-fixture',
+    code: 'DEM-LT',
+    name: 'Demo Light Fixture',
+    description: 'Remove and dispose of existing light fixture',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'demo-labor', description: 'Demolition labor allowance', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.0 }
+    ]
+  },
+  {
+    id: 'demo-switch',
+    code: 'DEM-SW',
+    name: 'Demo Switch/Device',
+    description: 'Remove and dispose of existing switch or device',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'demo-labor-sm', description: 'Demolition labor small device', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.0 }
+    ]
+  },
+  {
+    id: 'demo-panel',
+    code: 'DEM-PNL',
+    name: 'Demo Panel/Gear',
+    description: 'Remove and dispose of existing panel or electrical gear',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'demo-labor-lg', description: 'Demolition labor large equipment', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.0 }
+    ]
+  },
+  {
+    id: 'temp-power-pole',
+    code: 'TEMP-PP',
+    name: 'Temporary Power Pole',
+    description: 'Temporary power distribution pole with receptacles',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'temp-pole-100a', description: 'Temporary Power Pole, 100A, (4) 20A circuits', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.0 }
+    ]
+  },
+
+  // ============================================================================
+  // MISCELLANEOUS
+  // ============================================================================
+  {
+    id: 'blank-plate-1g',
+    code: 'PLATE-BLK',
+    name: 'Blank Plate Single-Gang',
+    description: 'Blank cover plate for unused boxes',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'plate-blank-1g', description: 'Blank Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Plates', wasteFactor: 1.02 }
+    ]
+  },
+  {
+    id: 'label-nameplate',
+    code: 'LABEL',
+    name: 'Equipment Label/Nameplate',
+    description: 'Engraved nameplate or label for equipment identification',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'label-engraved', description: 'Engraved label, 2x4"', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.05 }
+    ]
   }
 ];

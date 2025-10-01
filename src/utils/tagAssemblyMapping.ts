@@ -113,7 +113,8 @@ export function getAssemblyIdForTag(tagCode: string, tagCategory?: string): stri
   }
 
   // ===== BREAKERS =====
-  if (code.includes('BRK')) {
+  if (code.includes('BRK') || code === 'SPD') {
+    if (code === 'SPD') return 'surge-protector-panel';
     if (code.includes('20/1')) return 'breaker-1p-20a';
     if (code.includes('20/2') || code.includes('20/3')) return 'breaker-2p-30a';
     if (code.includes('30')) return 'breaker-2p-30a';
@@ -141,35 +142,78 @@ export function getAssemblyIdForTag(tagCode: string, tagCategory?: string): stri
     if (code.includes('6A')) return 'data-cat6a-jack';
     return 'data-cat6-jack';
   }
-  if (code === 'WAP') return 'data-cat6-jack'; // WAP needs data jack + power
+  if (code === 'WAP') return 'data-cat6-jack';
   if (code.includes('FIBER')) return 'data-fiber-jack';
-  if (code.includes('COAX') || code === 'CATV') return 'data-coax-jack';
+  if (code.includes('COAX')) return 'data-coax-jack';
+  if (code.includes('RACK')) {
+    if (code.includes('2P') || code.includes('2-POST')) return 'data-rack-2post-7ft';
+    if (code.includes('4P') || code.includes('4-POST')) return 'data-rack-4post-7ft';
+  }
+  if (code.includes('PATCH')) {
+    if (code.includes('24')) return 'patch-panel-24port';
+    if (code.includes('48')) return 'patch-panel-48port';
+  }
+  if (code.includes('JHOOK') || code === 'JHOOK-2') return 'jhook-2in';
+  if (code.includes('LAD-RACK') || code.includes('LADDER')) {
+    if (code.includes('12')) return 'ladder-rack-12in-10ft';
+    if (code.includes('18')) return 'ladder-rack-18in-10ft';
+  }
+
+  // ===== WIREMOLD =====
+  if (code === 'WM-3000') return 'wiremold-3000-10ft';
+  if (code === 'WM-4000') return 'wiremold-4000-10ft';
 
   // ===== SECURITY =====
   if (code === 'CAM' || code.includes('CAMERA')) return 'security-camera-ip';
   if (code === 'CARD' || code.includes('READER')) return 'security-card-reader';
-  if (code === 'DC' || code.includes('DOOR CONTACT')) return 'security-door-contact';
+  if (code === 'DC' && category.includes('security')) return 'security-door-contact';
   if (code === 'MAG' || code.includes('MAG LOCK')) return 'security-mag-lock';
+  if (code === 'NVR') return 'security-nvr-16ch';
+  if (code === 'REX') return 'security-rex-button';
+  if (code === 'SEC-PS') return 'security-power-supply';
 
   // ===== AV / SOUND =====
   if (code.includes('SPKR') || code.includes('SPEAKER')) return 'sound-speaker-70v';
   if (code.includes('PROJ') || code.includes('PROJECTOR')) return 'projector-outlet-ceiling';
   if (code.includes('DISPLAY')) return 'tv-mount-outlet';
-  if (code.includes('VOL')) return 'switch-sp-20a'; // volume control
+  if (code === 'VOL') return 'av-volume-control';
+  if (code === 'SCRN' || code.includes('SCREEN')) return 'av-motorized-screen';
+  if (code === 'DSP-AMP' || code.includes('DSP')) return 'av-dsp-amplifier';
+  if (code.includes('HDBaseT')) return 'av-hdbaset-txrx';
+  if (code === 'AV-RACK') return 'av-rack-wall-12u';
+
+  // ===== BAS / CONTROLS =====
+  if (code === 'STAT' || code.includes('THERMOSTAT')) return 'bas-thermostat';
+  if (code === 'TSENS') return 'bas-temp-sensor';
+  if (code === 'HSENS') return 'bas-humidity-sensor';
+  if (code === 'CO2') return 'bas-co2-sensor';
+  if (code === 'DDC') return 'bas-ddc-controller';
+  if (code === 'VAV-CTRL') return 'bas-vav-controller';
+  if (code === 'BAS-PS') return 'bas-power-supply';
 
   // ===== SITE POWER =====
-  if (code.includes('POLE')) return 'pole-light-photocell';
+  if (code.includes('POLE') && !code.includes('HEAD')) return 'pole-light-photocell';
+  if (code === 'SITE-LP-HEAD') return 'site-pole-head';
   if (code.includes('BOLLARD')) return 'bollard-light';
   if (code.includes('EVSE') || code.includes('EV')) return 'ev-charger-level2';
+  if (code === 'SITE-HH') return 'site-handhole';
+
+  // ===== DEMOLITION =====
+  if (code === 'DEM-LT') return 'demo-light-fixture';
+  if (code === 'DEM-SW') return 'demo-switch';
+  if (code === 'DEM-PNL') return 'demo-panel';
+  if (code === 'TEMP-PP') return 'temp-power-pole';
 
   // ===== STUB-UPS =====
-  if (code === 'TP' || code === 'D' || code === 'FSU' || code === 'CATV') {
-    return 'jbox-4x4'; // stub-up box
+  if (code === 'TP' || code === 'D' || code === 'FSU' || (code === 'CATV' && category.includes('stub'))) {
+    return 'jbox-4x4';
   }
 
   // ===== MISC BOXES =====
   if (code.includes('JBOX')) return 'jbox-4x4';
   if (code.includes('PULL') || code.includes('PB')) return 'jbox-pullbox-12x12';
+  if (code === 'PLATE-BLK') return 'blank-plate-1g';
+  if (code === 'LABEL') return 'label-nameplate';
 
   // Default: no assembly assigned
   return undefined;
