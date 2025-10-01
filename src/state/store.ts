@@ -548,11 +548,14 @@ export const useStore = create<State>()(
           const key = norm(t.code);
           const idx = merged.findIndex(x => norm(x.code) === key);
           if (idx >= 0) {
-            const updatedTag: Tag = { ...merged[idx], ...t, code: key };
-            // Remove assemblyId if it was set to undefined
-            if (finalAssemblyId === undefined && merged[idx].assemblyId !== undefined) {
-              delete (updatedTag as any).assemblyId;
-            }
+            // Merge tags but PRESERVE existing assemblyId unless explicitly overriding
+            const updatedTag: Tag = {
+              ...merged[idx],
+              ...t,
+              code: key,
+              // CRITICAL: Only override assemblyId if incoming tag has one
+              assemblyId: finalAssemblyId !== undefined ? finalAssemblyId : merged[idx].assemblyId
+            };
             merged[idx] = updatedTag;
           } else {
             merged.push({ ...t, code: key });
