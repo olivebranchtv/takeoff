@@ -101,6 +101,7 @@ export default function App() {
 
   /* ---------- per-project "Project Tags" ---------- */
   const [projectTags, setProjectTags] = useState<TagLite[]>([]);
+  const [projectTagsCollapsed, setProjectTagsCollapsed] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSel, setPickerSel] = useState<string>('');
   const [draggedTagIndex, setDraggedTagIndex] = useState<number | null>(null);
@@ -1169,11 +1170,19 @@ export default function App() {
       </div>
 
       {/* PROJECT TAGS BAR */}
-      <div className="quickbar" style={{display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderBottom:'1px solid #eee', position:'sticky', top:96, background:'#fff', zIndex:30, overflow:'visible'}}>
-        <div className="label" style={{minWidth:110, fontWeight:700}}>Project Tags</div>
+      <div className="quickbar" style={{display:'flex', alignItems:'center', gap:10, padding:'4px 12px', borderBottom:'1px solid #eee', position:'sticky', top:96, background:'#fff', zIndex:30, overflow:'visible'}}>
+        <button
+          className="btn"
+          onClick={() => setProjectTagsCollapsed(!projectTagsCollapsed)}
+          title={projectTagsCollapsed ? "Expand project tags" : "Collapse project tags"}
+          style={{padding: '4px 8px', minWidth: 'auto', fontSize: '12px'}}
+        >
+          {projectTagsCollapsed ? '▶' : '▼'}
+        </button>
+        <div className="label" style={{minWidth:90, fontWeight:700, fontSize: '13px'}}>Project Tags {projectTags.length > 0 && `(${projectTags.length})`}</div>
 
-        <div style={{display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', flex:1}}>
-          {projectTags.length === 0 && <span style={{color:'#777'}}>None — add from Tag DB ▼</span>}
+        {!projectTagsCollapsed && <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center', flex:1}}>
+          {projectTags.length === 0 && <span style={{color:'#777', fontSize: '12px'}}>None — add from Tag DB ▼</span>}
           {projectTags.map((t, index) => {
             const active = (t.code || '').toUpperCase() === (currentTag || '').toUpperCase();
             const isDragging = draggedTagIndex === index;
@@ -1191,29 +1200,31 @@ export default function App() {
                 style={{
                   display:'flex',
                   alignItems:'center',
-                  gap:6,
+                  gap:4,
                   position:'relative',
                   opacity: isDragging ? 0.5 : 1,
                   cursor: 'move',
                   outline: isDragOver ? '2px dashed #0066FF' : 'none',
                   outlineOffset: isDragOver ? '2px' : '0',
-                  transition: 'opacity 0.2s, outline 0.2s'
+                  transition: 'opacity 0.2s, outline 0.2s',
+                  padding: '4px 8px',
+                  fontSize: '12px'
                 }}
               >
-                <span style={{width:20, height:20, borderRadius:4, border:'1px solid #444', background: (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color}} />
-                <span style={{minWidth:26, textAlign:'center', fontWeight: active ? 700 : 600}}>{t.code}</span>
+                <span style={{width:16, height:16, borderRadius:3, border:'1px solid #444', background: (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color}} />
+                <span style={{minWidth:24, textAlign:'center', fontWeight: active ? 700 : 600}}>{t.code}</span>
                 <span
                   onClick={(e)=>{ e.stopPropagation(); setProjectTags(list => list.filter(x => x.id !== t.id)); if (currentTag === t.code) setCurrentTag(''); }}
                   title="Remove from Project Tags"
-                  style={{position:'absolute', top:-6, right:-6, width:18, height:18, lineHeight:'16px', textAlign:'center',
-                          border:'1px solid #bbb', borderRadius:'50%', background:'#fff', cursor:'pointer', fontSize:11}}
+                  style={{position:'absolute', top:-4, right:-4, width:16, height:16, lineHeight:'14px', textAlign:'center',
+                          border:'1px solid #bbb', borderRadius:'50%', background:'#fff', cursor:'pointer', fontSize:10}}
                 >×</span>
               </button>
             );
           })}
-        </div>
+        </div>}
 
-        <button className="btn" onClick={()=>setPickerOpen(v=>!v)}>Add from DB</button>
+        {!projectTagsCollapsed && <button className="btn" onClick={()=>setPickerOpen(v=>!v)} style={{padding: '4px 10px', fontSize: '12px', whiteSpace: 'nowrap'}}>Add from DB</button>}
 
         {pickerOpen && (
           <>
