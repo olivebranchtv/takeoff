@@ -326,8 +326,12 @@ export class PricingDatabase {
     };
 
     // Search for matches across related categories
+    let candidateCount = 0;
     for (const [key, price] of this.materialPrices.entries()) {
-      if (!categoryMatches(price.category) || !price.materialCost || price.materialCost <= 0) continue;
+      if (!categoryMatches(price.category)) continue;
+      candidateCount++;
+
+      if (!price.materialCost || price.materialCost <= 0) continue;
 
       const dbDesc = price.description.toLowerCase()
         .replace(/["']/g, '')
@@ -335,9 +339,17 @@ export class PricingDatabase {
         .replace(/-/g, '');
 
       // Check if database description contains assembly key terms
-      if (keyTerms.some(term => dbDesc.includes(term))) {
+      const matchFound = keyTerms.some(term => dbDesc.includes(term));
+      if (matchFound) {
         return price.materialCost;
       }
+    }
+
+    // Debug: log when no match found
+    if (candidateCount === 0) {
+      console.warn(`❌ No category match for: "${description}" (category: "${category}")`);
+    } else {
+      console.warn(`❌ No description match for: "${description}" (category: "${category}", ${candidateCount} candidates checked, keyTerms: ${JSON.stringify(keyTerms)})`);
     }
 
     return undefined;
