@@ -110,6 +110,9 @@ export default function App() {
   /* ---------- sidebar collapse ---------- */
   const [leftOpen, setLeftOpen] = useState<boolean>(true);
 
+  /* ---------- Focus Mode for maximum blueprint visibility ---------- */
+  const [focusMode, setFocusMode] = useState(false);
+
   /* ---------- Initialize: Load tags from Supabase ---------- */
   useInitialize();
 
@@ -1002,7 +1005,7 @@ export default function App() {
   return (
     <div className="app_root" style={{display:'flex', flexDirection:'column', height:'100vh'}}>
       {/* FILE MENU BAR */}
-      <div style={{display:'flex', alignItems:'center', gap:12, padding:'8px 12px', background:'#0d3b66', color:'#fff', position:'sticky', top:0, zIndex:50}}>
+      {!focusMode && <div style={{display:'flex', alignItems:'center', gap:12, padding:'8px 12px', background:'#0d3b66', color:'#fff', position:'sticky', top:0, zIndex:50}}>
         <div style={{position:'relative'}}>
           <button className="btn" style={{color:'#fff', borderColor:'#2d5c8f', background:'#124a85'}} onClick={()=>setFileMenuOpen(v=>!v)}>File ▾</button>
           {fileMenuOpen && (
@@ -1106,10 +1109,10 @@ export default function App() {
           {pdfName || fileName}
         </span>
         <button className="btn" onClick={()=>setSettingsOpen(true)} style={{marginLeft:'auto'}}>⚙️ Settings</button>
-      </div>
+      </div>}
 
       {/* TOOLBAR (tools + zoom) */}
-      <div className="toolbar" style={{display:'flex', alignItems:'center', gap:8, padding:'8px 12px', borderBottom:'1px solid #e6e6e6', position:'sticky', top:48, background:'#fff', zIndex:40, flexWrap:'wrap'}}>
+      <div className="toolbar" style={{display:'flex', alignItems:'center', gap:8, padding:'8px 12px', borderBottom:'1px solid #e6e6e6', position:'sticky', top: focusMode ? 0 : 48, background:'#fff', zIndex:40, flexWrap:'wrap'}}>
         {pageCount > 0 && (
           <div style={{display:'flex', alignItems:'center', gap:6}}>
             <button className="btn" onClick={()=>setActivePage(Math.max(0, activePage-1))} disabled={activePage<=0}>◀</button>
@@ -1138,11 +1141,27 @@ export default function App() {
           <button className="btn" onClick={()=>setZoom(zoom*0.9)}>-</button>
           <span className="badge">{Math.round(zoom*100)}%</span>
           <button className="btn" onClick={()=>setZoom(zoom*1.1)}>+</button>
+
+          {/* Focus Mode Toggle */}
+          <button
+            className="btn"
+            onClick={() => setFocusMode(!focusMode)}
+            style={{
+              background: focusMode ? '#2563eb' : '#64748b',
+              color: '#fff',
+              fontWeight: 'bold',
+              padding: '6px 12px',
+              marginLeft: '8px'
+            }}
+            title={focusMode ? "Exit Focus Mode (show all toolbars)" : "Enter Focus Mode (maximize blueprint visibility)"}
+          >
+            {focusMode ? '🔍 Exit' : '🎯 Focus'}
+          </button>
         </div>
 
         <div style={{flex:1}} />
 
-        <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
+        {!focusMode && <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
           <button className="btn" onClick={()=>setTagsOpen(true)}>Tags</button>
           <button className="btn" onClick={()=>setAssemblyPanelOpen(true)}>Assemblies</button>
           <button
@@ -1166,11 +1185,11 @@ export default function App() {
           <button className="btn" onClick={()=>setPricingPanelOpen(true)} style={{background:'#2e7d32', color:'#fff', fontWeight:'bold', whiteSpace:'nowrap'}}>💰 Pricing & Bidding</button>
           <button className="btn" onClick={exportExcelFull} style={{whiteSpace:'nowrap'}}>Export Excel (Full BOM)</button>
           <button className="btn" onClick={exportFixturesOnly} style={{whiteSpace:'nowrap'}}>Export Lighting Fixtures</button>
-        </div>
+        </div>}
       </div>
 
       {/* PROJECT TAGS BAR */}
-      <div className="quickbar" style={{display:'flex', alignItems:'center', gap:10, padding:'4px 12px', borderBottom:'1px solid #eee', position:'sticky', top:96, background:'#fff', zIndex:30, overflow:'visible'}}>
+      <div className="quickbar" style={{display:'flex', alignItems:'center', gap:10, padding:'4px 12px', borderBottom:'1px solid #eee', position:'sticky', top: focusMode ? 48 : 96, background:'#fff', zIndex:30, overflow:'visible'}}>
         <button
           className="btn"
           onClick={() => setProjectTagsCollapsed(!projectTagsCollapsed)}
