@@ -394,21 +394,6 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
                 if (file) loadPricingFile(file);
               }}
             />
-            <button
-              onClick={handleLoadDemoPricing}
-              style={{
-                padding: '8px 12px',
-                background: '#1976d2',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: '500'
-              }}
-            >
-              🎯 Load Demo Pricing
-            </button>
           </div>
         </div>
       )}
