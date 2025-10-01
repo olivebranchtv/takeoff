@@ -283,6 +283,10 @@ export async function exportProfessionalBOM(
   const pricingArray: Array<{ category: string; description: string; cost: number; laborHours: number }> = [];
 
   if (pricingData && pricingData.length > 0) {
+    let wireCount = 0;
+    let groundingCount = 0;
+    let fittingsCount = 0;
+
     pricingData.forEach(p => {
       const key = `${p.category}::${p.description}`;
       // Convert to number explicitly (Postgres may return as string)
@@ -295,6 +299,11 @@ export async function exportProfessionalBOM(
       };
       priceMap.set(key, priceInfo);
 
+      // Count categories
+      if (p.category.toLowerCase() === 'wire') wireCount++;
+      if (p.category.toLowerCase() === 'grounding') groundingCount++;
+      if (p.category.toLowerCase() === 'fittings') fittingsCount++;
+
       // Also store for fuzzy matching
       pricingArray.push({
         category: p.category,
@@ -303,9 +312,16 @@ export async function exportProfessionalBOM(
         laborHours: priceInfo.laborHours
       });
     });
-  }
 
-  console.log(`🔥 BOM EXPORTER v2.1 - Loaded ${pricingData?.length || 0} pricing records from database`);
+    console.log(`🔥 BOM EXPORTER v2.1 - Loaded ${pricingData?.length || 0} pricing records from database`);
+    console.log(`   📊 Categories: ${wireCount} wire, ${groundingCount} grounding, ${fittingsCount} fittings`);
+
+    // Show sample wire items
+    const sampleWireKeys = Array.from(priceMap.keys()).filter(k => k.startsWith('wire::')).slice(0, 5);
+    console.log(`   🔌 Sample wire keys:`, sampleWireKeys);
+  } else {
+    console.log(`🔥 BOM EXPORTER v2.1 - Loaded ${pricingData?.length || 0} pricing records from database`);
+  }
 
   // Category matcher - maps assembly categories to database categories
   function categoryMatches(assemblyCategory: string, dbCategory: string): boolean {
