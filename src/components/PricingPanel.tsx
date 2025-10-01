@@ -68,9 +68,9 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
           vendorPartNumber: m.vendor_part_number
         });
 
-        // Debug: verify item codes are stored correctly
-        if (itemCode && (itemCode === 'ITEM-0453' || itemCode === 'ITEM-0448' || itemCode === 'ITEM-0893')) {
-          console.log(`📌 Stored pricing: [${itemCode}] ${m.description} = $${finalCost} (type: ${typeof finalCost}), labor=${finalLabor}hrs`);
+        // Debug: verify item codes are stored correctly (including ALL wire items)
+        if (itemCode && (itemCode === 'ITEM-0453' || itemCode === 'ITEM-0448' || itemCode.startsWith('ITEM-089') || itemCode.startsWith('ITEM-090'))) {
+          console.log(`📌 Stored pricing: [${itemCode}] ${m.category}::${m.description} = $${finalCost} (type: ${typeof finalCost}), labor=${finalLabor}hrs`);
         }
 
         if (materialCost > 0) loadedCount++;
