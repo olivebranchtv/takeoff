@@ -46,12 +46,42 @@ export function calculateAssemblyMaterials(
 
   for (const row of bomRows) {
     const tag = tagMap.get(row.tagCode);
-    if (!tag || !tag.assemblyId) continue;
+    if (!tag) continue;
+
+    const count = row.qty;
+
+    // If tag has no assembly (generic lights), create a direct labor entry
+    if (!tag.assemblyId) {
+      console.log(`💡 Tag "${row.tagCode}" has no assembly - creating direct labor entry for ${count} units`);
+
+      // For generic light fixtures without assemblies, add as a material line with labor hours
+      const isLight = tag.category?.toLowerCase().includes('light');
+      const laborHours = isLight ? 1.5 : 0.5; // 1.5 hrs for lights, 0.5 hrs for other items
+
+      const matKey = `${tag.category || 'Lights'}::Fixture ${row.tagCode}::EA`;
+      const existing = materialAcc.get(matKey);
+
+      if (existing) {
+        existing.quantity += count;
+        existing.totalQty += count;
+      } else {
+        materialAcc.set(matKey, {
+          category: tag.category || 'Lights',
+          description: `Fixture ${row.tagCode}`,
+          unit: 'EA',
+          quantity: count,
+          wasteFactor: 1.0,
+          totalQty: count,
+          assemblyCode: row.tagCode,
+          assemblyName: tag.name,
+          notes: `Labor: ${laborHours} hrs per unit`
+        });
+      }
+      continue;
+    }
 
     const assembly = assemblyMap.get(tag.assemblyId);
     if (!assembly || !assembly.isActive) continue;
-
-    const count = row.qty;
 
     // Track assembly usage
     const usage: AssemblyUsage = {

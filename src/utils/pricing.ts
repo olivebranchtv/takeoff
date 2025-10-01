@@ -61,6 +61,12 @@ function getFallbackPrice(category: string, description: string): { price: numbe
   const desc = description.toLowerCase();
   const cat = category.toLowerCase();
 
+  // Check if this is a generic fixture (e.g., "Fixture A", "Fixture B")
+  if (desc.match(/^fixture [a-z0-9]+$/i) || cat.includes('light')) {
+    console.log(`💡 Generic light fixture "${description}" → $0.00 (owner-provided), 1.5hrs labor`);
+    return { price: 0.00, laborHours: 1.5 };
+  }
+
   // Try exact match first
   for (const [key, value] of Object.entries(FALLBACK_PRICES)) {
     if (desc.includes(key) || cat.includes(key)) {
