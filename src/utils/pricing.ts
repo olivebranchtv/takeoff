@@ -246,11 +246,17 @@ export class PricingDatabase {
     // 1. Try item code first (most reliable)
     if (itemCode) {
       for (const price of this.materialPrices.values()) {
-        if (price.itemCode === itemCode && price.materialCost > 0) {
-          console.log(`🔍 ✓ ITEM CODE [${itemCode}] "${description}" → $${price.materialCost}`);
-          return price.materialCost;
+        if (price.itemCode === itemCode) {
+          if (price.materialCost > 0) {
+            console.log(`🔍 ✓ ITEM CODE [${itemCode}] "${description}" → $${price.materialCost}`);
+            return price.materialCost;
+          } else {
+            console.warn(`⚠️ ITEM CODE FOUND BUT ZERO COST [${itemCode}] "${description}" cost=$${price.materialCost}`);
+            return price.materialCost; // Return even if 0 to distinguish from "not found"
+          }
         }
       }
+      console.warn(`⚠️ ITEM CODE NOT FOUND [${itemCode}] "${description}" - falling back to description match`);
     }
 
     // 2. Try exact match (case-sensitive)

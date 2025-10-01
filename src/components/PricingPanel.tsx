@@ -53,16 +53,25 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
         const materialCost = typeof m.material_cost === 'string' ? parseFloat(m.material_cost) : (m.material_cost || 0);
         const laborHours = typeof m.labor_hours === 'string' ? parseFloat(m.labor_hours) : (m.labor_hours || 0);
 
+        const finalCost = isNaN(materialCost) ? 0 : materialCost;
+        const finalLabor = isNaN(laborHours) ? 0 : laborHours;
+        const itemCode = (m as any).item_code;
+
         pricingDb.setMaterialPrice(key, {
           category: m.category,
           description: m.description,
           unit: m.unit,
-          materialCost: isNaN(materialCost) ? 0 : materialCost,
-          laborHours: isNaN(laborHours) ? 0 : laborHours,
-          itemCode: (m as any).item_code,  // Include item code from database
+          materialCost: finalCost,
+          laborHours: finalLabor,
+          itemCode,
           vendor: m.vendor,
           vendorPartNumber: m.vendor_part_number
         });
+
+        // Debug: verify item codes are stored correctly
+        if (itemCode && (itemCode === 'ITEM-0453' || itemCode === 'ITEM-0448' || itemCode === 'ITEM-0893')) {
+          console.log(`📌 Stored pricing: [${itemCode}] ${m.description} = $${finalCost} (type: ${typeof finalCost}), labor=${finalLabor}hrs`);
+        }
 
         if (materialCost > 0) loadedCount++;
       });
