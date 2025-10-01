@@ -795,6 +795,8 @@ export default function App() {
     const XLSX = await ensureXLSX();
     const { countByCode } = aggregate();
 
+    const projectName = useStore.getState().getProjectName()?.trim() || 'Project Name';
+
     const lightingRows = Array.from(countByCode.entries())
       .filter(([code]) => isLighting(code))
       .map(([code, count]) => ({
@@ -807,22 +809,28 @@ export default function App() {
     // Calculate total count
     const totalCount = lightingRows.reduce((sum, row) => sum + row.Count, 0);
 
-    // Add TOTAL row
-    const rowsWithTotal = [
-      ...lightingRows,
-      {
-        Code: 'TOTAL',
-        Name: '',
-        Count: totalCount
-      }
+    // Create the data array with header and total row
+    const data: any[][] = [
+      [`Project:  ${projectName}`, '', ''], // Project header row
+      [], // Empty row
+      ['Code', 'Name', 'Count'], // Column headers
+      ...lightingRows.map(row => [row.Code, row.Name, row.Count]),
+      ['Total', '', totalCount] // Total row
     ];
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsWithTotal), 'Lighting');
+    const ws = XLSX.utils.aoa_to_sheet(data);
 
-    const baseName =
-      (useStore.getState().getProjectName()?.trim() || 'Lighting') + ' - Fixtures';
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 10 },  // Code column
+      { wch: 30 },  // Name column
+      { wch: 10 }   // Count column
+    ];
 
+    XLSX.utils.book_append_sheet(wb, ws, 'Lighting');
+
+    const baseName = projectName + ' - Fixtures';
     XLSX.writeFile(wb, `${baseName}.xlsx`);
   };
 
