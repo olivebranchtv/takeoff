@@ -86,7 +86,7 @@ export const DEFAULT_MASTER_TAGS: MasterTag[] = [
   // --------------------------- STUB-UPS ---------------------------
   { code: 'TP', name: 'Telephone Stub-Up', color: '#38BDF8', category: 'Stub-Ups' },
   { code: 'CATV', name: 'CATV Stub-Up', color: '#38BDF8', category: 'Stub-Ups' },
-  { code: 'D', name: 'Data Stub-Up', color: '#38BDF8', category: 'Stub-Ups' },
+  { code: 'DATA-SU', name: 'Data Stub-Up', color: '#38BDF8', category: 'Stub-Ups' },
   { code: 'FSU', name: 'Floor Stub-Up', color: '#38BDF8', category: 'Stub-Ups' },
   { code: 'STU-GEN', name: 'Generator Control Stub-Up', color: '#38BDF8', category: 'Stub-Ups' },
 

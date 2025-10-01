@@ -79,10 +79,14 @@ Analyze these electrical drawings and extract the following information in a str
    - Include notes about existing conditions
    - Any clarifications or questions noted
 
-2. FIXTURE RESPONSIBILITY:
-   - Which fixtures are OWNER PROVIDED (e.g., light fixtures by owner)
-   - Which fixtures are CONTRACTOR PROVIDED (e.g., wiring, boxes by contractor)
-   - Any specific notes about fixture responsibilities
+2. FIXTURE RESPONSIBILITY - EXTRACT ALL DETAILS:
+   - Look for sections titled "OWNER FURNISHED", "BY OWNER", "FURNISHED BY OTHERS", "CONTRACTOR FURNISHED", "BY CONTRACTOR"
+   - Owner/Owner-Furnished items: List ALL items explicitly stated as provided by owner (e.g., "ALL LIGHT FIXTURES", "LIGHTING CONTROL PANEL & ACC.", "OCCUPANCY SENSING LIGHT SWITCHES", "PHOTOCELLS", "BALLASTS", "SITE LIGHT POLES AND BRACKETS")
+   - Contractor-Furnished items: List what contractor provides (e.g., "ALL WIRING", "BOXES", "CONDUIT", "INSTALLATION LABOR")
+   - Contractor work/responsibilities: What work the electrical contractor performs (e.g., "Install and wire lighting", "Install controls", "Connect to lighting control panel")
+   - Copy the EXACT wording from the drawings - do not paraphrase
+   - Include all details about who provides what materials and who performs what work
+   - Any specific notes about fixture responsibilities or division of work
 
 3. LIGHTING SCHEDULE:
    - Extract EVERY SINGLE ROW from the lighting fixture schedule table
@@ -325,10 +329,14 @@ Extract the following information:
    - Include notes about existing conditions if stated
    - Any clarifications or questions noted in the documents
 
-2. FIXTURE RESPONSIBILITY:
-   - Which fixtures are explicitly marked as OWNER PROVIDED
-   - Which fixtures are explicitly marked as CONTRACTOR PROVIDED
-   - Specific notes about fixture responsibilities from the drawings
+2. FIXTURE RESPONSIBILITY - EXTRACT ALL DETAILS:
+   - Look for sections titled "OWNER FURNISHED", "BY OWNER", "FURNISHED BY OTHERS", "CONTRACTOR FURNISHED", "BY CONTRACTOR"
+   - Owner/Owner-Furnished items: List ALL items explicitly stated as provided by owner (e.g., "ALL LIGHT FIXTURES", "LIGHTING CONTROL PANEL & ACC.", "OCCUPANCY SENSING LIGHT SWITCHES", "PHOTOCELLS", "BALLASTS", "SITE LIGHT POLES AND BRACKETS")
+   - Contractor-Furnished items: List what contractor provides (e.g., "ALL WIRING", "BOXES", "CONDUIT", "INSTALLATION LABOR")
+   - Contractor work/responsibilities: What work the electrical contractor performs (e.g., "Install and wire lighting", "Install controls", "Connect to lighting control panel")
+   - Copy the EXACT wording from the drawings - do not paraphrase
+   - Include all details about who provides what materials and who performs what work
+   - Specific notes about fixture responsibilities or division of work from the drawings
 
 3. LIGHTING SCHEDULE - READ EXACTLY AS WRITTEN:
    - Extract EVERY SINGLE ROW from the lighting fixture schedule table
