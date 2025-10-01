@@ -4,6 +4,7 @@ import { useStore } from '@/state/store';
 import type { Tag } from '@/types';
 import { downloadTagsFile } from '@/utils/persist';
 import { DEFAULT_MASTER_TAGS } from '@/constants/masterTags';
+import { getAssemblyIdForTag } from '@/utils/tagAssemblyMapping';
 
 type Props = {
   open: boolean;
@@ -256,6 +257,24 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     if (confirm(`Delete tag ${tag.code}?`)) deleteTag(id);
   }
 
+  function autoPopulateAssemblies() {
+    if (!confirm('Auto-assign assemblies to all tags based on their codes and categories? This will update tags that don\'t have assemblies assigned.')) return;
+
+    let updated = 0;
+    (tags as Tag[]).forEach((tag: Tag) => {
+      // Only auto-assign if no assembly is currently set
+      if (!(tag as any).assemblyId) {
+        const assemblyId = getAssemblyIdForTag(tag.code, tag.category);
+        if (assemblyId) {
+          updateTag(tag.id, { ...tag, assemblyId } as any);
+          updated++;
+        }
+      }
+    });
+
+    alert(`Auto-assigned assemblies to ${updated} tags.`);
+  }
+
   function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -343,6 +362,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap:'wrap' }}>
             <button className="btn" onClick={loadDefaults}>Load Defaults</button>
+            <button className="btn" onClick={autoPopulateAssemblies} title="Auto-assign assemblies to tags that don't have them">Auto-Assign Assemblies</button>
             <button className="btn" onClick={() => fileRef.current?.click()}>Import JSON</button>
             <button className="btn" onClick={() => downloadTagsFile('tags.json', exportTags())}>Export JSON</button>
             <button className="btn" onClick={onClose}>Close</button>
@@ -500,6 +520,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                   <th style={S.thCode}>Code</th>
                   <th style={S.thCat}>Category</th>
                   <th>Name</th>
+                  <th style={S.thAssembly}>Assembly</th>
                   <th style={S.thActions}>Actions</th>
                 </tr>
               </thead>
@@ -507,11 +528,13 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                 {filteredGroups.map(group => (
                   <React.Fragment key={group.category || 'Uncategorized'}>
                     <tr ref={el => { if (el) groupRefs.current.set(group.category || 'Uncategorized', el); }}>
-                      <td colSpan={5} style={{ padding:'8px 6px', background:'#fafafa', borderTop:'1px solid #eee', fontWeight:700, position:'sticky', top:34, zIndex:1 }}>
+                      <td colSpan={6} style={{ padding:'8px 6px', background:'#fafafa', borderTop:'1px solid #eee', fontWeight:700, position:'sticky', top:34, zIndex:1 }}>
                         {group.category || 'Uncategorized'}
                       </td>
                     </tr>
-                    {group.items.map((t: Tag) => (
+                    {group.items.map((t: Tag) => {
+                      const assembly = (t as any).assemblyId ? assemblies?.find((a: any) => a.id === (t as any).assemblyId) : null;
+                      return (
                       <tr key={t.id} style={{ height:32 }}>
                         <td>
                           <div style={{ width:18, height:18, borderRadius:4, background:t.color, border:'1px solid #999', margin:'0 auto' }} />
@@ -519,6 +542,9 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                         <td style={{ fontWeight:600 }}>{t.code}</td>
                         <td>{t.category}</td>
                         <td>{t.name}</td>
+                        <td style={{ fontSize: 13, color: assembly ? '#333' : '#999' }}>
+                          {assembly ? `${assembly.code} - ${assembly.name}` : '—'}
+                        </td>
                         <td>
                           <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
                             <button className="btn" title="Add to current project" aria-label={`Add ${t.code} to current project`} onClick={() => addToProject(t)}>+</button>
@@ -527,14 +553,14 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    )})}
                     {group.items.length === 0 && (
-                      <tr><td colSpan={5} style={{ color:'#777', padding:'8px 6px' }}>No items in this category.</td></tr>
+                      <tr><td colSpan={6} style={{ color:'#777', padding:'8px 6px' }}>No items in this category.</td></tr>
                     )}
                   </React.Fragment>
                 ))}
                 {filteredGroups.length === 0 && (
-                  <tr><td colSpan={5} style={{ textAlign:'center', color:'#666', padding:'14px 0' }}>No tags match your search.</td></tr>
+                  <tr><td colSpan={6} style={{ textAlign:'center', color:'#666', padding:'14px 0' }}>No tags match your search.</td></tr>
                 )}
               </tbody>
             </table>
@@ -596,6 +622,8 @@ const S: Record<string, React.CSSProperties> = {
   thCode:   { width:100, textAlign:'left', padding:'8px 6px', fontSize:12, color:'#555',
     borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff', zIndex:2 },
   thCat:    { width:220, textAlign:'left', padding:'8px 6px', fontSize:12, color:'#555',
+    borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff', zIndex:2 },
+  thAssembly: { width:280, textAlign:'left', padding:'8px 6px', fontSize:12, color:'#555',
     borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff', zIndex:2 },
   thActions:{ width:210, textAlign:'right', padding:'8px 6px', fontSize:12, color:'#555',
     borderBottom:'1px solid #eee', position:'sticky', top:0, background:'#fff', zIndex:2 },
