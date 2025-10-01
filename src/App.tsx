@@ -833,8 +833,8 @@ export default function App() {
 
         {/* Company + Project Name (click to rename) */}
         <div style={{display:'flex', alignItems:'center', gap:8}}>
-          <div style={{fontSize:16, fontWeight:700}}>SKD Services</div>
-          <div style={{opacity:.7}}>·</div>
+          <div style={{fontSize:18, fontWeight:700}}>SKD Services</div>
+          <div style={{opacity:.7, fontSize:18}}>·</div>
           <button
             title="Click to rename project"
             onClick={()=>{ const next = prompt('Project name:', headerProjectLabel); if (next != null) setProjectName(next.trim() || 'Untitled Project'); }}
@@ -843,10 +843,11 @@ export default function App() {
               background:'transparent',
               border:'1px dashed rgba(255,255,255,.35)',
               color:'#fff',
-              padding:'2px 8px',
+              padding:'6px 12px',
               borderRadius:6,
               cursor:'pointer',
               fontWeight:600,
+              fontSize:16,
               maxWidth:340,
               whiteSpace:'nowrap',
               overflow:'hidden',
@@ -1265,23 +1266,23 @@ function SidebarBOM({ bom, onToggle }:{
 
   return (
     <div>
-      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, padding:'8px 10px', position:'sticky', top:0, background:'#0d3b66', zIndex:2, borderBottom:'2px solid #124a85', color:'#fff'}}>
-        <div style={{fontWeight:700, fontSize:14}}>📋 Live BOM Summary</div>
-        <button className="btn" onClick={onToggle} style={{fontSize:12, padding:'2px 8px', color:'#fff', borderColor:'#2d5c8f', background:'#124a85'}} title="Hide sidebar">‹ Hide</button>
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, padding:'10px 12px', position:'sticky', top:0, background:'#0d3b66', zIndex:2, borderBottom:'2px solid #124a85', color:'#fff'}}>
+        <div style={{fontWeight:700, fontSize:16}}>📋 Live BOM Summary</div>
+        <button className="btn" onClick={onToggle} style={{fontSize:14, padding:'4px 10px', color:'#fff', borderColor:'#2d5c8f', background:'#124a85'}} title="Hide sidebar">‹ Hide</button>
       </div>
 
       <div style={{padding:'12px'}}>
         {/* Calibration Status */}
-        <div style={{padding:'8px 10px', marginBottom:12, background: bom.calibratedCount === bom.totalPages ? '#d4edda' : '#fff3cd', border:'1px solid ' + (bom.calibratedCount === bom.totalPages ? '#c3e6cb' : '#ffc107'), borderRadius:6, fontSize:12}}>
+        <div style={{padding:'10px 12px', marginBottom:12, background: bom.calibratedCount === bom.totalPages ? '#d4edda' : '#fff3cd', border:'1px solid ' + (bom.calibratedCount === bom.totalPages ? '#c3e6cb' : '#ffc107'), borderRadius:6, fontSize:14}}>
           <strong>Calibration:</strong> {bom.calibratedCount}/{bom.totalPages} pages
           {bom.calibratedCount < bom.totalPages && <span style={{color:'#856404'}}> ⚠️ Calibrate remaining pages</span>}
           {bom.calibratedCount === bom.totalPages && <span style={{color:'#155724'}}> ✓ All calibrated!</span>}
         </div>
 
         {/* Quick Totals Card */}
-        <div style={{padding:'10px', marginBottom:16, background:'#f8f9fa', border:'1px solid #dee2e6', borderRadius:8}}>
-          <div style={{marginBottom:8, fontWeight:700, fontSize:13, color:'#495057'}}>Project Totals</div>
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', rowGap:6, fontSize:13}}>
+        <div style={{padding:'12px', marginBottom:16, background:'#f8f9fa', border:'1px solid #dee2e6', borderRadius:8}}>
+          <div style={{marginBottom:8, fontWeight:700, fontSize:15, color:'#495057'}}>Project Totals</div>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', rowGap:6, fontSize:14}}>
             <div style={{color:'#6c757d'}}>Total Devices:</div><div style={{fontWeight:600}}>{bom.totalTags}</div>
             <div style={{color:'#6c757d'}}>Total Conduit:</div><div style={{fontWeight:600}}>{bom.totalLF.toFixed(0)} LF</div>
           </div>
@@ -1289,10 +1290,10 @@ function SidebarBOM({ bom, onToggle }:{
 
         {/* Categorized Tags */}
         <div style={{marginBottom:16}}>
-          <div style={{marginBottom:10, fontWeight:700, fontSize:14, color:'#212529'}}>Devices by Category</div>
+          <div style={{marginBottom:10, fontWeight:700, fontSize:15, color:'#212529'}}>Devices by Category</div>
 
           {categorizedTags.length === 0 && (
-            <div style={{padding:'20px', textAlign:'center', color:'#6c757d', fontSize:13, background:'#f8f9fa', borderRadius:6}}>
+            <div style={{padding:'20px', textAlign:'center', color:'#6c757d', fontSize:14, background:'#f8f9fa', borderRadius:6}}>
               No devices tagged yet. Start tagging to see your progress here!
             </div>
           )}
