@@ -277,11 +277,13 @@ export async function exportProfessionalBOM(
 
   // Fuzzy matcher - finds closest match in database
   function findPrice(category: string, description: string): { cost: number; laborHours: number } {
+    console.log(`🔍 Finding price for: "${description}" (category: "${category}")`);
+
     // Try exact match first
     const exactKey = `${category}::${description}`;
     const exact = priceMap.get(exactKey);
     if (exact && (exact.cost > 0 || exact.laborHours > 0)) {
-      console.log(`✓ Exact match for ${category}::${description} = $${exact.cost}`);
+      console.log(`✅ EXACT MATCH: ${category}::${description} = $${exact.cost}, ${exact.laborHours}hrs`);
       return exact;
     }
 
@@ -294,6 +296,11 @@ export async function exportProfessionalBOM(
 
     // Find matches using category mapping + description matching
     const keyTerms = normDesc.split(/[,\/]/).filter(t => t.length > 2);
+    console.log(`   Key terms: [${keyTerms.join(', ')}]`);
+
+    // First check: how many DB items match our category?
+    const categoryMatchCount = pricingArray.filter(p => categoryMatches(category, p.category)).length;
+    console.log(`   Category matches: ${categoryMatchCount} items in DB match category "${category}"`);
 
     const candidates = pricingArray.filter(p => {
       // Use category mapper instead of strict equality
@@ -304,14 +311,19 @@ export async function exportProfessionalBOM(
       return keyTerms.some(term => dbDesc.includes(term));
     });
 
+    console.log(`   Description candidates: ${candidates.length} items matched`);
+    if (candidates.length > 0) {
+      console.log(`   First 3 candidates:`, candidates.slice(0, 3).map(c => c.description));
+    }
+
     // Return first match with pricing
     const match = candidates.find(c => c.cost > 0 || c.laborHours > 0);
     if (match) {
-      console.log(`✓ Fuzzy match for ${description} → ${match.description} (${match.category}) = $${match.cost}, ${match.laborHours}hrs`);
+      console.log(`✅ FUZZY MATCH: "${description}" → "${match.description}" (${match.category}) = $${match.cost}, ${match.laborHours}hrs`);
       return { cost: match.cost, laborHours: match.laborHours };
     }
 
-    console.warn(`❌ No match found for: "${description}" (category: "${category}")`);
+    console.error(`❌❌❌ NO MATCH: "${description}" (category: "${category}") - ${candidates.length} candidates but none had pricing`);
     return { cost: 0, laborHours: 0 };
   }
 
