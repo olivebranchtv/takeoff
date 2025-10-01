@@ -157,7 +157,8 @@ export function calculateAssemblyMaterials(
 
     // Add wire/conductors
     if (row.conductors && Array.isArray(row.conductors) && row.conductors.length > 0) {
-      console.log(`  📌 Row has ${row.conductors.length} conductor configs, racewayLf=${row.racewayLf}`);
+      console.log(`  📌 Row "${row.tagCode}" has ${row.conductors.length} conductor configs, racewayLf=${row.racewayLf}`);
+      console.log(`  📌 Conductor data:`, JSON.stringify(row.conductors, null, 2));
       for (const cond of row.conductors) {
         if (!cond.count || !cond.size || cond.count === 0) {
           console.log(`  ⚠️ Skipping conductor: count=${cond.count}, size=${cond.size}`);
