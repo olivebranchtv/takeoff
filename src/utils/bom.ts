@@ -263,8 +263,8 @@ export function buildBOMRows(pages: PageState[], mode: BomMode = 'itemized'): Bo
         racewayLf: r.shape === 'count' ? undefined : (r.racewayLf ?? 0),
         conductorLfTotal: r.shape === 'count' ? undefined : (r.conductorLfTotal ?? 0),
         boxes: r.shape === 'count' ? undefined : (r.boxes ?? 0),
-        // conductors cannot be meaningfully "summed" as arrays; omit in summary
-        conductors: undefined,
+        // Keep conductors from first row (all rows with same tag/shape should have same conductors)
+        conductors: r.conductors,
       });
     } else {
       g.qty += 1;
