@@ -154,6 +154,9 @@ type State = {
 
   // ASSEMBLY DATABASE (standard material kits)
   assemblies: Assembly[];
+  addAssembly: (assembly: Assembly) => void;
+  updateAssembly: (id: string, assembly: Assembly) => void;
+  deleteAssembly: (id: string) => void;
 
   // AI ANALYSIS RESULTS (persisted)
   aiAnalysisResult: ProjectAnalysis | null;
@@ -685,18 +688,37 @@ export const useStore = create<State>()(
       /** ===== AI Analysis helpers ===== */
       setAiAnalysisResult: (result) => set({ aiAnalysisResult: result }),
       getAiAnalysisResult: () => get().aiAnalysisResult,
+
+      /** ===== Assembly management ===== */
+      addAssembly: (assembly) => set((s) => ({
+        assemblies: [...s.assemblies, assembly]
+      })),
+      updateAssembly: (id, assembly) => set((s) => ({
+        assemblies: s.assemblies.map(a => a.id === id ? assembly : a)
+      })),
+      deleteAssembly: (id) => set((s) => {
+        // Remove assembly and clear it from any tags using it
+        const tags = s.tags.map(tag =>
+          tag.assemblyId === id ? { ...tag, assemblyId: undefined } : tag
+        );
+        return {
+          assemblies: s.assemblies.filter(a => a.id !== id),
+          tags
+        };
+      }),
     }),
     {
       name: 'skd.mastertags.v1',
       storage: createJSONStorage(() => localStorage),
       version: 1,
-      // persist master DB, palette, overrides, lastMeasureOptions, AND aiAnalysisResult
+      // persist master DB, palette, overrides, lastMeasureOptions, aiAnalysisResult, AND assemblies
       partialize: (s) => ({
         tags: s.tags,
         palette: s.palette,
         colorOverrides: s.colorOverrides,
         lastMeasureOptions: s.lastMeasureOptions,
         aiAnalysisResult: s.aiAnalysisResult,
+        assemblies: s.assemblies,
       }),
     }
   )
