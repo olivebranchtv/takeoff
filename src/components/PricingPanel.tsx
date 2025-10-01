@@ -21,7 +21,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
   const [pricingDb] = useState(() => new PricingDatabase(30.0));
   const [overheadPct, setOverheadPct] = useState(15);
   const [profitPct, setProfitPct] = useState(12);
-  const [taxRate, setTaxRate] = useState(8.5);
+  const [taxRate, setTaxRate] = useState(9.5);
   const [shipping, setShipping] = useState(0);
   const [equipment, setEquipment] = useState(0);
   const [pricesLoaded, setPricesLoaded] = useState(false);
