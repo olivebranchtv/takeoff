@@ -12,6 +12,7 @@ import type {
 } from '@/types';
 import { STANDARD_ASSEMBLIES } from '@/constants/assemblies';
 import { autoAssignAssembly } from '@/utils/tagAssemblyMapping';
+import { saveTagsToSupabase } from '@/utils/supabasePricing';
 
 type HistoryEntry = { pageIndex: number; objects: AnyTakeoffObject[] };
 
@@ -354,8 +355,9 @@ export const useStore = create<State>()(
         const incomingColor = t.color || ORANGE;
         const incomingCat = (t.category || '').trim();
 
-        // Auto-assign assembly if not already set
-        const tagWithAssembly = autoAssignAssembly({
+        // Auto-assign assembly if not already set (but skip Lights category)
+        const isLightCategory = incomingCat?.toLowerCase().includes('light');
+        const tagWithAssembly = isLightCategory ? { assemblyId: undefined } : autoAssignAssembly({
           code: codeKey,
           category: incomingCat,
           assemblyId: t.assemblyId
@@ -373,6 +375,10 @@ export const useStore = create<State>()(
           if (incomingColor && incomingColor.toUpperCase() !== ORANGE.toUpperCase()) overrides[codeKey] = incomingColor;
           else delete overrides[codeKey];
         }
+
+        // Save to Supabase asynchronously
+        saveTagsToSupabase(tags, overrides).catch(err => console.error('Failed to save tags to Supabase:', err));
+
         return { tags, colorOverrides: overrides };
       }),
 
@@ -386,14 +392,15 @@ export const useStore = create<State>()(
         const nextCat  = (patch.category ?? (tags[currentIdx].category || '')).trim();
         const nextName = patch.name ?? tags[currentIdx].name;
         const nextColor= patch.color ?? tags[currentIdx].color;
+        const nextAssemblyId = patch.assemblyId !== undefined ? patch.assemblyId : tags[currentIdx].assemblyId;
 
         // Merge into canonical if code collides with another
         const canonicalIdx = tags.findIndex(t => norm(t.code) === nextCode);
         if (canonicalIdx >= 0 && canonicalIdx !== currentIdx) {
-          tags[canonicalIdx] = { ...tags[canonicalIdx], code: nextCode, name: nextName, category: nextCat, color: nextColor };
+          tags[canonicalIdx] = { ...tags[canonicalIdx], code: nextCode, name: nextName, category: nextCat, color: nextColor, assemblyId: nextAssemblyId };
           tags.splice(currentIdx, 1);
         } else {
-          tags[currentIdx] = { ...tags[currentIdx], code: nextCode, name: nextName, category: nextCat, color: nextColor };
+          tags[currentIdx] = { ...tags[currentIdx], code: nextCode, name: nextName, category: nextCat, color: nextColor, assemblyId: nextAssemblyId };
         }
 
         const overrides = { ...s.colorOverrides };
@@ -404,6 +411,10 @@ export const useStore = create<State>()(
           // non-lights: remove any leftover override
           delete overrides[nextCode];
         }
+
+        // Save to Supabase asynchronously
+        saveTagsToSupabase(tags, overrides).catch(err => console.error('Failed to save tags to Supabase:', err));
+
         return { tags, colorOverrides: overrides, projectTagIds: s.projectTagIds.filter(pid => pid !== id) };
       }),
 
@@ -412,6 +423,10 @@ export const useStore = create<State>()(
         const tags = s.tags.filter(t => t.id !== id);
         const overrides = { ...s.colorOverrides };
         if (tag) delete overrides[norm(tag.code)];
+
+        // Save to Supabase asynchronously
+        saveTagsToSupabase(tags, overrides).catch(err => console.error('Failed to save tags to Supabase:', err));
+
         return { tags, projectTagIds: s.projectTagIds.filter(pid => pid !== id), colorOverrides: overrides };
       }),
 
@@ -421,10 +436,14 @@ export const useStore = create<State>()(
         const overrides = { ...s.colorOverrides };
 
         for (const raw of incoming) {
-          // Auto-assign assembly if not already set
-          const tagWithAssembly = autoAssignAssembly({
+          // Skip Lights category for auto-assign assembly
+          const incomingCat = (raw as any).category || '';
+          const isLightCategory = incomingCat?.toLowerCase().includes('light');
+
+          // Auto-assign assembly if not already set (but skip Lights)
+          const tagWithAssembly = isLightCategory ? { assemblyId: undefined } : autoAssignAssembly({
             code: (raw as any).code,
-            category: (raw as any).category || '',
+            category: incomingCat,
             assemblyId: (raw as any).assemblyId
           });
 
@@ -432,7 +451,7 @@ export const useStore = create<State>()(
             id: (raw as Tag).id || nextId(),
             code: (raw as any).code,
             name: (raw as any).name || '',
-            category: (raw as any).category || '',
+            category: incomingCat,
             color: (raw as any).color || ORANGE,
             assemblyId: tagWithAssembly.assemblyId,
           } as Tag;
@@ -450,6 +469,10 @@ export const useStore = create<State>()(
           }
         }
         const keep = s.projectTagIds.filter(id => merged.some(t => t.id === id));
+
+        // Save to Supabase asynchronously
+        saveTagsToSupabase(merged, overrides).catch(err => console.error('Failed to save tags to Supabase:', err));
+
         return { tags: merged, projectTagIds: keep, colorOverrides: overrides };
       }),
 
