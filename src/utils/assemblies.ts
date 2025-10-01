@@ -33,7 +33,7 @@ export function calculateAssemblyMaterials(
           // Count lights and GFCI receptacles
           if (tag.category === 'Lights') {
             lightCount++;
-          } else if (countObj.code === 'REC-GFCI' || countObj.code === 'REC-WP-GFCI') {
+          } else if (countObj.code.includes('GFCI') || countObj.code.includes('GFI')) {
             gfiCount++;
           }
 
