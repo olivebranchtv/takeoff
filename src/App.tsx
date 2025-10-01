@@ -901,7 +901,17 @@ export default function App() {
           onChange={async (e)=>{ const input=e.currentTarget; const f=input.files?.[0]; input.value=''; if (f) await doOpenProject(f); }}
         />
 
-        <div style={{flex:1}} />
+        <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'center'}}>
+          <span style={{
+            fontSize: 20,
+            fontWeight: 700,
+            color: '#fff',
+            textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+            letterSpacing: '0.5px'
+          }}>
+            ⭐ SKD Estimators Rockstar Team ⭐
+          </span>
+        </div>
 
         {/* quick open PDF right from the menu bar */}
         <input
