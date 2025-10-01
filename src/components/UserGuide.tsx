@@ -211,30 +211,149 @@ export function UserGuide({ onClose }: UserGuideProps) {
           </Section>
 
           <Section title="📊 Export Bill of Materials">
-            <SubSection title="G. Export Full BOM">
+            <SubSection title="G. Export Full BOM (Excel)">
               <ol>
                 <li>Click <strong>"Export Excel (Full BOM)"</strong></li>
-                <li>Excel file downloads automatically</li>
-                <li>Contains complete material list with quantities</li>
-                <li>Includes waste factors (5-15% by material type)</li>
-                <li>Organized by category</li>
-                <li>Ready to send to vendors for quotes</li>
+                <li>Professional Excel workbook downloads with 7 sheets:</li>
+                <ul>
+                  <li><strong>Cover Sheet:</strong> Project details, scope, and exclusions</li>
+                  <li><strong>Summary by Category:</strong> High-level device counts by CSI division</li>
+                  <li><strong>Bill of Materials:</strong> Complete material list with pricing, labor hours, and extended costs</li>
+                  <li><strong>Assembly Breakdown:</strong> Shows which assemblies were used and their materials</li>
+                  <li><strong>Device Counts:</strong> Tag-by-tag count with totals by category</li>
+                  <li><strong>Conduit & Wire Summary:</strong> All homerun conduit and conductor quantities</li>
+                  <li><strong>Takeoff Detail:</strong> Itemized measurements for every tag and line</li>
+                </ul>
+                <li>Includes waste factors automatically applied (wire 10%, conduit 5%, devices 2%)</li>
+                <li>Material costs pulled from Supabase database</li>
+                <li>Labor hours calculated using NECA standards</li>
+                <li>Total row shows sum of all material costs and labor hours</li>
+                <li>Ready to send to vendors for quotes or use for bidding</li>
               </ol>
             </SubSection>
 
-            <SubSection title="Export Lighting Fixtures">
+            <SubSection title="H. Export BOM Summary (CSV)">
               <ul>
-                <li>Exports all lighting fixtures to Excel</li>
-                <li>Includes linear fixtures, troffers, high-bays, downlights, emergency, exit signs</li>
-                <li>Perfect for sending to lighting vendors for pricing quotes</li>
-                <li>Organized by fixture type with quantities</li>
-                <li>Helps get competitive pricing for lighting packages</li>
+                <li>Click <strong>"Export CSV"</strong> in BOM Panel</li>
+                <li>Quick CSV export with fixture counts by code</li>
+                <li>Includes total raceway LF, conductor LF, and boxes</li>
+                <li>Wire breakdown by size and material</li>
+                <li><strong>NEW:</strong> Includes TOTAL row summing all fixture counts</li>
+                <li>Perfect for quick reviews and email summaries</li>
               </ul>
             </SubSection>
           </Section>
 
+          <Section title="🤖 AI Document Analysis (NEW!)">
+            <SubSection title="Automatic Drawing Analysis with OpenAI">
+              <div style={{background: '#e3f2fd', padding: '15px', borderRadius: '6px', marginBottom: '15px'}}>
+                <strong>✨ AI-Powered Features:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  Upload your electrical drawings and let AI extract key information automatically -
+                  fixture schedules, panel schedules, scope of work, and comprehensive project assumptions!
+                </p>
+              </div>
+              <ol>
+                <li>Click <strong>"⚙️ Settings"</strong> in top toolbar</li>
+                <li>Scroll to <strong>"AI Document Analysis"</strong> section</li>
+                <li>Enter your OpenAI API key (get from <a href="https://platform.openai.com" target="_blank" rel="noopener">platform.openai.com</a>)</li>
+                <li>Click Save</li>
+                <li>Load your PDF drawings</li>
+                <li>Click <strong>"🤖 Analyze with AI"</strong> button in toolbar</li>
+                <li>AI analyzes all pages and extracts information</li>
+                <li>Analysis modal opens with organized tabs</li>
+              </ol>
+            </SubSection>
+
+            <SubSection title="AI Analysis Tabs">
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '15px'}}>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>📋 Overview</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Fixture responsibility (owner vs contractor)</li>
+                    <li>Summary of lighting schedule</li>
+                    <li>Key project notes</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>📌 Assumptions</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Fixture supply & responsibility details</li>
+                    <li>Electrical contractor scope</li>
+                    <li>Lighting fixture schedule location</li>
+                    <li>Detailed fixtures list with specs</li>
+                    <li>Other pages notes</li>
+                    <li>Lighting controls & devices</li>
+                    <li>Fixture counts basis</li>
+                    <li>Waste factors & labor rates</li>
+                    <li>QA notes and clarifications</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>📄 Drawings</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Page-by-page analysis</li>
+                    <li>Page type identification</li>
+                    <li>Key findings per page</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>💡 Lighting</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Complete fixture schedule extracted</li>
+                    <li>Type, description, manufacturer</li>
+                    <li>Model, wattage, voltage, mounting</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>⚡ Panels</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Panel schedule details</li>
+                    <li>Voltage, phases, main breaker</li>
+                    <li>Location and feed information</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>📝 Scope</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Included work items</li>
+                    <li>Excluded work items</li>
+                    <li>Division of responsibilities</li>
+                  </ul>
+                </div>
+              </div>
+            </SubSection>
+
+            <SubSection title="Export AI Analysis Report">
+              <ul>
+                <li>Click <strong>"📥 Export Report"</strong> button in AI Analysis modal</li>
+                <li>Excel file downloads with complete analysis</li>
+                <li>Includes all assumptions organized by category</li>
+                <li>Fixture responsibility breakdown</li>
+                <li>Complete lighting and panel schedules</li>
+                <li>Scope of work details</li>
+                <li>Perfect for project documentation and bid reviews</li>
+              </ul>
+            </SubSection>
+
+            <SubSection title="AI Assumptions - Professional Format">
+              <div style={{background: '#fff3cd', padding: '15px', borderRadius: '6px', marginTop: '10px'}}>
+                <strong>📌 The AI generates comprehensive assumptions similar to what a senior estimator would write:</strong>
+                <ul style={{marginTop: '8px', marginBottom: 0, fontSize: '14px'}}>
+                  <li><strong>Fixture Supply:</strong> "All light fixtures (A-F) furnished by Owner (AutoZone)"</li>
+                  <li><strong>Electrical Scope:</strong> "Electrical Contractor scope is installation only, including conduit, wire, junction boxes, supports, and terminations"</li>
+                  <li><strong>Schedule Location:</strong> "The only Lighting Fixture Schedule is located on Sheet E-3 'Lighting Plans and Details'"</li>
+                  <li><strong>Fixtures Listed:</strong> "Type A: 2x4 LED Troffer, 30W" with all fixture types detailed</li>
+                  <li><strong>Controls:</strong> "M1 Occupancy Sensors are Owner-furnished. Recommended labor unit: 0.75-1.0 hrs each"</li>
+                  <li><strong>Waste Factors:</strong> "Wire 10%, conduit 5%, devices 2%"</li>
+                  <li><strong>Labor Rates:</strong> "Labor rate: $30/hr. Labor unit references: NECA Manual"</li>
+                </ul>
+              </div>
+            </SubSection>
+          </Section>
+
           <Section title="💰 Pricing and Bidding">
-            <SubSection title="H. Prepare Your Pricing Database">
+            <SubSection title="I. Prepare Your Pricing Database">
               <div style={{background: '#f8f9fa', padding: '15px', borderRadius: '6px', marginBottom: '15px'}}>
                 <strong>Excel Format Required:</strong>
                 <pre style={{background: '#fff', padding: '10px', borderRadius: '4px', overflow: 'auto', fontSize: '13px', marginTop: '8px'}}>
@@ -253,7 +372,7 @@ Conduit  | EMT 1/2"              | FT   | 0.42`}
               </ul>
             </SubSection>
 
-            <SubSection title="I. Calculate Project Costs">
+            <SubSection title="J. Calculate Project Costs">
               <ol>
                 <li>Click <strong>"💰 Pricing & Bidding"</strong> (green button)</li>
                 <li>Pricing panel opens on right side</li>
@@ -264,7 +383,7 @@ Conduit  | EMT 1/2"              | FT   | 0.42`}
               </ol>
             </SubSection>
 
-            <SubSection title="J. Configure Markup Settings">
+            <SubSection title="K. Configure Markup Settings">
               <ul>
                 <li><strong>Overhead %:</strong> Default 10% (adjust for your company)</li>
                 <li><strong>Profit Margin %:</strong> Default 10% (adjust per job)</li>
@@ -274,7 +393,7 @@ Conduit  | EMT 1/2"              | FT   | 0.42`}
               </ul>
             </SubSection>
 
-            <SubSection title="K. Review Cost Breakdown">
+            <SubSection title="L. Review Cost Breakdown">
               <div style={{background: '#f0f4f8', padding: '15px', borderRadius: '6px'}}>
                 <strong>System automatically calculates:</strong>
                 <ul style={{marginTop: '8px', marginBottom: 0}}>
@@ -290,7 +409,7 @@ Conduit  | EMT 1/2"              | FT   | 0.42`}
               </div>
             </SubSection>
 
-            <SubSection title="L. Generate Professional Bid">
+            <SubSection title="M. Generate Professional Bid">
               <ol>
                 <li>Review all costs in pricing panel</li>
                 <li>Make final adjustments to overhead/profit</li>
@@ -403,14 +522,19 @@ Conduit  | EMT 1/2"              | FT   | 0.42`}
           </Section>
 
           <Section title="❓ Frequently Asked Questions">
-            <FAQ q="Material costs showing $0?" a="Upload your pricing Excel file by clicking '📁 Upload Pricing Excel' in the Pricing panel." />
-            <FAQ q="How do I change labor rate?" a="Currently $30/hr default. Adjust by editing labor hours if needed. Custom rates coming soon." />
-            <FAQ q="Can I edit assemblies?" a="Yes! Click Assemblies button to view/edit all 75 assemblies and their material breakdowns." />
-            <FAQ q="Where is my project saved?" a="File > Download .skdproj saves to your downloads folder. File > Open Project loads saved projects." />
-            <FAQ q="Can I use on multiple computers?" a="Yes! Save your .skdproj file and open it on any computer with this application." />
+            <FAQ q="Material costs showing $0?" a="Upload your pricing Excel file by clicking '📁 Upload Pricing Excel' in the Pricing panel, or ensure your Supabase pricing database is populated." />
+            <FAQ q="How do I get an OpenAI API key for AI analysis?" a="Visit platform.openai.com, sign up or log in, go to API Keys section, and create a new key. Add it in Settings > AI Document Analysis." />
+            <FAQ q="How accurate is the AI analysis?" a="Very accurate for extracting fixture schedules, panel schedules, and visible text. Always review and verify the extracted data." />
+            <FAQ q="Why don't I see assumptions in AI analysis?" a="The AI only extracts explicitly stated information from drawings. If drawings don't include detailed assumptions, add them manually." />
+            <FAQ q="Do BOM exports include totals?" a="Yes! The full Excel BOM includes total rows for material costs and labor hours. CSV exports also include fixture count totals." />
+            <FAQ q="How do I change labor rate?" a="Currently $30/hr default based on industry standards. You can adjust markup percentages to account for different labor rates." />
+            <FAQ q="Can I edit assemblies?" a="Yes! Click Assemblies button to view/edit all 75+ assemblies and their material breakdowns." />
+            <FAQ q="Where is my project saved?" a="File > Download .skdproj saves to your downloads folder. File > Open Project loads saved projects. Projects can also be saved to Supabase database." />
+            <FAQ q="Can I use on multiple computers?" a="Yes! Save your .skdproj file and open it on any computer with this application. Or use Supabase storage to access projects from anywhere." />
             <FAQ q="What if I make a mistake?" a="Use Select tool to click objects and press Delete. Or File > Open Project to reload last saved version." />
-            <FAQ q="How accurate are labor hours?" a="Based on industry standards (NECA). Adjust for your crew's speed and site conditions." />
-            <FAQ q="Can I customize assemblies?" a="Yes! In Assembly Manager, you can view and modify materials in any assembly." />
+            <FAQ q="How accurate are labor hours?" a="Based on industry standards (NECA Manual of Labor Units). Adjust for your crew's speed and site conditions." />
+            <FAQ q="Can I customize assemblies?" a="Yes! In Assembly Manager, you can view and modify materials in any assembly. Changes are saved to the project." />
+            <FAQ q="What's the difference between BOM CSV and Excel exports?" a="CSV is quick summary with counts. Excel has 7 detailed sheets including pricing, labor, assembly breakdown, and conduit/wire summaries." />
           </Section>
 
           <Section title="🎓 Example Project Walkthrough">
