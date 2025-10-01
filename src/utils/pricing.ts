@@ -11,6 +11,20 @@ import { calculateAssemblyMaterials, type MaterialLine, type AssemblyUsage } fro
  * Used when database pricing is not available
  */
 const FALLBACK_PRICES: Record<string, { price: number; laborHours: number }> = {
+  // Lighting Fixtures - Customer supplied get $0 cost but we still need labor
+  'light': { price: 0.00, laborHours: 1.5 },
+  'fixture': { price: 0.00, laborHours: 1.5 },
+  'led': { price: 180.00, laborHours: 1.5 },
+  'troffer': { price: 200.00, laborHours: 2.0 },
+  'highbay': { price: 250.00, laborHours: 2.5 },
+  'high bay': { price: 250.00, laborHours: 2.5 },
+  'wall pack': { price: 150.00, laborHours: 1.5 },
+  'exit': { price: 100.00, laborHours: 1.0 },
+  'emergency': { price: 120.00, laborHours: 1.0 },
+  'canopy': { price: 180.00, laborHours: 1.5 },
+  'downlight': { price: 80.00, laborHours: 0.75 },
+  'recessed': { price: 100.00, laborHours: 1.0 },
+
   // Fittings - EMT Connectors
   'emt connector': { price: 2.50, laborHours: 0.05 },
   'compression connector': { price: 3.00, laborHours: 0.05 },

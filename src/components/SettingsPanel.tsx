@@ -429,6 +429,28 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               </p>
             </div>
 
+            <div style={{
+              padding: '16px',
+              background: '#fefce8',
+              border: '1px solid #fde047',
+              borderRadius: '8px',
+              marginBottom: '16px',
+              fontSize: '13px',
+              color: '#713f12'
+            }}>
+              <strong>💡 Labor Hours for Fixtures:</strong>
+              <p style={{ margin: '8px 0 0 0' }}>
+                When adding lighting fixtures (especially customer-supplied ones), make sure to set:
+              </p>
+              <ul style={{ margin: '8px 0 0 16px', paddingLeft: 0 }}>
+                <li><strong>Material Cost:</strong> $0 (if customer supplies)</li>
+                <li><strong>Labor Hours:</strong> 1.5-2.0 hours per fixture (for installation)</li>
+              </ul>
+              <p style={{ margin: '8px 0 0 0' }}>
+                Example: "D Lights D" → Material Cost: $0, Labor Hours: 1.5
+              </p>
+            </div>
+
             <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
               <button
                 onClick={handleExportDatabase}
