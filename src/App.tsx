@@ -901,7 +901,7 @@ export default function App() {
           onChange={async (e)=>{ const input=e.currentTarget; const f=input.files?.[0]; input.value=''; if (f) await doOpenProject(f); }}
         />
 
-        <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'center'}}>
+        <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap: 20}}>
           <span style={{
             fontSize: 20,
             fontWeight: 700,
@@ -909,7 +909,16 @@ export default function App() {
             textShadow: '0 2px 4px rgba(0,0,0,0.2)',
             letterSpacing: '0.5px'
           }}>
-            ⭐ SKD Estimators Rockstar Team ⭐
+            ⭐ SKD Rockstar Team ⭐ {new Date().getDay() === 5 ? 'TGIF' : ''}
+          </span>
+          <span style={{
+            fontSize: 16,
+            fontWeight: 600,
+            color: '#fff',
+            opacity: 0.9,
+            textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+          }}>
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </span>
         </div>
 
