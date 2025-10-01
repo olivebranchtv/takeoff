@@ -365,10 +365,18 @@ export async function exportProfessionalBOM(
 
     // Try exact match first
     const exactKey = `${category}::${description}`;
+    console.log(`   Trying exact key: "${exactKey}"`);
     const exact = priceMap.get(exactKey);
     if (exact && (exact.cost > 0 || exact.laborHours > 0)) {
       console.log(`✅ EXACT MATCH: ${category}::${description} = $${exact.cost}, ${exact.laborHours}hrs`);
       return exact;
+    }
+    console.log(`   No exact match found in priceMap (has ${priceMap.size} entries)`);
+
+    // Debug: show a few keys from priceMap if this is a grounding item
+    if (category.toLowerCase().includes('ground')) {
+      const groundingKeys = Array.from(priceMap.keys()).filter(k => k.toLowerCase().includes('ground')).slice(0, 5);
+      console.log(`   Sample grounding keys in priceMap:`, groundingKeys);
     }
 
     // Normalize for fuzzy matching
