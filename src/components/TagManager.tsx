@@ -256,6 +256,28 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     if (category) scrollToCategory(category);
   }
 
+  function addAndAddToProject() {
+    const category = resolvedCategory();
+    const next: Draft = { ...draft, code: draft.code.trim().toUpperCase(), category };
+    const msg = validate(next);
+    if (msg) { setError(msg); return; }
+
+    const canonicalId = upsertByCode(next, null);
+
+    // Also add to current project if callback provided
+    if (onAddToProject && canonicalId) {
+      const newTag = (tags as Tag[]).find(t => t.id === canonicalId);
+      if (newTag) {
+        onAddToProject(newTag);
+      }
+    }
+
+    setDraft(d => ({ ...d, code: '', name: '' }));
+    setError('');
+    codeInputRef.current?.focus();
+    if (category) scrollToCategory(category);
+  }
+
   function saveEdit() {
     if (!editId) return;
     const category = resolvedCategory();
@@ -558,14 +580,26 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                 </div>
               </div>
 
-              <div style={{ display:'flex', alignItems:'flex-end', gap: 8 }}>
+              <div style={{ display:'flex', alignItems:'flex-end', gap: 8, flexWrap: 'wrap' }}>
                 {editId ? (
                   <>
                     <button className="btn" onClick={saveEdit}>Save</button>
                     <button className="btn" onClick={cancelEdit}>Cancel</button>
                   </>
                 ) : (
-                  <button className="btn" onClick={add}>Add Tag</button>
+                  <>
+                    <button className="btn" onClick={add}>Add to Database</button>
+                    {onAddToProject && (
+                      <button
+                        className="btn"
+                        onClick={addAndAddToProject}
+                        style={{ background: '#2563eb', color: 'white', fontWeight: 600 }}
+                        title="Add to database and immediately add to current project"
+                      >
+                        Add to Database + Project
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
