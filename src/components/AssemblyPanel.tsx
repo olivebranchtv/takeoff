@@ -4,10 +4,11 @@ import type { Assembly, Tag, AssemblyItem } from '@/types';
 import { Plus, Save, X, Trash2, CreditCard as Edit2 } from 'lucide-react';
 
 export function AssemblyPanel() {
-  const { assemblies, tags, addAssembly, updateAssembly, deleteAssembly } = useStore();
+  const { assemblies, tags, addAssembly, updateAssembly, deleteAssembly, saveAssemblyToDatabase } = useStore();
   const [selectedAssembly, setSelectedAssembly] = React.useState<Assembly | null>(null);
   const [isCreating, setIsCreating] = React.useState(false);
   const [editingAssembly, setEditingAssembly] = React.useState<Partial<Assembly> | null>(null);
+  const [isSaving, setIsSaving] = React.useState(false);
 
   const tagsUsingAssembly = (assemblyId: string) => {
     return tags.filter(t => t.assemblyId === assemblyId);
@@ -36,8 +37,10 @@ export function AssemblyPanel() {
     setIsCreating(false);
   };
 
-  const saveAssembly = () => {
+  const saveAssembly = async () => {
     if (!editingAssembly || !editingAssembly.code || !editingAssembly.name) return;
+
+    setIsSaving(true);
 
     const assembly: Assembly = {
       id: editingAssembly.id || crypto.randomUUID(),
@@ -49,15 +52,32 @@ export function AssemblyPanel() {
       isActive: editingAssembly.isActive ?? true
     };
 
-    if (editingAssembly.id) {
-      updateAssembly(editingAssembly.id, assembly);
-    } else {
-      addAssembly(assembly);
-    }
+    try {
+      // Save to local state first
+      if (editingAssembly.id) {
+        updateAssembly(editingAssembly.id, assembly);
+      } else {
+        addAssembly(assembly);
+      }
 
-    setEditingAssembly(null);
-    setIsCreating(false);
-    setSelectedAssembly(assembly);
+      // Save to Supabase database
+      const success = await saveAssemblyToDatabase(assembly);
+
+      if (success) {
+        console.log('✅ Assembly saved to database');
+      } else {
+        console.warn('⚠️ Failed to save assembly to database (saved locally only)');
+      }
+
+      setEditingAssembly(null);
+      setIsCreating(false);
+      setSelectedAssembly(assembly);
+    } catch (err) {
+      console.error('Error saving assembly:', err);
+      alert('Failed to save assembly. Changes saved locally only.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const [searchingItemCode, setSearchingItemCode] = React.useState<string | null>(null);
@@ -237,23 +257,24 @@ export function AssemblyPanel() {
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   onClick={saveAssembly}
-                  disabled={!editingAssembly.code || !editingAssembly.name}
+                  disabled={!editingAssembly.code || !editingAssembly.name || isSaving}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
                     padding: '8px 16px',
-                    background: (!editingAssembly.code || !editingAssembly.name) ? '#ccc' : '#0066FF',
+                    background: (!editingAssembly.code || !editingAssembly.name || isSaving) ? '#ccc' : '#0066FF',
                     color: 'white',
                     border: 'none',
                     borderRadius: '6px',
-                    cursor: (!editingAssembly.code || !editingAssembly.name) ? 'not-allowed' : 'pointer',
+                    cursor: (!editingAssembly.code || !editingAssembly.name || isSaving) ? 'not-allowed' : 'pointer',
                     fontSize: '14px',
-                    fontWeight: 500
+                    fontWeight: 500,
+                    opacity: isSaving ? 0.7 : 1
                   }}
                 >
                   <Save size={16} />
-                  Save
+                  {isSaving ? 'Saving...' : 'Save'}
                 </button>
                 <button
                   onClick={cancelEdit}

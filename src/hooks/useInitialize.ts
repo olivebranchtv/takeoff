@@ -5,6 +5,7 @@ import { loadTagsFromSupabase } from '@/utils/supabasePricing';
 export function useInitialize() {
   const importTags = useStore(s => s.importTags);
   const setTagColorOverride = useStore(s => s.setTagColorOverride);
+  const loadAssembliesFromDatabase = useStore(s => s.loadAssembliesFromDatabase);
   const hasInitialized = useRef(false);
 
   useEffect(() => {
@@ -12,8 +13,10 @@ export function useInitialize() {
     hasInitialized.current = true;
 
     async function initialize() {
-      console.log('🔄 Loading tags from Supabase...');
+      console.log('🔄 Initializing application...');
 
+      // Load tags from Supabase
+      console.log('🔄 Loading tags from Supabase...');
       try {
         const result = await loadTagsFromSupabase();
 
@@ -38,8 +41,18 @@ export function useInitialize() {
         console.error('❌ Failed to load tags from Supabase:', error);
         console.log('ℹ️ Falling back to localStorage tags');
       }
+
+      // Load custom assemblies from Supabase
+      console.log('🔄 Loading assemblies from Supabase...');
+      try {
+        await loadAssembliesFromDatabase();
+        console.log('✅ Assemblies loaded successfully');
+      } catch (error) {
+        console.error('❌ Failed to load assemblies from Supabase:', error);
+        console.log('ℹ️ Using standard assemblies only');
+      }
     }
 
     initialize();
-  }, [importTags, setTagColorOverride]);
+  }, [importTags, setTagColorOverride, loadAssembliesFromDatabase]);
 }

@@ -14,6 +14,7 @@ import { STANDARD_ASSEMBLIES } from '@/constants/assemblies';
 import { autoAssignAssembly } from '@/utils/tagAssemblyMapping';
 import { saveTagsToSupabase } from '@/utils/supabasePricing';
 import type { ProjectAnalysis } from '@/utils/openaiAnalysis';
+import { loadAssembliesFromSupabase, saveAssemblyToSupabase } from '@/utils/supabaseAssemblies';
 
 type HistoryEntry = { pageIndex: number; objects: AnyTakeoffObject[] };
 
@@ -157,6 +158,8 @@ type State = {
   addAssembly: (assembly: Assembly) => void;
   updateAssembly: (id: string, assembly: Assembly) => void;
   deleteAssembly: (id: string) => void;
+  loadAssembliesFromDatabase: () => Promise<void>;
+  saveAssemblyToDatabase: (assembly: Assembly) => Promise<boolean>;
 
   // AI ANALYSIS RESULTS (persisted)
   aiAnalysisResult: ProjectAnalysis | null;
@@ -706,6 +709,61 @@ export const useStore = create<State>()(
           tags
         };
       }),
+
+      /** Load custom assemblies from Supabase and merge with standard assemblies */
+      loadAssembliesFromDatabase: async () => {
+        try {
+          const customAssemblies = await loadAssembliesFromSupabase();
+
+          if (customAssemblies.length > 0) {
+            set((s) => {
+              // Create a map of custom assemblies by ID
+              const customMap = new Map(customAssemblies.map(a => [a.id, a]));
+
+              // Merge: custom assemblies override standard ones with same ID
+              const merged = STANDARD_ASSEMBLIES.map(std =>
+                customMap.has(std.id) ? customMap.get(std.id)! : std
+              );
+
+              // Add any custom assemblies that aren't overrides
+              customAssemblies.forEach(custom => {
+                if (!STANDARD_ASSEMBLIES.find(std => std.id === custom.id)) {
+                  merged.push(custom);
+                }
+              });
+
+              console.log(`✅ Loaded ${customAssemblies.length} custom assemblies, total: ${merged.length}`);
+              return { assemblies: merged };
+            });
+          } else {
+            console.log('No custom assemblies found, using standard assemblies');
+          }
+        } catch (err) {
+          console.error('Failed to load assemblies from database:', err);
+        }
+      },
+
+      /** Save an assembly to Supabase */
+      saveAssemblyToDatabase: async (assembly: Assembly) => {
+        try {
+          const success = await saveAssemblyToSupabase(assembly);
+          if (success) {
+            // Update local state
+            const { assemblies } = get();
+            const exists = assemblies.find(a => a.id === assembly.id);
+
+            if (exists) {
+              set({ assemblies: assemblies.map(a => a.id === assembly.id ? assembly : a) });
+            } else {
+              set({ assemblies: [...assemblies, assembly] });
+            }
+          }
+          return success;
+        } catch (err) {
+          console.error('Failed to save assembly to database:', err);
+          return false;
+        }
+      },
     }),
     {
       name: 'skd.mastertags.v1',
