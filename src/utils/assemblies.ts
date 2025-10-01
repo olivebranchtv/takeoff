@@ -30,10 +30,10 @@ export function calculateAssemblyMaterials(
         const tag = tagMap.get(countObj.code);
 
         if (tag) {
-          // Count lights and GFI receptacles
+          // Count lights and GFCI receptacles
           if (tag.category === 'Lights') {
             lightCount++;
-          } else if (countObj.code === 'REC-GFCI' || countObj.code === 'REC-WP-GFCI') {
+          } else if (countObj.code === 'REC-GFCI') {
             gfiCount++;
           }
 
@@ -68,7 +68,7 @@ export function calculateAssemblyMaterials(
     // Calculate number of 100ft homeruns needed for lights (1 per 8 lights, minimum 1 if any lights)
     const lightHomeruns = lightCount > 0 ? Math.ceil(lightCount / 8) : 0;
 
-    // Calculate number of 100ft homeruns needed for GFIs (1 per 6 GFIs, minimum 1 if any GFIs)
+    // Calculate number of 100ft homeruns needed for GFCIs (1 per 6 GFCIs, minimum 1 if any GFCIs)
     const gfiHomeruns = gfiCount > 0 ? Math.ceil(gfiCount / 6) : 0;
 
     const totalHomeruns = lightHomeruns + gfiHomeruns;
@@ -84,7 +84,7 @@ export function calculateAssemblyMaterials(
           category: item.category,
           assemblyCode: homerunAssembly.code,
           assemblyName: homerunAssembly.name,
-          notes: `Auto-added: ${lightHomeruns} for lights (${lightCount} total), ${gfiHomeruns} for GFIs (${gfiCount} total)`
+          notes: `Auto-added: ${lightHomeruns} for lights (${lightCount} total), ${gfiHomeruns} for GFCIs (${gfiCount} total)`
         });
       });
     }
