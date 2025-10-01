@@ -109,7 +109,8 @@ export function calculateAssemblyMaterials(
   for (const row of racewayRows) {
     // Add conduit/raceway if EMT size specified
     if (row.emtSize && row.racewayLf && row.racewayLf > 0) {
-      // Format to match database exactly: "3/4"EMT Conduit" (no space after closing quote)
+      // Format to match database exactly: '1/2"EMT Conduit' (with the inch mark after the size)
+      // Database format uses actual double-quote character: 1/2"EMT Conduit
       const emtDesc = `${row.emtSize}EMT Conduit`;
       const matKey = `EMT CONDUIT::${emtDesc}::EA`;
       console.log(`📦 Generated EMT material: category="EMT CONDUIT", desc="${emtDesc}", qty=${row.racewayLf}LF`);
@@ -146,7 +147,10 @@ export function calculateAssemblyMaterials(
         // Format wire description to match database exactly
         // Standard: #14, #12, #10 use Stranded for flexibility; #8+ always Stranded
         const wireType = 'Str'; // Use stranded by default (industry standard for branch circuits)
-        const wireDesc = `${cond.size} THHN Copper Wire,${wireType}`;
+
+        // Ensure size has # prefix to match database format: "#12 THHN Copper Wire,Str"
+        const sizeWithHash = cond.size.startsWith('#') ? cond.size : `#${cond.size}`;
+        const wireDesc = `${sizeWithHash} THHN Copper Wire,${wireType}`;
         const matKey = `wire::${wireDesc}::EA`;
         console.log(`📦 Generated WIRE material: category="wire", desc="${wireDesc}", qty=${totalCondLf}LF`);
         const existing = materialAcc.get(matKey);
