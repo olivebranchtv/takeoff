@@ -804,8 +804,21 @@ export default function App() {
       }))
       .sort((a, b) => a.Code.localeCompare(b.Code));
 
+    // Calculate total count
+    const totalCount = lightingRows.reduce((sum, row) => sum + row.Count, 0);
+
+    // Add TOTAL row
+    const rowsWithTotal = [
+      ...lightingRows,
+      {
+        Code: 'TOTAL',
+        Name: '',
+        Count: totalCount
+      }
+    ];
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(lightingRows), 'Lighting');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsWithTotal), 'Lighting');
 
     const baseName =
       (useStore.getState().getProjectName()?.trim() || 'Lighting') + ' - Fixtures';
