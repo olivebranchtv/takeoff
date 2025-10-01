@@ -376,7 +376,7 @@ export const useStore = create<State>()(
         const incomingColor = t.color || ORANGE;
         const incomingCat = (t.category || '').trim();
 
-        // NEVER auto-assign assembly to Lights category
+        // Preserve incoming assemblyId, or auto-assign for non-light categories
         const isLightCategory = incomingCat?.toLowerCase().includes('light');
         let finalAssemblyId = t.assemblyId;
 
@@ -388,10 +388,8 @@ export const useStore = create<State>()(
             assemblyId: t.assemblyId
           });
           finalAssemblyId = result.assemblyId;
-        } else if (isLightCategory) {
-          // Force undefined for lights - NEVER allow assemblies on lights
-          finalAssemblyId = undefined;
         }
+        // Keep t.assemblyId as-is for lights (preserve user assignments)
 
         const tags = [...s.tags];
         if (idx >= 0) {
@@ -519,11 +517,11 @@ export const useStore = create<State>()(
         const overrides = { ...s.colorOverrides };
 
         for (const raw of incoming) {
-          // Skip Lights category for auto-assign assembly
+          // Preserve incoming assemblyId, or auto-assign for non-light categories
           const incomingCat = (raw as any).category || '';
           const isLightCategory = incomingCat?.toLowerCase().includes('light');
 
-          // Auto-assign assembly if not already set (but skip Lights)
+          // Auto-assign assembly if not already set (but skip auto-assign for Lights)
           let finalAssemblyId = (raw as any).assemblyId;
 
           if (!isLightCategory && !finalAssemblyId) {
@@ -533,9 +531,8 @@ export const useStore = create<State>()(
               assemblyId: (raw as any).assemblyId
             });
             finalAssemblyId = tagWithAssembly.assemblyId;
-          } else if (isLightCategory) {
-            finalAssemblyId = undefined;
           }
+          // Keep raw.assemblyId as-is for lights (preserve user assignments)
 
           // Create tag object - only include assemblyId if defined
           const t: Tag = {
