@@ -12,13 +12,13 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'NEC standard for commercial receptacles' },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang, 1/2" or 5/8"', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-20a-125v', description: 'Duplex Receptacle, 20A, 125V, NEMA 5-20R (spec grade)', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'emt-coupling-3/4', description: 'EMT Coupling, 3/4", steel', unit: 'EA', quantityPer: 0.1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'NEC standard for commercial receptacles' },
+      { id: 'mudring-1g', itemCode: 'MUD-1G', description: 'Raised Device Cover / Mud Ring, single-gang, 1/2" or 5/8"', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-20a-125v', itemCode: 'REC-20A-125V', description: 'Duplex Receptacle, 20A, 125V, NEMA 5-20R (spec grade)', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-1g', itemCode: 'PLT-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONN-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'emt-coupling-3/4', itemCode: 'EMT-COUP-3/4', description: 'EMT Coupling, 3/4", steel', unit: 'EA', quantityPer: 0.1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GRD-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -29,13 +29,13 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-15a-125v', description: 'Duplex Receptacle, 15A, 125V, NEMA 5-15R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ny-1g', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'emt-coupling-3/4', description: 'EMT Coupling, 3/4", steel', unit: 'EA', quantityPer: 0.1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-15a-125v', itemCode: 'RECEP-15A-125V', description: 'Duplex Receptacle, 15A, 125V, NEMA 5-15R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ny-1g', itemCode: 'PLATE-NY-1G', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'emt-coupling-3/4', itemCode: 'EMT-COUPLING-3/4', description: 'EMT Coupling, 3/4", steel', unit: 'EA', quantityPer: 0.1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -46,13 +46,13 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'Deeper box for GFCI device' },
-      { id: 'mudring-1g-deep', description: 'Raised Device Cover / Mud Ring, single-gang, 5/8" depth', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-gfci-20a', description: 'GFCI Duplex Receptacle, 20A, 125V, self-test', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'UL listed, tamper resistant' },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'emt-coupling-3/4', description: 'EMT Coupling, 3/4", steel', unit: 'EA', quantityPer: 0.1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'Deeper box for GFCI device' },
+      { id: 'mudring-1g-deep', itemCode: 'MUDRING-1G-DEEP', description: 'Raised Device Cover / Mud Ring, single-gang, 5/8" depth', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-gfci-20a', itemCode: 'RECEP-GFCI-20A', description: 'GFCI Duplex Receptacle, 20A, 125V, self-test', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'UL listed, tamper resistant' },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'emt-coupling-3/4', itemCode: 'EMT-COUPLING-3/4', description: 'EMT Coupling, 3/4", steel', unit: 'EA', quantityPer: 0.1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -63,12 +63,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-ig-20a', description: 'Isolated Ground Duplex Receptacle, 20A, 125V (orange)', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'Orange face, hospital grade' },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-wire-ig-12', description: '#12 CU insulated green wire for isolated ground', unit: 'FT', quantityPer: 10, category: 'Grounding', wasteFactor: 1.10, notes: 'Run back to source' }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-ig-20a', itemCode: 'RECEP-IG-20A', description: 'Isolated Ground Duplex Receptacle, 20A, 125V (orange)', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'Orange face, hospital grade' },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-wire-ig-12', itemCode: 'GROUND-WIRE-IG-12', description: '#12 CU insulated green wire for isolated ground', unit: 'FT', quantityPer: 10, category: 'Grounding', wasteFactor: 1.10, notes: 'Run back to source' }
     ]
   },
   {
@@ -79,12 +79,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-fs-1g-wp', description: 'FS Box, single-gang, 2" deep, weather-proof', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-gfci-20a-wp', description: 'GFCI Receptacle, 20A, 125V, WR (weather resistant)', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'cover-wp-1g-inuse', description: 'Weather-Proof In-Use Cover, single-gang, clear', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'UL extra-duty, while-in-use' },
-      { id: 'gasket-wp', description: 'Foam gasket for weather-proof box', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4-comp', description: 'EMT Connector, 3/4", compression type (wet location)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-fs-1g-wp', itemCode: 'BOX-FS-1G-WP', description: 'FS Box, single-gang, 2" deep, weather-proof', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-gfci-20a-wp', itemCode: 'RECEP-GFCI-20A-WP', description: 'GFCI Receptacle, 20A, 125V, WR (weather resistant)', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'cover-wp-1g-inuse', itemCode: 'COVER-WP-1G-INUSE', description: 'Weather-Proof In-Use Cover, single-gang, clear', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'UL extra-duty, while-in-use' },
+      { id: 'gasket-wp', itemCode: 'GASKET-WP', description: 'Foam gasket for weather-proof box', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4-comp', itemCode: 'EMT-CONNECTOR-3/4-COMP', description: 'EMT Connector, 3/4", compression type (wet location)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -95,10 +95,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-floor-adj', description: 'Floor Box, adjustable depth, steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'For concrete pour or wood deck' },
-      { id: 'recep-floor-20a', description: 'Floor Receptacle Insert, 20A duplex', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'cover-floor-brass', description: 'Floor Box Cover, brass or nickel, flip-lid', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05, notes: 'Typically 2 feeds or loop' }
+      { id: 'box-floor-adj', itemCode: 'BOX-FLOOR-ADJ', description: 'Floor Box, adjustable depth, steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'For concrete pour or wood deck' },
+      { id: 'recep-floor-20a', itemCode: 'RECEP-FLOOR-20A', description: 'Floor Receptacle Insert, 20A duplex', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'cover-floor-brass', itemCode: 'COVER-FLOOR-BRASS', description: 'Floor Box Cover, brass or nickel, flip-lid', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05, notes: 'Typically 2 feeds or loop' }
     ]
   },
   {
@@ -109,12 +109,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-usb-20a', description: 'Duplex Receptacle with USB-A/C, 20A, 125V, 3.6A USB', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'Combo device, tamper resistant' },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-usb-20a', itemCode: 'RECEP-USB-20A', description: 'Duplex Receptacle with USB-A/C, 20A, 125V, 3.6A USB', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'Combo device, tamper resistant' },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
 
@@ -129,12 +129,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'switch-sp-20a', description: 'Single-Pole Switch, 20A, 120/277V, spec grade', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'switch-sp-20a', itemCode: 'SWITCH-SP-20A', description: 'Single-Pole Switch, 20A, 120/277V, spec grade', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -145,12 +145,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'switch-3way-20a', description: '3-Way Switch, 20A, 120/277V, spec grade', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'switch-3way-20a', itemCode: 'SWITCH-3WAY-20A', description: '3-Way Switch, 20A, 120/277V, spec grade', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -161,12 +161,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'switch-4way-20a', description: '4-Way Switch, 20A, 120/277V, spec grade', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'switch-4way-20a', itemCode: 'SWITCH-4WAY-20A', description: '4-Way Switch, 20A, 120/277V, spec grade', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -177,12 +177,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'Deeper for dimmer device' },
-      { id: 'mudring-1g-deep', description: 'Raised Device Cover / Mud Ring, single-gang, 5/8"', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'dimmer-led-600w', description: 'LED Dimmer, 600W, 120V, 3-way capable, spec grade', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'Forward phase control' },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'Deeper for dimmer device' },
+      { id: 'mudring-1g-deep', itemCode: 'MUDRING-1G-DEEP', description: 'Raised Device Cover / Mud Ring, single-gang, 5/8"', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'dimmer-led-600w', itemCode: 'DIMMER-LED-600W', description: 'LED Dimmer, 600W, 120V, 3-way capable, spec grade', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'Forward phase control' },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -193,12 +193,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g-deep', description: 'Raised Device Cover / Mud Ring, single-gang, 5/8"', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'occ-sensor-switch', description: 'Occupancy Sensor Switch, PIR/ultrasonic, 120/277V, 800W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'Self-contained, wall-mount' },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g-deep', itemCode: 'MUDRING-1G-DEEP', description: 'Raised Device Cover / Mud Ring, single-gang, 5/8"', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'occ-sensor-switch', itemCode: 'OCC-SENSOR-SWITCH', description: 'Occupancy Sensor Switch, PIR/ultrasonic, 120/277V, 800W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'Self-contained, wall-mount' },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -209,12 +209,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g-deep', description: 'Raised Device Cover / Mud Ring, single-gang, 5/8"', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'timer-switch-digital', description: 'Digital Timer Switch, 7-day programmable, 15A, 120V', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g-deep', itemCode: 'MUDRING-1G-DEEP', description: 'Raised Device Cover / Mud Ring, single-gang, 5/8"', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'timer-switch-digital', itemCode: 'TIMER-SWITCH-DIGITAL', description: 'Digital Timer Switch, 7-day programmable, 15A, 120V', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
 
@@ -229,12 +229,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'fixture',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, ceiling rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'fixture-ring', description: 'Fixture Ring/Raised Cover for 4" box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'whip-mc-6ft', description: 'MC Cable Whip, 6 ft, 12/2 or 12/3, armored', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02, notes: 'Box to fixture connection' },
-      { id: 'mc-connector-3/8', description: 'MC Cable Connector, 3/8", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'wirenuts-assorted', description: 'Wire Nuts for fixture connections', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, ceiling rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'fixture-ring', itemCode: 'FIXTURE-RING', description: 'Fixture Ring/Raised Cover for 4" box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'whip-mc-6ft', itemCode: 'WHIP-MC-6FT', description: 'MC Cable Whip, 6 ft, 12/2 or 12/3, armored', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02, notes: 'Box to fixture connection' },
+      { id: 'mc-connector-3/8', itemCode: 'MC-CONNECTOR-3/8', description: 'MC Cable Connector, 3/8", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'wirenuts-assorted', itemCode: 'WIRENUTS-ASSORTED', description: 'Wire Nuts for fixture connections', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
     ]
   },
   {
@@ -245,12 +245,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'fixture',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, ceiling rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'fixture-ring', description: 'Fixture Ring/Raised Cover for 4" box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'whip-mc-6ft', description: 'MC Cable Whip, 6 ft, 12/2, armored', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 },
-      { id: 'mc-connector-3/8', description: 'MC Cable Connector, 3/8", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'wirenuts-assorted', description: 'Wire Nuts for fixture connections', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, ceiling rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'fixture-ring', itemCode: 'FIXTURE-RING', description: 'Fixture Ring/Raised Cover for 4" box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'whip-mc-6ft', itemCode: 'WHIP-MC-6FT', description: 'MC Cable Whip, 6 ft, 12/2, armored', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 },
+      { id: 'mc-connector-3/8', itemCode: 'MC-CONNECTOR-3/8', description: 'MC Cable Connector, 3/8", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'wirenuts-assorted', itemCode: 'WIRENUTS-ASSORTED', description: 'Wire Nuts for fixture connections', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
     ]
   },
   {
@@ -261,12 +261,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'fixture',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep with fixture studs', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'fixture-ring-heavy', description: 'Heavy-Duty Fixture Ring for 4" box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'whip-soow-10ft', description: 'SOOW Cord, 10 ft, 12/3, strain relief', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02, notes: 'Flexible cord for vibration' },
-      { id: 'cord-grip', description: 'Cord Grip/Strain Relief, 1/2", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'safety-cable', description: 'Safety Cable/Aircraft Cable, 1/16", 10 ft', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02, notes: 'Secondary support per code' }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep with fixture studs', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'fixture-ring-heavy', itemCode: 'FIXTURE-RING-HEAVY', description: 'Heavy-Duty Fixture Ring for 4" box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'whip-soow-10ft', itemCode: 'WHIP-SOOW-10FT', description: 'SOOW Cord, 10 ft, 12/3, strain relief', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02, notes: 'Flexible cord for vibration' },
+      { id: 'cord-grip', itemCode: 'CORD-GRIP', description: 'Cord Grip/Strain Relief, 1/2", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'safety-cable', itemCode: 'SAFETY-CABLE', description: 'Safety Cable/Aircraft Cable, 1/16", 10 ft', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02, notes: 'Secondary support per code' }
     ]
   },
   {
@@ -277,12 +277,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'fixture',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, ceiling rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'fixture-ring', description: 'Fixture Ring/Raised Cover for 4" box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'romex-nm-10ft', description: 'NM Cable (Romex), 10 ft, 14/2, for fixture whip', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02, notes: 'Plenum if required' },
-      { id: 'romex-connector', description: 'NM Cable Connector, 1/2", plastic', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'emt-connector-1/2', description: 'EMT Connector, 1/2", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'wirenuts-assorted', description: 'Wire Nuts for fixture connections', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, ceiling rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'fixture-ring', itemCode: 'FIXTURE-RING', description: 'Fixture Ring/Raised Cover for 4" box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'romex-nm-10ft', itemCode: 'ROMEX-NM-10FT', description: 'NM Cable (Romex), 10 ft, 14/2, for fixture whip', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02, notes: 'Plenum if required' },
+      { id: 'romex-connector', itemCode: 'ROMEX-CONNECTOR', description: 'NM Cable Connector, 1/2", plastic', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'emt-connector-1/2', itemCode: 'EMT-CONNECTOR-1/2', description: 'EMT Connector, 1/2", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'wirenuts-assorted', itemCode: 'WIRENUTS-ASSORTED', description: 'Wire Nuts for fixture connections', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
     ]
   },
   {
@@ -293,11 +293,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'fixture',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, ceiling/wall rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'mounting-hardware', description: 'Fixture mounting screws and anchors', unit: 'SET', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 },
-      { id: 'wirenuts-assorted', description: 'Wire Nuts for emergency light', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, ceiling/wall rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'mounting-hardware', itemCode: 'MOUNTING-HARDWARE', description: 'Fixture mounting screws and anchors', unit: 'SET', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 },
+      { id: 'wirenuts-assorted', itemCode: 'WIRENUTS-ASSORTED', description: 'Wire Nuts for emergency light', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
     ]
   },
   {
@@ -308,11 +308,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'fixture',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, ceiling/wall rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'mounting-hardware', description: 'Fixture mounting screws and universal mount', unit: 'SET', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 },
-      { id: 'wirenuts-assorted', description: 'Wire Nuts for exit sign', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, ceiling/wall rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'mounting-hardware', itemCode: 'MOUNTING-HARDWARE', description: 'Fixture mounting screws and universal mount', unit: 'SET', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 },
+      { id: 'wirenuts-assorted', itemCode: 'WIRENUTS-ASSORTED', description: 'Wire Nuts for exit sign', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
     ]
   },
 
@@ -327,10 +327,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'Deeper for splice capacity' },
-      { id: 'cover-blank-4sq', description: 'Blank Cover, 4" square, flat', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05, notes: 'Average 3 entries per J-box' },
-      { id: 'wirenuts-assorted', description: 'Wire Nuts, assorted sizes (yellow/red/blue)', unit: 'PKG', quantityPer: 0.5, category: 'Fittings', wasteFactor: 1.02, notes: 'Estimate 1 pkg per 2 boxes' }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'Deeper for splice capacity' },
+      { id: 'cover-blank-4sq', itemCode: 'COVER-BLANK-4SQ', description: 'Blank Cover, 4" square, flat', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05, notes: 'Average 3 entries per J-box' },
+      { id: 'wirenuts-assorted', itemCode: 'WIRENUTS-ASSORTED', description: 'Wire Nuts, assorted sizes (yellow/red/blue)', unit: 'PKG', quantityPer: 0.5, category: 'Fittings', wasteFactor: 1.02, notes: 'Estimate 1 pkg per 2 boxes' }
     ]
   },
   {
@@ -341,10 +341,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'box-4-11/16-2.125', description: '4-11/16" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'cover-blank-4-11/16', description: 'Blank Cover, 4-11/16" square, flat', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 4, category: 'Fittings', wasteFactor: 1.05, notes: 'Average 4 entries for multi-circuit box' },
-      { id: 'wirenuts-assorted', description: 'Wire Nuts, assorted sizes', unit: 'PKG', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 }
+      { id: 'box-4-11/16-2.125', itemCode: 'BOX-4-11/16-2.125', description: '4-11/16" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'cover-blank-4-11/16', itemCode: 'COVER-BLANK-4-11/16', description: 'Blank Cover, 4-11/16" square, flat', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 4, category: 'Fittings', wasteFactor: 1.05, notes: 'Average 4 entries for multi-circuit box' },
+      { id: 'wirenuts-assorted', itemCode: 'WIRENUTS-ASSORTED', description: 'Wire Nuts, assorted sizes', unit: 'PKG', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 }
     ]
   },
   {
@@ -355,9 +355,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'pullbox-8x8x4', description: 'Pull Box, 8"x8"x4", NEMA 1, screw cover', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'emt-connector-1in', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 4, category: 'Fittings', wasteFactor: 1.05, notes: 'For larger conduit' },
-      { id: 'wirenuts-large', description: 'Large Wire Nuts (gray/orange) for feeders', unit: 'PKG', quantityPer: 0.5, category: 'Fittings', wasteFactor: 1.02 }
+      { id: 'pullbox-8x8x4', itemCode: 'PULLBOX-8X8X4', description: 'Pull Box, 8"x8"x4", NEMA 1, screw cover', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'emt-connector-1in', itemCode: 'EMT-CONNECTOR-1IN', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 4, category: 'Fittings', wasteFactor: 1.05, notes: 'For larger conduit' },
+      { id: 'wirenuts-large', itemCode: 'WIRENUTS-LARGE', description: 'Large Wire Nuts (gray/orange) for feeders', unit: 'PKG', quantityPer: 0.5, category: 'Fittings', wasteFactor: 1.02 }
     ]
   },
   {
@@ -368,10 +368,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'pullbox-12x12x6', description: 'Pull Box, 12"x12"x6", NEMA 1, hinged cover', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'emt-connector-1.25in', description: 'EMT Connector, 1-1/4", steel', unit: 'EA', quantityPer: 4, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'wirenuts-large', description: 'Large Wire Nuts (gray/orange)', unit: 'PKG', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 },
-      { id: 'grounding-bushing', description: 'Grounding Bushing, 1-1/4", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'pullbox-12x12x6', itemCode: 'PULLBOX-12X12X6', description: 'Pull Box, 12"x12"x6", NEMA 1, hinged cover', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'emt-connector-1.25in', itemCode: 'EMT-CONNECTOR-1.25IN', description: 'EMT Connector, 1-1/4", steel', unit: 'EA', quantityPer: 4, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'wirenuts-large', itemCode: 'WIRENUTS-LARGE', description: 'Large Wire Nuts (gray/orange)', unit: 'PKG', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 },
+      { id: 'grounding-bushing', itemCode: 'GROUNDING-BUSHING', description: 'Grounding Bushing, 1-1/4", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
 
@@ -386,11 +386,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g-low-volt', description: 'Low-Voltage Mud Ring, single-gang (orange)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'cat6-jack', description: 'CAT6 RJ45 Keystone Jack, UTP, TIA-568-B', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05, notes: '1Gbps rated' },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel (for power nearby)', unit: 'EA', quantityPer: 0, category: 'Fittings', wasteFactor: 1.05, notes: 'Data only - no power' }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g-low-volt', itemCode: 'MUDRING-1G-LOW-VOLT', description: 'Low-Voltage Mud Ring, single-gang (orange)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'cat6-jack', itemCode: 'CAT6-JACK', description: 'CAT6 RJ45 Keystone Jack, UTP, TIA-568-B', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05, notes: '1Gbps rated' },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel (for power nearby)', unit: 'EA', quantityPer: 0, category: 'Fittings', wasteFactor: 1.05, notes: 'Data only - no power' }
     ]
   },
   {
@@ -401,10 +401,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g-low-volt', description: 'Low-Voltage Mud Ring, single-gang (orange)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'cat6a-jack', description: 'CAT6A RJ45 Keystone Jack, shielded (STP), TIA-568-B', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05, notes: '10Gbps rated' },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g-low-volt', itemCode: 'MUDRING-1G-LOW-VOLT', description: 'Low-Voltage Mud Ring, single-gang (orange)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'cat6a-jack', itemCode: 'CAT6A-JACK', description: 'CAT6A RJ45 Keystone Jack, shielded (STP), TIA-568-B', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05, notes: '10Gbps rated' },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
     ]
   },
   {
@@ -415,10 +415,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g-low-volt', description: 'Low-Voltage Mud Ring, single-gang (orange)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'fiber-jack-sc', description: 'Fiber Optic SC Duplex Keystone Jack (multi-mode or single-mode)', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g-low-volt', itemCode: 'MUDRING-1G-LOW-VOLT', description: 'Low-Voltage Mud Ring, single-gang (orange)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'fiber-jack-sc', itemCode: 'FIBER-JACK-SC', description: 'Fiber Optic SC Duplex Keystone Jack (multi-mode or single-mode)', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
     ]
   },
   {
@@ -429,12 +429,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'Deeper for cable volume' },
-      { id: 'mudring-2g-low-volt', description: 'Low-Voltage Mud Ring, two-gang (orange)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'hdmi-jack', description: 'HDMI Keystone Jack, female-to-female', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
-      { id: 'cat6-jack', description: 'CAT6 RJ45 Keystone Jack, UTP', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
-      { id: 'audio-jack-3.5mm', description: '3.5mm Audio Keystone Jack, stereo', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
-      { id: 'plate-ss-2g', description: 'Device Cover Plate, two-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'Deeper for cable volume' },
+      { id: 'mudring-2g-low-volt', itemCode: 'MUDRING-2G-LOW-VOLT', description: 'Low-Voltage Mud Ring, two-gang (orange)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'hdmi-jack', itemCode: 'HDMI-JACK', description: 'HDMI Keystone Jack, female-to-female', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
+      { id: 'cat6-jack', itemCode: 'CAT6-JACK', description: 'CAT6 RJ45 Keystone Jack, UTP', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
+      { id: 'audio-jack-3.5mm', itemCode: 'AUDIO-JACK-3.5MM', description: '3.5mm Audio Keystone Jack, stereo', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
+      { id: 'plate-ss-2g', itemCode: 'PLATE-SS-2G', description: 'Device Cover Plate, two-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
     ]
   },
   {
@@ -445,10 +445,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g-low-volt', description: 'Low-Voltage Mud Ring, single-gang (orange)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'coax-jack-rg6', description: 'Coax F-Connector Keystone Jack, RG6, 3GHz', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g-low-volt', itemCode: 'MUDRING-1G-LOW-VOLT', description: 'Low-Voltage Mud Ring, single-gang (orange)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'coax-jack-rg6', itemCode: 'COAX-JACK-RG6', description: 'Coax F-Connector Keystone Jack, RG6, 3GHz', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
     ]
   },
 
@@ -463,11 +463,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'panel-42-225a-mlo', description: 'Panel, 42-circuit, 225A MLO, 120/208V 3-phase, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00, notes: 'Ordered exact' },
-      { id: 'panel-trim-surface', description: 'Panel Trim/Cover, surface mount, painted steel', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 },
-      { id: 'breaker-blank', description: 'Breaker Blanks/Filler Plates', unit: 'SET', quantityPer: 1, category: 'Panels', wasteFactor: 1.02 },
-      { id: 'panel-label-kit', description: 'Panel Directory Label Kit, self-adhesive', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 },
-      { id: 'grounding-bar-addon', description: 'Additional Grounding Bar, 12-lug, copper', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.00 }
+      { id: 'panel-42-225a-mlo', itemCode: 'PANEL-42-225A-MLO', description: 'Panel, 42-circuit, 225A MLO, 120/208V 3-phase, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00, notes: 'Ordered exact' },
+      { id: 'panel-trim-surface', itemCode: 'PANEL-TRIM-SURFACE', description: 'Panel Trim/Cover, surface mount, painted steel', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 },
+      { id: 'breaker-blank', itemCode: 'BREAKER-BLANK', description: 'Breaker Blanks/Filler Plates', unit: 'SET', quantityPer: 1, category: 'Panels', wasteFactor: 1.02 },
+      { id: 'panel-label-kit', itemCode: 'PANEL-LABEL-KIT', description: 'Panel Directory Label Kit, self-adhesive', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 },
+      { id: 'grounding-bar-addon', itemCode: 'GROUNDING-BAR-ADDON', description: 'Additional Grounding Bar, 12-lug, copper', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.00 }
     ]
   },
   {
@@ -478,11 +478,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'panel-24-100a-mlo', description: 'Subpanel, 24-circuit, 100A MLO, 120/208V 3-phase', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 },
-      { id: 'panel-trim-surface', description: 'Panel Trim/Cover, surface mount', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 },
-      { id: 'breaker-blank', description: 'Breaker Blanks/Filler Plates', unit: 'SET', quantityPer: 1, category: 'Panels', wasteFactor: 1.02 },
-      { id: 'panel-label-kit', description: 'Panel Directory Label Kit', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 },
-      { id: 'grounding-bar-addon', description: 'Additional Grounding Bar, 12-lug, copper', unit: 'EA', quantityPer: 0.5, category: 'Grounding', wasteFactor: 1.00 }
+      { id: 'panel-24-100a-mlo', itemCode: 'PANEL-24-100A-MLO', description: 'Subpanel, 24-circuit, 100A MLO, 120/208V 3-phase', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 },
+      { id: 'panel-trim-surface', itemCode: 'PANEL-TRIM-SURFACE', description: 'Panel Trim/Cover, surface mount', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 },
+      { id: 'breaker-blank', itemCode: 'BREAKER-BLANK', description: 'Breaker Blanks/Filler Plates', unit: 'SET', quantityPer: 1, category: 'Panels', wasteFactor: 1.02 },
+      { id: 'panel-label-kit', itemCode: 'PANEL-LABEL-KIT', description: 'Panel Directory Label Kit', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 },
+      { id: 'grounding-bar-addon', itemCode: 'GROUNDING-BAR-ADDON', description: 'Additional Grounding Bar, 12-lug, copper', unit: 'EA', quantityPer: 0.5, category: 'Grounding', wasteFactor: 1.00 }
     ]
   },
   {
@@ -493,7 +493,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'panel-100a', description: '100 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 }
+      { id: 'panel-100a', itemCode: 'PANEL-100A', description: '100 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 }
     ]
   },
   {
@@ -504,7 +504,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'panel-200a', description: '200 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 }
+      { id: 'panel-200a', itemCode: 'PANEL-200A', description: '200 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 }
     ]
   },
   {
@@ -515,7 +515,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'panel-400a', description: '400 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 }
+      { id: 'panel-400a', itemCode: 'PANEL-400A', description: '400 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 }
     ]
   },
   {
@@ -526,7 +526,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'panel-600a', description: '600 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00, notes: 'From master pricing database' }
+      { id: 'panel-600a', itemCode: 'PANEL-600A', description: '600 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00, notes: 'From master pricing database' }
     ]
   },
   {
@@ -537,7 +537,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'panel-800a', description: '800 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 }
+      { id: 'panel-800a', itemCode: 'PANEL-800A', description: '800 AMP PANEL', unit: 'EA', quantityPer: 1, category: 'Panels', wasteFactor: 1.00 }
     ]
   },
 
@@ -552,7 +552,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'dim-600w-sp', description: 'Dimmer Switch, Single-Pole, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
+      { id: 'dim-600w-sp', itemCode: 'DIM-600W-SP', description: 'Dimmer Switch, Single-Pole, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
     ]
   },
   {
@@ -563,7 +563,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'dim-600w-3w', description: 'Dimmer Switch, Three-Way, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
+      { id: 'dim-600w-3w', itemCode: 'DIM-600W-3W', description: 'Dimmer Switch, Three-Way, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
     ]
   },
   {
@@ -574,7 +574,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'dim-1000w', description: '1000 Watt Dimmer,Decora', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
+      { id: 'dim-1000w', itemCode: 'DIM-1000W', description: '1000 Watt Dimmer,Decora', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
     ]
   },
   {
@@ -585,7 +585,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'dim-1500w', description: '1500 Watt Dimmer,Decora', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
+      { id: 'dim-1500w', itemCode: 'DIM-1500W', description: '1500 Watt Dimmer,Decora', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
     ]
   },
   {
@@ -596,7 +596,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'dim-2000w', description: '2000 Watt Dimmer,Decora', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
+      { id: 'dim-2000w', itemCode: 'DIM-2000W', description: '2000 Watt Dimmer,Decora', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
     ]
   },
   {
@@ -607,7 +607,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'dim-wc', description: 'Dimming Wall Control Station, 0-10V or DALI', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
+      { id: 'dim-wc', itemCode: 'DIM-WC', description: 'Dimming Wall Control Station, 0-10V or DALI', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
     ]
   },
   {
@@ -618,7 +618,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'dim-ml', description: 'Multi-Location Master Dimmer, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
+      { id: 'dim-ml', itemCode: 'DIM-ML', description: 'Multi-Location Master Dimmer, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.00 }
     ]
   },
 
@@ -633,7 +633,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'disc-30-3p', description: '30A/240V/3PH/F/N3/DISC.', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 }
+      { id: 'disc-30-3p', itemCode: 'DISC-30-3P', description: '30A/240V/3PH/F/N3/DISC.', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 }
     ]
   },
   {
@@ -644,7 +644,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'disc-60-3p', description: '60A/240V/3PH/F/N3/DISC.', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 }
+      { id: 'disc-60-3p', itemCode: 'DISC-60-3P', description: '60A/240V/3PH/F/N3/DISC.', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 }
     ]
   },
   {
@@ -655,7 +655,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'disc-100-3p', description: '100A/240V/3PH/F/N3/DISC.', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 }
+      { id: 'disc-100-3p', itemCode: 'DISC-100-3P', description: '100A/240V/3PH/F/N3/DISC.', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 }
     ]
   },
   {
@@ -666,9 +666,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'disconnect-60a-nf', description: 'Safety Disconnect, 60A, 3P, 240V, non-fused, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 },
-      { id: 'emt-connector-1in', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05, notes: 'Line and load side' },
-      { id: 'grounding-bushing', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'disconnect-60a-nf', itemCode: 'DISCONNECT-60A-NF', description: 'Safety Disconnect, 60A, 3P, 240V, non-fused, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 },
+      { id: 'emt-connector-1in', itemCode: 'EMT-CONNECTOR-1IN', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05, notes: 'Line and load side' },
+      { id: 'grounding-bushing', itemCode: 'GROUNDING-BUSHING', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -679,10 +679,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'disconnect-100a-fused', description: 'Safety Disconnect, 100A, 3P, 240V, fused, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 },
-      { id: 'fuse-class-j-100a', description: 'Class J Time-Delay Fuses, 100A, 600V', unit: 'EA', quantityPer: 3, category: 'Disconnects', wasteFactor: 1.02 },
-      { id: 'emt-connector-1.25in-comp', description: 'EMT Connector, 1-1/4", compression (wet location)', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'grounding-bushing', description: 'Grounding Bushing, 1-1/4", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'disconnect-100a-fused', itemCode: 'DISCONNECT-100A-FUSED', description: 'Safety Disconnect, 100A, 3P, 240V, fused, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 },
+      { id: 'fuse-class-j-100a', itemCode: 'FUSE-CLASS-J-100A', description: 'Class J Time-Delay Fuses, 100A, 600V', unit: 'EA', quantityPer: 3, category: 'Disconnects', wasteFactor: 1.02 },
+      { id: 'emt-connector-1.25in-comp', itemCode: 'EMT-CONNECTOR-1.25IN-COMP', description: 'EMT Connector, 1-1/4", compression (wet location)', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', itemCode: 'GROUNDING-BUSHING', description: 'Grounding Bushing, 1-1/4", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
 
@@ -697,11 +697,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep (red if fire alarm)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'fa-smoke-base', description: 'Smoke Detector Base, addressable, twist-lock', unit: 'EA', quantityPer: 1, category: 'Fire Alarm', wasteFactor: 1.02 },
-      { id: 'fa-smoke-head', description: 'Smoke Detector Head, photoelectric, addressable', unit: 'EA', quantityPer: 1, category: 'Fire Alarm', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel (red conduit)', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'fa-end-line-resistor', description: 'End-of-Line Resistor (if required by system)', unit: 'EA', quantityPer: 0.1, category: 'Fire Alarm', wasteFactor: 1.02, notes: 'Typically 1 per zone' }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep (red if fire alarm)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'fa-smoke-base', itemCode: 'FA-SMOKE-BASE', description: 'Smoke Detector Base, addressable, twist-lock', unit: 'EA', quantityPer: 1, category: 'Fire Alarm', wasteFactor: 1.02 },
+      { id: 'fa-smoke-head', itemCode: 'FA-SMOKE-HEAD', description: 'Smoke Detector Head, photoelectric, addressable', unit: 'EA', quantityPer: 1, category: 'Fire Alarm', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel (red conduit)', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'fa-end-line-resistor', itemCode: 'FA-END-LINE-RESISTOR', description: 'End-of-Line Resistor (if required by system)', unit: 'EA', quantityPer: 0.1, category: 'Fire Alarm', wasteFactor: 1.02, notes: 'Typically 1 per zone' }
     ]
   },
   {
@@ -712,10 +712,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep (red if fire alarm)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'fa-pull-station', description: 'Manual Pull Station, addressable, single-action', unit: 'EA', quantityPer: 1, category: 'Fire Alarm', wasteFactor: 1.02 },
-      { id: 'fa-surface-mount-kit', description: 'Surface Mount Kit for pull station (if not recessed)', unit: 'EA', quantityPer: 0.5, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep (red if fire alarm)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'fa-pull-station', itemCode: 'FA-PULL-STATION', description: 'Manual Pull Station, addressable, single-action', unit: 'EA', quantityPer: 1, category: 'Fire Alarm', wasteFactor: 1.02 },
+      { id: 'fa-surface-mount-kit', itemCode: 'FA-SURFACE-MOUNT-KIT', description: 'Surface Mount Kit for pull station (if not recessed)', unit: 'EA', quantityPer: 0.5, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
   {
@@ -726,10 +726,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep (red if fire alarm)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'fa-horn-strobe', description: 'Horn/Strobe, 24VDC, wall mount, red, ADA candela', unit: 'EA', quantityPer: 1, category: 'Fire Alarm', wasteFactor: 1.02, notes: '15/75 or 110 cd per specs' },
-      { id: 'fa-surface-mount-kit', description: 'Surface Mount Kit for horn/strobe', unit: 'EA', quantityPer: 0.5, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep (red if fire alarm)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'fa-horn-strobe', itemCode: 'FA-HORN-STROBE', description: 'Horn/Strobe, 24VDC, wall mount, red, ADA candela', unit: 'EA', quantityPer: 1, category: 'Fire Alarm', wasteFactor: 1.02, notes: '15/75 or 110 cd per specs' },
+      { id: 'fa-surface-mount-kit', itemCode: 'FA-SURFACE-MOUNT-KIT', description: 'Surface Mount Kit for horn/strobe', unit: 'EA', quantityPer: 0.5, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
 
@@ -744,10 +744,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, ceiling/wall rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'camera-mount-adapter', description: 'Camera Mounting Adapter/Bracket for 4" box', unit: 'EA', quantityPer: 1, category: 'Security', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel (for CAT6 cable protection)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'cat6-patch-3ft', description: 'CAT6 Patch Cable, 3 ft, for camera connection', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05, notes: 'If not hardwired' }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, ceiling/wall rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'camera-mount-adapter', itemCode: 'CAMERA-MOUNT-ADAPTER', description: 'Camera Mounting Adapter/Bracket for 4" box', unit: 'EA', quantityPer: 1, category: 'Security', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel (for CAT6 cable protection)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'cat6-patch-3ft', itemCode: 'CAT6-PATCH-3FT', description: 'CAT6 Patch Cable, 3 ft, for camera connection', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05, notes: 'If not hardwired' }
     ]
   },
   {
@@ -758,10 +758,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g-low-volt', description: 'Low-Voltage Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'card-reader-prox', description: 'Proximity Card Reader (HID or similar)', unit: 'EA', quantityPer: 1, category: 'Security', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel (for low-volt cable)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g-low-volt', itemCode: 'MUDRING-1G-LOW-VOLT', description: 'Low-Voltage Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'card-reader-prox', itemCode: 'CARD-READER-PROX', description: 'Proximity Card Reader (HID or similar)', unit: 'EA', quantityPer: 1, category: 'Security', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel (for low-volt cable)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
   {
@@ -772,11 +772,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'mag-lock-1200lb', description: 'Magnetic Door Lock, 1200 lb, 12/24VDC', unit: 'EA', quantityPer: 1, category: 'Security', wasteFactor: 1.02 },
-      { id: 'mag-lock-bracket', description: 'Mounting Brackets for mag lock (door + frame)', unit: 'SET', quantityPer: 1, category: 'Security', wasteFactor: 1.02 },
-      { id: 'power-supply-12vdc-5a', description: 'Power Supply, 12VDC, 5A, with battery backup', unit: 'EA', quantityPer: 1, category: 'Security', wasteFactor: 1.02 },
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep (for power supply)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'mag-lock-1200lb', itemCode: 'MAG-LOCK-1200LB', description: 'Magnetic Door Lock, 1200 lb, 12/24VDC', unit: 'EA', quantityPer: 1, category: 'Security', wasteFactor: 1.02 },
+      { id: 'mag-lock-bracket', itemCode: 'MAG-LOCK-BRACKET', description: 'Mounting Brackets for mag lock (door + frame)', unit: 'SET', quantityPer: 1, category: 'Security', wasteFactor: 1.02 },
+      { id: 'power-supply-12vdc-5a', itemCode: 'POWER-SUPPLY-12VDC-5A', description: 'Power Supply, 12VDC, 5A, with battery backup', unit: 'EA', quantityPer: 1, category: 'Security', wasteFactor: 1.02 },
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep (for power supply)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
   {
@@ -787,9 +787,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'door-contact-mag', description: 'Magnetic Door Contact, surface mount, NO/NC', unit: 'EA', quantityPer: 1, category: 'Security', wasteFactor: 1.02 },
-      { id: 'box-1g-surface', description: 'Single-Gang Surface Box, plastic (for low-voltage)', unit: 'EA', quantityPer: 0.5, category: 'Boxes', wasteFactor: 1.02, notes: 'If junction needed' },
-      { id: 'emt-connector-1/2', description: 'EMT Connector, 1/2", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'door-contact-mag', itemCode: 'DOOR-CONTACT-MAG', description: 'Magnetic Door Contact, surface mount, NO/NC', unit: 'EA', quantityPer: 1, category: 'Security', wasteFactor: 1.02 },
+      { id: 'box-1g-surface', itemCode: 'BOX-1G-SURFACE', description: 'Single-Gang Surface Box, plastic (for low-voltage)', unit: 'EA', quantityPer: 0.5, category: 'Boxes', wasteFactor: 1.02, notes: 'If junction needed' },
+      { id: 'emt-connector-1/2', itemCode: 'EMT-CONNECTOR-1/2', description: 'EMT Connector, 1/2", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
 
@@ -804,12 +804,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-208v-20a', description: 'Single Receptacle, 20A, 208V, NEMA 6-20R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-208v-20a', itemCode: 'RECEP-208V-20A', description: 'Single Receptacle, 20A, 208V, NEMA 6-20R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -820,12 +820,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-2g', description: 'Raised Device Cover / Mud Ring, two-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-240v-30a', description: 'Single Receptacle, 30A, 240V, NEMA 6-30R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ss-2g', description: 'Device Cover Plate, two-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-1in', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-10', description: '#10 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-2g', itemCode: 'MUDRING-2G', description: 'Raised Device Cover / Mud Ring, two-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-240v-30a', itemCode: 'RECEP-240V-30A', description: 'Single Receptacle, 30A, 240V, NEMA 6-30R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-2g', itemCode: 'PLATE-SS-2G', description: 'Device Cover Plate, two-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-1in', itemCode: 'EMT-CONNECTOR-1IN', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-10', itemCode: 'GROUND-PIGTAIL-10', description: '#10 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -836,12 +836,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-2g-deep', description: 'Raised Device Cover / Mud Ring, two-gang, deep', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-50a-range', description: 'Range Receptacle, 50A, 125/250V, NEMA 14-50R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ss-2g', description: 'Device Cover Plate, two-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-1.25in', description: 'EMT Connector, 1-1/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-8', description: '#8 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-2g-deep', itemCode: 'MUDRING-2G-DEEP', description: 'Raised Device Cover / Mud Ring, two-gang, deep', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-50a-range', itemCode: 'RECEP-50A-RANGE', description: 'Range Receptacle, 50A, 125/250V, NEMA 14-50R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-2g', itemCode: 'PLATE-SS-2G', description: 'Device Cover Plate, two-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-1.25in', itemCode: 'EMT-CONNECTOR-1.25IN', description: 'EMT Connector, 1-1/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-8', itemCode: 'GROUND-PIGTAIL-8', description: '#8 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -852,12 +852,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-l5-30r', description: 'Twist-Lock Receptacle, 30A, 125V, NEMA L5-30R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-1in', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-10', description: '#10 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-l5-30r', itemCode: 'RECEP-L5-30R', description: 'Twist-Lock Receptacle, 30A, 125V, NEMA L5-30R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-1in', itemCode: 'EMT-CONNECTOR-1IN', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-10', itemCode: 'GROUND-PIGTAIL-10', description: '#10 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -868,12 +868,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-2g-deep', description: 'Raised Device Cover / Mud Ring, two-gang, deep', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-6-50r', description: 'Receptacle, 50A, 250V, NEMA 6-50R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ss-2g', description: 'Device Cover Plate, two-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-1.25in', description: 'EMT Connector, 1-1/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-8', description: '#8 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-2g-deep', itemCode: 'MUDRING-2G-DEEP', description: 'Raised Device Cover / Mud Ring, two-gang, deep', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-6-50r', itemCode: 'RECEP-6-50R', description: 'Receptacle, 50A, 250V, NEMA 6-50R', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-2g', itemCode: 'PLATE-SS-2G', description: 'Device Cover Plate, two-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-1.25in', itemCode: 'EMT-CONNECTOR-1.25IN', description: 'EMT Connector, 1-1/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-8', itemCode: 'GROUND-PIGTAIL-8', description: '#8 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
 
@@ -888,11 +888,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'motor-starter-3hp', description: 'Motor Starter, 3HP, 230V, NEMA 1, with overload', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
-      { id: 'enclosure-nema1-12x16', description: 'NEMA 1 Enclosure, 12"x16"x6", steel', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
-      { id: 'disconnect-30a-nf', description: 'Fusible Disconnect, 30A, 240V, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
-      { id: 'emt-connector-1in', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05, notes: 'Line, load, control' },
-      { id: 'grounding-bushing', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'motor-starter-3hp', itemCode: 'MOTOR-STARTER-3HP', description: 'Motor Starter, 3HP, 230V, NEMA 1, with overload', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'enclosure-nema1-12x16', itemCode: 'ENCLOSURE-NEMA1-12X16', description: 'NEMA 1 Enclosure, 12"x16"x6", steel', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'disconnect-30a-nf', itemCode: 'DISCONNECT-30A-NF', description: 'Fusible Disconnect, 30A, 240V, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'emt-connector-1in', itemCode: 'EMT-CONNECTOR-1IN', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05, notes: 'Line, load, control' },
+      { id: 'grounding-bushing', itemCode: 'GROUNDING-BUSHING', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -903,11 +903,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'motor-starter-10hp', description: 'Motor Starter, 10HP, 480V, NEMA 2, with overload', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
-      { id: 'enclosure-nema1-16x20', description: 'NEMA 1 Enclosure, 16"x20"x8", steel', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
-      { id: 'disconnect-60a-f', description: 'Fused Disconnect, 60A, 480V, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
-      { id: 'emt-connector-1.25in', description: 'EMT Connector, 1-1/4", steel', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'grounding-bushing', description: 'Grounding Bushing, 1-1/4", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'motor-starter-10hp', itemCode: 'MOTOR-STARTER-10HP', description: 'Motor Starter, 10HP, 480V, NEMA 2, with overload', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'enclosure-nema1-16x20', itemCode: 'ENCLOSURE-NEMA1-16X20', description: 'NEMA 1 Enclosure, 16"x20"x8", steel', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'disconnect-60a-f', itemCode: 'DISCONNECT-60A-F', description: 'Fused Disconnect, 60A, 480V, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'emt-connector-1.25in', itemCode: 'EMT-CONNECTOR-1.25IN', description: 'EMT Connector, 1-1/4", steel', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', itemCode: 'GROUNDING-BUSHING', description: 'Grounding Bushing, 1-1/4", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -918,11 +918,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'vfd-5hp', description: 'Variable Frequency Drive, 5HP, 480V, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
-      { id: 'disconnect-30a-nf', description: 'Non-Fused Disconnect, 30A, 480V, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
-      { id: 'bypass-contactor', description: 'Bypass Contactor, 30A, 480V coil', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
-      { id: 'emt-connector-1in', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 4, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'grounding-bushing', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'vfd-5hp', itemCode: 'VFD-5HP', description: 'Variable Frequency Drive, 5HP, 480V, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'disconnect-30a-nf', itemCode: 'DISCONNECT-30A-NF', description: 'Non-Fused Disconnect, 30A, 480V, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'bypass-contactor', itemCode: 'BYPASS-CONTACTOR', description: 'Bypass Contactor, 30A, 480V coil', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'emt-connector-1in', itemCode: 'EMT-CONNECTOR-1IN', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 4, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', itemCode: 'GROUNDING-BUSHING', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -933,10 +933,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'contactor-30a-4p', description: 'Lighting Contactor, 30A, 4-pole, 277V coil', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
-      { id: 'enclosure-nema1-8x10', description: 'NEMA 1 Enclosure, 8"x10"x4", steel', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'grounding-bushing', description: 'Grounding Bushing, 3/4", insulated throat', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'contactor-30a-4p', itemCode: 'CONTACTOR-30A-4P', description: 'Lighting Contactor, 30A, 4-pole, 277V coil', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'enclosure-nema1-8x10', itemCode: 'ENCLOSURE-NEMA1-8X10', description: 'NEMA 1 Enclosure, 8"x10"x4", steel', unit: 'EA', quantityPer: 1, category: 'Motor Control', wasteFactor: 1.00 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', itemCode: 'GROUNDING-BUSHING', description: 'Grounding Bushing, 3/4", insulated throat', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
 
@@ -951,11 +951,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'disconnect-60a-nf-3r', description: 'Non-Fused Disconnect, 60A, 240V, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 },
-      { id: 'whip-seow-10ft-8/4', description: 'SEOW Cord, 10 ft, 8/4, outdoor rated', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 },
-      { id: 'cord-grip-1in', description: 'Cord Grip/Strain Relief, 1", steel, NEMA 3R', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'emt-connector-1in-comp', description: 'EMT Connector, 1", compression (wet location)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'grounding-bushing', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'disconnect-60a-nf-3r', itemCode: 'DISCONNECT-60A-NF-3R', description: 'Non-Fused Disconnect, 60A, 240V, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 },
+      { id: 'whip-seow-10ft-8/4', itemCode: 'WHIP-SEOW-10FT-8/4', description: 'SEOW Cord, 10 ft, 8/4, outdoor rated', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 },
+      { id: 'cord-grip-1in', itemCode: 'CORD-GRIP-1IN', description: 'Cord Grip/Strain Relief, 1", steel, NEMA 3R', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'emt-connector-1in-comp', itemCode: 'EMT-CONNECTOR-1IN-COMP', description: 'EMT Connector, 1", compression (wet location)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', itemCode: 'GROUNDING-BUSHING', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -966,10 +966,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'disconnect-60a-fused-3r', description: 'Fused Disconnect, 60A, 240V, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 },
-      { id: 'fuse-class-rk5-60a', description: 'Class RK5 Time-Delay Fuses, 60A, 250V', unit: 'EA', quantityPer: 2, category: 'Disconnects', wasteFactor: 1.02 },
-      { id: 'emt-connector-1in-comp', description: 'EMT Connector, 1", compression (wet location)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'grounding-bushing', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'disconnect-60a-fused-3r', itemCode: 'DISCONNECT-60A-FUSED-3R', description: 'Fused Disconnect, 60A, 240V, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.00 },
+      { id: 'fuse-class-rk5-60a', itemCode: 'FUSE-CLASS-RK5-60A', description: 'Class RK5 Time-Delay Fuses, 60A, 250V', unit: 'EA', quantityPer: 2, category: 'Disconnects', wasteFactor: 1.02 },
+      { id: 'emt-connector-1in-comp', itemCode: 'EMT-CONNECTOR-1IN-COMP', description: 'EMT Connector, 1", compression (wet location)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', itemCode: 'GROUNDING-BUSHING', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -980,12 +980,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g-deep', description: 'Raised Device Cover / Mud Ring, single-gang, 5/8"', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'timer-switch-60min', description: 'Timer Switch, 60-minute, spring wound, 15A', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g-deep', itemCode: 'MUDRING-1G-DEEP', description: 'Raised Device Cover / Mud Ring, single-gang, 5/8"', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'timer-switch-60min', itemCode: 'TIMER-SWITCH-60MIN', description: 'Timer Switch, 60-minute, spring wound, 15A', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
 
@@ -1000,11 +1000,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'fixture',
     isActive: true,
     items: [
-      { id: 'pole-base-handhole', description: 'Light Pole Base with Hand-Hole, aluminum', unit: 'EA', quantityPer: 1, category: 'Site Lighting', wasteFactor: 1.00 },
-      { id: 'photocell-120-277v', description: 'Photocell, 120-277V, twist-lock', unit: 'EA', quantityPer: 1, category: 'Site Lighting', wasteFactor: 1.02 },
-      { id: 'emt-connector-1in-comp', description: 'EMT Connector, 1", compression (wet location)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'grounding-bushing', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 },
-      { id: 'wirenuts-assorted', description: 'Wire Nuts for connections', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
+      { id: 'pole-base-handhole', itemCode: 'POLE-BASE-HANDHOLE', description: 'Light Pole Base with Hand-Hole, aluminum', unit: 'EA', quantityPer: 1, category: 'Site Lighting', wasteFactor: 1.00 },
+      { id: 'photocell-120-277v', itemCode: 'PHOTOCELL-120-277V', description: 'Photocell, 120-277V, twist-lock', unit: 'EA', quantityPer: 1, category: 'Site Lighting', wasteFactor: 1.02 },
+      { id: 'emt-connector-1in-comp', itemCode: 'EMT-CONNECTOR-1IN-COMP', description: 'EMT Connector, 1", compression (wet location)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', itemCode: 'GROUNDING-BUSHING', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 },
+      { id: 'wirenuts-assorted', itemCode: 'WIRENUTS-ASSORTED', description: 'Wire Nuts for connections', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1015,10 +1015,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'fixture',
     isActive: true,
     items: [
-      { id: 'bollard-base-concrete', description: 'Bollard Light Base/Stub for concrete mount', unit: 'EA', quantityPer: 1, category: 'Site Lighting', wasteFactor: 1.00 },
-      { id: 'pvc-conduit-stub-1in', description: 'PVC Conduit Stub, 1", schedule 40, 18" long', unit: 'EA', quantityPer: 1, category: 'Site Lighting', wasteFactor: 1.02 },
-      { id: 'pvc-coupling-1in', description: 'PVC Coupling, 1", schedule 40', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'wirenuts-assorted', description: 'Wire Nuts for connections', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
+      { id: 'bollard-base-concrete', itemCode: 'BOLLARD-BASE-CONCRETE', description: 'Bollard Light Base/Stub for concrete mount', unit: 'EA', quantityPer: 1, category: 'Site Lighting', wasteFactor: 1.00 },
+      { id: 'pvc-conduit-stub-1in', itemCode: 'PVC-CONDUIT-STUB-1IN', description: 'PVC Conduit Stub, 1", schedule 40, 18" long', unit: 'EA', quantityPer: 1, category: 'Site Lighting', wasteFactor: 1.02 },
+      { id: 'pvc-coupling-1in', itemCode: 'PVC-COUPLING-1IN', description: 'PVC Coupling, 1", schedule 40', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'wirenuts-assorted', itemCode: 'WIRENUTS-ASSORTED', description: 'Wire Nuts for connections', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1029,11 +1029,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-fs-1g-wp', description: 'FS Box, single-gang, 2" deep, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-20a-125v-wp', description: 'Receptacle, 20A, 125V, weather-resistant', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'cover-wp-1g-inuse', description: 'Weather-Proof In-Use Cover, single-gang', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'photocell-120v', description: 'Photocell, 120V, twist-lock', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4-comp', description: 'EMT Connector, 3/4", compression (wet location)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'box-fs-1g-wp', itemCode: 'BOX-FS-1G-WP', description: 'FS Box, single-gang, 2" deep, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-20a-125v-wp', itemCode: 'RECEP-20A-125V-WP', description: 'Receptacle, 20A, 125V, weather-resistant', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'cover-wp-1g-inuse', itemCode: 'COVER-WP-1G-INUSE', description: 'Weather-Proof In-Use Cover, single-gang', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'photocell-120v', itemCode: 'PHOTOCELL-120V', description: 'Photocell, 120V, twist-lock', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4-comp', itemCode: 'EMT-CONNECTOR-3/4-COMP', description: 'EMT Connector, 3/4", compression (wet location)', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
   {
@@ -1044,10 +1044,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'ev-charger-40a', description: 'EV Charger, Level 2, 40A, 208/240V, wall/pedestal mount', unit: 'EA', quantityPer: 1, category: 'EV Charging', wasteFactor: 1.00, notes: 'Networked or standalone' },
-      { id: 'disconnect-60a-nf-3r', description: 'Non-Fused Disconnect, 60A, 240V, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'EV Charging', wasteFactor: 1.00 },
-      { id: 'emt-connector-1in-comp', description: 'EMT Connector, 1", compression', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'grounding-bushing', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'ev-charger-40a', itemCode: 'EV-CHARGER-40A', description: 'EV Charger, Level 2, 40A, 208/240V, wall/pedestal mount', unit: 'EA', quantityPer: 1, category: 'EV Charging', wasteFactor: 1.00, notes: 'Networked or standalone' },
+      { id: 'disconnect-60a-nf-3r', itemCode: 'DISCONNECT-60A-NF-3R', description: 'Non-Fused Disconnect, 60A, 240V, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'EV Charging', wasteFactor: 1.00 },
+      { id: 'emt-connector-1in-comp', itemCode: 'EMT-CONNECTOR-1IN-COMP', description: 'EMT Connector, 1", compression', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', itemCode: 'GROUNDING-BUSHING', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
 
@@ -1062,13 +1062,13 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, ceiling rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-15a-125v', description: 'Receptacle, 15A, 125V, standard', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'mudring-2g-low-volt', description: 'Low-Voltage Mud Ring, two-gang (orange)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'hdmi-jack', description: 'HDMI Keystone Jack, female-to-female', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
-      { id: 'cat6-jack', description: 'CAT6 RJ45 Keystone Jack, UTP', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
-      { id: 'plate-combo-power-data', description: 'Combo Plate, power + 2-port data, white', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, ceiling rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-15a-125v', itemCode: 'RECEP-15A-125V', description: 'Receptacle, 15A, 125V, standard', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'mudring-2g-low-volt', itemCode: 'MUDRING-2G-LOW-VOLT', description: 'Low-Voltage Mud Ring, two-gang (orange)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'hdmi-jack', itemCode: 'HDMI-JACK', description: 'HDMI Keystone Jack, female-to-female', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
+      { id: 'cat6-jack', itemCode: 'CAT6-JACK', description: 'CAT6 RJ45 Keystone Jack, UTP', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
+      { id: 'plate-combo-power-data', itemCode: 'PLATE-COMBO-POWER-DATA', description: 'Combo Plate, power + 2-port data, white', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
   {
@@ -1079,11 +1079,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-recessed-tv', description: 'Recessed TV Box, low-voltage + power combo', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-15a-125v', description: 'Receptacle, 15A, 125V, standard', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'hdmi-jack', description: 'HDMI Keystone Jack, female-to-female', unit: 'EA', quantityPer: 2, category: 'Data/Comm', wasteFactor: 1.05 },
-      { id: 'plate-recessed-tv', description: 'Recessed TV Plate, white or ivory', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'box-recessed-tv', itemCode: 'BOX-RECESSED-TV', description: 'Recessed TV Box, low-voltage + power combo', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-15a-125v', itemCode: 'RECEP-15A-125V', description: 'Receptacle, 15A, 125V, standard', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'hdmi-jack', itemCode: 'HDMI-JACK', description: 'HDMI Keystone Jack, female-to-female', unit: 'EA', quantityPer: 2, category: 'Data/Comm', wasteFactor: 1.05 },
+      { id: 'plate-recessed-tv', itemCode: 'PLATE-RECESSED-TV', description: 'Recessed TV Plate, white or ivory', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
   {
@@ -1094,10 +1094,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, ceiling rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'speaker-ring-70v', description: '70V Speaker Mounting Ring/Bracket', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.02 },
-      { id: 'volume-control-70v', description: '70V Volume Control, rotary, wall mount', unit: 'EA', quantityPer: 0.5, category: 'Data/Comm', wasteFactor: 1.02, notes: '1 per 2 speakers avg' },
-      { id: 'emt-connector-1/2', description: 'EMT Connector, 1/2", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, ceiling rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'speaker-ring-70v', itemCode: 'SPEAKER-RING-70V', description: '70V Speaker Mounting Ring/Bracket', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.02 },
+      { id: 'volume-control-70v', itemCode: 'VOLUME-CONTROL-70V', description: '70V Volume Control, rotary, wall mount', unit: 'EA', quantityPer: 0.5, category: 'Data/Comm', wasteFactor: 1.02, notes: '1 per 2 speakers avg' },
+      { id: 'emt-connector-1/2', itemCode: 'EMT-CONNECTOR-1/2', description: 'EMT Connector, 1/2", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
   {
@@ -1108,12 +1108,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'floor-monument-box', description: 'Floor Monument Box, adjustable, steel or aluminum', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-20a-125v', description: 'Duplex Receptacle, 20A, 125V', unit: 'EA', quantityPer: 2, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'cat6-jack', description: 'CAT6 RJ45 Keystone Jack, UTP', unit: 'EA', quantityPer: 2, category: 'Data/Comm', wasteFactor: 1.05 },
-      { id: 'hdmi-jack', description: 'HDMI Keystone Jack, female-to-female', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
-      { id: 'cover-floor-monument', description: 'Floor Monument Cover/Lid, brushed aluminum', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'floor-monument-box', itemCode: 'FLOOR-MONUMENT-BOX', description: 'Floor Monument Box, adjustable, steel or aluminum', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-20a-125v', itemCode: 'RECEP-20A-125V', description: 'Duplex Receptacle, 20A, 125V', unit: 'EA', quantityPer: 2, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'cat6-jack', itemCode: 'CAT6-JACK', description: 'CAT6 RJ45 Keystone Jack, UTP', unit: 'EA', quantityPer: 2, category: 'Data/Comm', wasteFactor: 1.05 },
+      { id: 'hdmi-jack', itemCode: 'HDMI-JACK', description: 'HDMI Keystone Jack, female-to-female', unit: 'EA', quantityPer: 1, category: 'Data/Comm', wasteFactor: 1.05 },
+      { id: 'cover-floor-monument', itemCode: 'COVER-FLOOR-MONUMENT', description: 'Floor Monument Cover/Lid, brushed aluminum', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
 
@@ -1128,7 +1128,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'breaker-1p-20a', description: 'Circuit Breaker, 1-pole, 20A, 120V, 10kAIC', unit: 'EA', quantityPer: 1, category: 'Breakers', wasteFactor: 1.02 }
+      { id: 'breaker-1p-20a', itemCode: 'BREAKER-1P-20A', description: 'Circuit Breaker, 1-pole, 20A, 120V, 10kAIC', unit: 'EA', quantityPer: 1, category: 'Breakers', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1139,7 +1139,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'breaker-2p-30a', description: 'Circuit Breaker, 2-pole, 30A, 240V, 10kAIC', unit: 'EA', quantityPer: 1, category: 'Breakers', wasteFactor: 1.02 }
+      { id: 'breaker-2p-30a', itemCode: 'BREAKER-2P-30A', description: 'Circuit Breaker, 2-pole, 30A, 240V, 10kAIC', unit: 'EA', quantityPer: 1, category: 'Breakers', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1150,7 +1150,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'breaker-3p-100a', description: 'Circuit Breaker, 3-pole, 100A, 208V, 22kAIC', unit: 'EA', quantityPer: 1, category: 'Breakers', wasteFactor: 1.02 }
+      { id: 'breaker-3p-100a', itemCode: 'BREAKER-3P-100A', description: 'Circuit Breaker, 3-pole, 100A, 208V, 22kAIC', unit: 'EA', quantityPer: 1, category: 'Breakers', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1161,7 +1161,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'breaker-gfci-2p-20a', description: 'GFCI Breaker, 2-pole, 20A, 240V, self-test', unit: 'EA', quantityPer: 1, category: 'Breakers', wasteFactor: 1.02 }
+      { id: 'breaker-gfci-2p-20a', itemCode: 'BREAKER-GFCI-2P-20A', description: 'GFCI Breaker, 2-pole, 20A, 240V, self-test', unit: 'EA', quantityPer: 1, category: 'Breakers', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1172,7 +1172,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'breaker-afci-1p-15a', description: 'AFCI Breaker, 1-pole, 15A, 120V, combination type', unit: 'EA', quantityPer: 1, category: 'Breakers', wasteFactor: 1.02 }
+      { id: 'breaker-afci-1p-15a', itemCode: 'BREAKER-AFCI-1P-15A', description: 'AFCI Breaker, 1-pole, 15A, 120V, combination type', unit: 'EA', quantityPer: 1, category: 'Breakers', wasteFactor: 1.02 }
     ]
   },
 
@@ -1187,10 +1187,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'ground-rod-8ft', description: 'Ground Rod, 8 ft, 5/8" dia., copper-clad steel', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 },
-      { id: 'ground-rod-clamp', description: 'Ground Rod Clamp, bronze, 5/8" rod', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 },
-      { id: 'ground-wire-6cu', description: '#6 CU bare ground wire, 10 ft average', unit: 'FT', quantityPer: 10, category: 'Grounding', wasteFactor: 1.10 },
-      { id: 'pvc-conduit-3/4-5ft', description: 'PVC Conduit, 3/4", 5 ft for ground wire protection', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'ground-rod-8ft', itemCode: 'GROUND-ROD-8FT', description: 'Ground Rod, 8 ft, 5/8" dia., copper-clad steel', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 },
+      { id: 'ground-rod-clamp', itemCode: 'GROUND-ROD-CLAMP', description: 'Ground Rod Clamp, bronze, 5/8" rod', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 },
+      { id: 'ground-wire-6cu', itemCode: 'GROUND-WIRE-6CU', description: '#6 CU bare ground wire, 10 ft average', unit: 'FT', quantityPer: 10, category: 'Grounding', wasteFactor: 1.10 },
+      { id: 'pvc-conduit-3/4-5ft', itemCode: 'PVC-CONDUIT-3/4-5FT', description: 'PVC Conduit, 3/4", 5 ft for ground wire protection', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1201,9 +1201,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'ground-wire-4cu-bare', description: '#4 CU bare ground wire, 20 ft for rebar connection', unit: 'FT', quantityPer: 20, category: 'Grounding', wasteFactor: 1.10 },
-      { id: 'rebar-clamp', description: 'Rebar Ground Clamp, bronze, #4 rebar', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02, notes: 'Min 2 per NEC 250.52' },
-      { id: 'pvc-conduit-1in-10ft', description: 'PVC Conduit, 1", 10 ft for ground wire to panel', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'ground-wire-4cu-bare', itemCode: 'GROUND-WIRE-4CU-BARE', description: '#4 CU bare ground wire, 20 ft for rebar connection', unit: 'FT', quantityPer: 20, category: 'Grounding', wasteFactor: 1.10 },
+      { id: 'rebar-clamp', itemCode: 'REBAR-CLAMP', description: 'Rebar Ground Clamp, bronze, #4 rebar', unit: 'EA', quantityPer: 2, category: 'Grounding', wasteFactor: 1.02, notes: 'Min 2 per NEC 250.52' },
+      { id: 'pvc-conduit-1in-10ft', itemCode: 'PVC-CONDUIT-1IN-10FT', description: 'PVC Conduit, 1", 10 ft for ground wire to panel', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
 
@@ -1218,10 +1218,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'gen-inlet-50a', description: 'Generator Inlet Box, 50A, 125/250V, NEMA 14-50, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'Emergency Power', wasteFactor: 1.00 },
-      { id: 'inlet-receptacle-l14-50', description: 'Inlet Receptacle, L14-50R, flanged, 50A', unit: 'EA', quantityPer: 1, category: 'Emergency Power', wasteFactor: 1.02 },
-      { id: 'emt-connector-1.25in-comp', description: 'EMT Connector, 1-1/4", compression', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'grounding-bushing', description: 'Grounding Bushing, 1-1/4", insulated throat', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'gen-inlet-50a', itemCode: 'GEN-INLET-50A', description: 'Generator Inlet Box, 50A, 125/250V, NEMA 14-50, NEMA 3R', unit: 'EA', quantityPer: 1, category: 'Emergency Power', wasteFactor: 1.00 },
+      { id: 'inlet-receptacle-l14-50', itemCode: 'INLET-RECEPTACLE-L14-50', description: 'Inlet Receptacle, L14-50R, flanged, 50A', unit: 'EA', quantityPer: 1, category: 'Emergency Power', wasteFactor: 1.02 },
+      { id: 'emt-connector-1.25in-comp', itemCode: 'EMT-CONNECTOR-1.25IN-COMP', description: 'EMT Connector, 1-1/4", compression', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'grounding-bushing', itemCode: 'GROUNDING-BUSHING', description: 'Grounding Bushing, 1-1/4", insulated throat', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1232,9 +1232,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'panel',
     isActive: true,
     items: [
-      { id: 'transfer-switch-30a', description: 'Manual Transfer Switch, 30A, 10-circuit, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Emergency Power', wasteFactor: 1.00 },
-      { id: 'emt-connector-1in', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05, notes: 'Utility, generator, load' },
-      { id: 'grounding-bushing', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 3, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'transfer-switch-30a', itemCode: 'TRANSFER-SWITCH-30A', description: 'Manual Transfer Switch, 30A, 10-circuit, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Emergency Power', wasteFactor: 1.00 },
+      { id: 'emt-connector-1in', itemCode: 'EMT-CONNECTOR-1IN', description: 'EMT Connector, 1", steel', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05, notes: 'Utility, generator, load' },
+      { id: 'grounding-bushing', itemCode: 'GROUNDING-BUSHING', description: 'Grounding Bushing, 1", insulated throat', unit: 'EA', quantityPer: 3, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
 
@@ -1249,11 +1249,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'wiremold-2400-base', description: 'Wiremold 2400 Base, 10 ft section', unit: 'EA', quantityPer: 1, category: 'Raceways', wasteFactor: 1.05 },
-      { id: 'wiremold-2400-cover', description: 'Wiremold 2400 Cover, 10 ft section', unit: 'EA', quantityPer: 1, category: 'Raceways', wasteFactor: 1.05 },
-      { id: 'wiremold-2400-coupling', description: 'Wiremold 2400 Coupling', unit: 'EA', quantityPer: 1, category: 'Raceways', wasteFactor: 1.05 },
-      { id: 'wiremold-2400-elbow', description: 'Wiremold 2400 90° Flat Elbow', unit: 'EA', quantityPer: 2, category: 'Raceways', wasteFactor: 1.05, notes: 'Average 2 per run' },
-      { id: 'wiremold-2400-device-box', description: 'Wiremold 2400 Device Box', unit: 'EA', quantityPer: 1, category: 'Raceways', wasteFactor: 1.02 }
+      { id: 'wiremold-2400-base', itemCode: 'WIREMOLD-2400-BASE', description: 'Wiremold 2400 Base, 10 ft section', unit: 'EA', quantityPer: 1, category: 'Raceways', wasteFactor: 1.05 },
+      { id: 'wiremold-2400-cover', itemCode: 'WIREMOLD-2400-COVER', description: 'Wiremold 2400 Cover, 10 ft section', unit: 'EA', quantityPer: 1, category: 'Raceways', wasteFactor: 1.05 },
+      { id: 'wiremold-2400-coupling', itemCode: 'WIREMOLD-2400-COUPLING', description: 'Wiremold 2400 Coupling', unit: 'EA', quantityPer: 1, category: 'Raceways', wasteFactor: 1.05 },
+      { id: 'wiremold-2400-elbow', itemCode: 'WIREMOLD-2400-ELBOW', description: 'Wiremold 2400 90° Flat Elbow', unit: 'EA', quantityPer: 2, category: 'Raceways', wasteFactor: 1.05, notes: 'Average 2 per run' },
+      { id: 'wiremold-2400-device-box', itemCode: 'WIREMOLD-2400-DEVICE-BOX', description: 'Wiremold 2400 Device Box', unit: 'EA', quantityPer: 1, category: 'Raceways', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1264,9 +1264,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'jbox-pvc-4x4', description: 'PVC Junction Box, 4"x4"x2", NEMA 4X, hinged cover', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'pvc-connector-3/4', description: 'PVC Conduit Connector, 3/4", compression', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'gasket-pvc', description: 'Gasket for PVC box, foam', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 }
+      { id: 'jbox-pvc-4x4', itemCode: 'JBOX-PVC-4X4', description: 'PVC Junction Box, 4"x4"x2", NEMA 4X, hinged cover', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'pvc-connector-3/4', itemCode: 'PVC-CONNECTOR-3/4', description: 'PVC Conduit Connector, 3/4", compression', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'gasket-pvc', itemCode: 'GASKET-PVC', description: 'Gasket for PVC box, foam', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.02 }
     ]
   },
 
@@ -1281,12 +1281,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-hosp-ig-20a', description: 'Hospital Grade IG Receptacle, 20A, 125V (green dot)', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'UL 1363, orange w/ green dot' },
-      { id: 'plate-ss-1g', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-wire-ig-12-insul', description: '#12 CU insulated green wire for IG', unit: 'FT', quantityPer: 15, category: 'Grounding', wasteFactor: 1.10 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-hosp-ig-20a', itemCode: 'RECEP-HOSP-IG-20A', description: 'Hospital Grade IG Receptacle, 20A, 125V (green dot)', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'UL 1363, orange w/ green dot' },
+      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-wire-ig-12-insul', itemCode: 'GROUND-WIRE-IG-12-INSUL', description: '#12 CU insulated green wire for IG', unit: 'FT', quantityPer: 15, category: 'Grounding', wasteFactor: 1.10 }
     ]
   },
   {
@@ -1297,12 +1297,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep (red for emergency)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-hosp-20a-red', description: 'Hospital Grade Receptacle, 20A, 125V, RED face', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'Emergency circuit per NEC 517' },
-      { id: 'plate-red-1g', description: 'Device Cover Plate, single-gang, RED', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4-red', description: 'EMT Connector, 3/4", steel (red conduit)', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep (red for emergency)', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-hosp-20a-red', itemCode: 'RECEP-HOSP-20A-RED', description: 'Hospital Grade Receptacle, 20A, 125V, RED face', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'Emergency circuit per NEC 517' },
+      { id: 'plate-red-1g', itemCode: 'PLATE-RED-1G', description: 'Device Cover Plate, single-gang, RED', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4-red', itemCode: 'EMT-CONNECTOR-3/4-RED', description: 'EMT Connector, 3/4", steel (red conduit)', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1313,11 +1313,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-2g-low-volt', description: 'Low-Voltage Mud Ring, two-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'nurse-call-station', description: 'Nurse Call Station, audio/visual with pull cord', unit: 'EA', quantityPer: 1, category: 'Healthcare', wasteFactor: 1.02 },
-      { id: 'plate-nurse-call', description: 'Nurse Call Plate, two-gang, white', unit: 'EA', quantityPer: 1, category: 'Healthcare', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-2g-low-volt', itemCode: 'MUDRING-2G-LOW-VOLT', description: 'Low-Voltage Mud Ring, two-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'nurse-call-station', itemCode: 'NURSE-CALL-STATION', description: 'Nurse Call Station, audio/visual with pull cord', unit: 'EA', quantityPer: 1, category: 'Healthcare', wasteFactor: 1.02 },
+      { id: 'plate-nurse-call', itemCode: 'PLATE-NURSE-CALL', description: 'Nurse Call Plate, two-gang, white', unit: 'EA', quantityPer: 1, category: 'Healthcare', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
 
@@ -1332,11 +1332,11 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, ceiling rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'occ-sensor-ceiling', description: 'Occupancy Sensor, ceiling mount, 360°, PIR/ultrasonic', unit: 'EA', quantityPer: 1, category: 'Controls', wasteFactor: 1.02 },
-      { id: 'mounting-plate-sensor', description: 'Sensor Mounting Plate for 4" box', unit: 'EA', quantityPer: 1, category: 'Controls', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'wirenuts-assorted', description: 'Wire Nuts for sensor', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, ceiling rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'occ-sensor-ceiling', itemCode: 'OCC-SENSOR-CEILING', description: 'Occupancy Sensor, ceiling mount, 360°, PIR/ultrasonic', unit: 'EA', quantityPer: 1, category: 'Controls', wasteFactor: 1.02 },
+      { id: 'mounting-plate-sensor', itemCode: 'MOUNTING-PLATE-SENSOR', description: 'Sensor Mounting Plate for 4" box', unit: 'EA', quantityPer: 1, category: 'Controls', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'wirenuts-assorted', itemCode: 'WIRENUTS-ASSORTED', description: 'Wire Nuts for sensor', unit: 'PKG', quantityPer: 0.2, category: 'Fittings', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1347,7 +1347,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'fixture',
     isActive: true,
     items: [
-      { id: 'occ-sensor-owner', description: 'Occupancy Sensor - Owner Supplied (install only)', unit: 'EA', quantityPer: 1, category: 'Lights', wasteFactor: 1.0, notes: 'Owner-provided sensor, labor only' }
+      { id: 'occ-sensor-owner', itemCode: 'OCC-SENSOR-OWNER', description: 'Occupancy Sensor - Owner Supplied (install only)', unit: 'EA', quantityPer: 1, category: 'Lights', wasteFactor: 1.0, notes: 'Owner-provided sensor, labor only' }
     ]
   },
   {
@@ -1358,10 +1358,10 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, ceiling/wall rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'daylight-sensor', description: 'Daylight Sensor, 0-10V dimming output', unit: 'EA', quantityPer: 1, category: 'Controls', wasteFactor: 1.02 },
-      { id: 'mounting-plate-sensor', description: 'Sensor Mounting Plate', unit: 'EA', quantityPer: 1, category: 'Controls', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, ceiling/wall rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'daylight-sensor', itemCode: 'DAYLIGHT-SENSOR', description: 'Daylight Sensor, 0-10V dimming output', unit: 'EA', quantityPer: 1, category: 'Controls', wasteFactor: 1.02 },
+      { id: 'mounting-plate-sensor', itemCode: 'MOUNTING-PLATE-SENSOR', description: 'Sensor Mounting Plate', unit: 'EA', quantityPer: 1, category: 'Controls', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
 
@@ -1376,12 +1376,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'dimmer-sp-600w', description: 'Dimmer Switch, Single-Pole, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ny-1g', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'dimmer-sp-600w', itemCode: 'DIMMER-SP-600W', description: 'Dimmer Switch, Single-Pole, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ny-1g', itemCode: 'PLATE-NY-1G', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1392,12 +1392,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'Deeper box for 3-way wiring' },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'dimmer-3w-600w', description: 'Dimmer Switch, Three-Way, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ny-1g', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'Deeper box for 3-way wiring' },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'dimmer-3w-600w', itemCode: 'DIMMER-3W-600W', description: 'Dimmer Switch, Three-Way, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ny-1g', itemCode: 'PLATE-NY-1G', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1408,13 +1408,13 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'Deeper box for 4-way wiring' },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'dimmer-3w-600w', description: 'Dimmer Switch, Three-Way, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'Use 3-way dimmer for 4-way application' },
-      { id: 'switch-4w', description: 'Switch, 4-way, 15A, spec grade', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: '4-way traveler switch' },
-      { id: 'plate-ny-1g', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'Deeper box for 4-way wiring' },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'dimmer-3w-600w', itemCode: 'DIMMER-3W-600W', description: 'Dimmer Switch, Three-Way, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'Use 3-way dimmer for 4-way application' },
+      { id: 'switch-4w', itemCode: 'SWITCH-4W', description: 'Switch, 4-way, 15A, spec grade', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: '4-way traveler switch' },
+      { id: 'plate-ny-1g', itemCode: 'PLATE-NY-1G', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1425,12 +1425,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'dimmer-wall-control', description: 'Dimming Wall Control Station, 0-10V or DALI', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ny-1g', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'dimmer-wall-control', itemCode: 'DIMMER-WALL-CONTROL', description: 'Dimming Wall Control Station, 0-10V or DALI', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ny-1g', itemCode: 'PLATE-NY-1G', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1441,12 +1441,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'dimmer-ml-master', description: 'Multi-Location Master Dimmer, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ny-1g', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'dimmer-ml-master', itemCode: 'DIMMER-ML-MASTER', description: 'Multi-Location Master Dimmer, 600W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ny-1g', itemCode: 'PLATE-NY-1G', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1457,12 +1457,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'dimmer-1000w', description: '1000 Watt Rotary Dimmer', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ny-1g', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'dimmer-1000w', itemCode: 'DIMMER-1000W', description: '1000 Watt Rotary Dimmer', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ny-1g', itemCode: 'PLATE-NY-1G', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1473,12 +1473,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'dimmer-1500w', description: '1500 Watt Rotary Dimmer', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ny-1g', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'dimmer-1500w', itemCode: 'DIMMER-1500W', description: '1500 Watt Rotary Dimmer', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ny-1g', itemCode: 'PLATE-NY-1G', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1489,12 +1489,12 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'box-4sq-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'mudring-1g', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'dimmer-2000w', description: '2000 Watt Rotary Dimmer', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'plate-ny-1g', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'dimmer-2000w', itemCode: 'DIMMER-2000W', description: '2000 Watt Rotary Dimmer', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ny-1g', itemCode: 'PLATE-NY-1G', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
     ]
   },
 
@@ -1509,8 +1509,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'spd-type2', description: 'Surge Protection Device, Type 2, 140kA', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'breaker-2p-30a', description: 'Circuit Breaker, 2-pole, 30A', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
+      { id: 'spd-type2', itemCode: 'SPD-TYPE2', description: 'Surge Protection Device, Type 2, 140kA', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'breaker-2p-30a', itemCode: 'BREAKER-2P-30A', description: 'Circuit Breaker, 2-pole, 30A', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
     ]
   },
 
@@ -1525,9 +1525,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'wm-3000-base', description: 'Wiremold 3000 base, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.10 },
-      { id: 'wm-3000-cover', description: 'Wiremold 3000 cover, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.10 },
-      { id: 'wm-coupling', description: 'Wiremold coupling', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'wm-3000-base', itemCode: 'WM-3000-BASE', description: 'Wiremold 3000 base, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.10 },
+      { id: 'wm-3000-cover', itemCode: 'WM-3000-COVER', description: 'Wiremold 3000 cover, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.10 },
+      { id: 'wm-coupling', itemCode: 'WM-COUPLING', description: 'Wiremold coupling', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
   {
@@ -1538,9 +1538,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'wm-4000-base', description: 'Wiremold 4000 base, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.10 },
-      { id: 'wm-4000-cover', description: 'Wiremold 4000 cover, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.10 },
-      { id: 'wm-coupling-lg', description: 'Wiremold coupling large', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'wm-4000-base', itemCode: 'WM-4000-BASE', description: 'Wiremold 4000 base, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.10 },
+      { id: 'wm-4000-cover', itemCode: 'WM-4000-COVER', description: 'Wiremold 4000 cover, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.10 },
+      { id: 'wm-coupling-lg', itemCode: 'WM-COUPLING-LG', description: 'Wiremold coupling large', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
 
@@ -1555,8 +1555,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'rack-2post-42u', description: '2-Post Rack, 42U, 7 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'cage-nuts-50', description: 'Cage nuts and screws, pkg of 50', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'rack-2post-42u', itemCode: 'RACK-2POST-42U', description: '2-Post Rack, 42U, 7 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'cage-nuts-50', itemCode: 'CAGE-NUTS-50', description: 'Cage nuts and screws, pkg of 50', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
   {
@@ -1567,9 +1567,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'rack-4post-42u', description: '4-Post Enclosed Rack, 42U, 7 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'cage-nuts-100', description: 'Cage nuts and screws, pkg of 100', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'rack-pdu-basic', description: 'Basic rack PDU, 20A', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
+      { id: 'rack-4post-42u', itemCode: 'RACK-4POST-42U', description: '4-Post Enclosed Rack, 42U, 7 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'cage-nuts-100', itemCode: 'CAGE-NUTS-100', description: 'Cage nuts and screws, pkg of 100', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'rack-pdu-basic', itemCode: 'RACK-PDU-BASIC', description: 'Basic rack PDU, 20A', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1580,8 +1580,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'patch-24-cat6', description: 'Patch Panel, 24-port, Cat6, 1U', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'cable-mgmt-1u', description: 'Cable management, 1U horizontal', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
+      { id: 'patch-24-cat6', itemCode: 'PATCH-24-CAT6', description: 'Patch Panel, 24-port, Cat6, 1U', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'cable-mgmt-1u', itemCode: 'CABLE-MGMT-1U', description: 'Cable management, 1U horizontal', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1592,8 +1592,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'patch-48-cat6', description: 'Patch Panel, 48-port, Cat6, 2U', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'cable-mgmt-2u', description: 'Cable management, 2U horizontal', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
+      { id: 'patch-48-cat6', itemCode: 'PATCH-48-CAT6', description: 'Patch Panel, 48-port, Cat6, 2U', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'cable-mgmt-2u', itemCode: 'CABLE-MGMT-2U', description: 'Cable management, 2U horizontal', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1604,8 +1604,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'jhook-2', description: 'J-Hook, 2", galvanized', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.05 },
-      { id: 'threaded-rod-clip', description: 'Beam clamp or rod clip', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'jhook-2', itemCode: 'JHOOK-2', description: 'J-Hook, 2", galvanized', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.05 },
+      { id: 'threaded-rod-clip', itemCode: 'THREADED-ROD-CLIP', description: 'Beam clamp or rod clip', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
   {
@@ -1616,9 +1616,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'ladder-rack-12', description: 'Ladder Rack, 12" wide, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.05 },
-      { id: 'rack-splice-plate', description: 'Splice plate for ladder rack', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'trapeze-hanger', description: 'Trapeze hanger with hardware', unit: 'EA', quantityPer: 0.4, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'ladder-rack-12', itemCode: 'LADDER-RACK-12', description: 'Ladder Rack, 12" wide, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.05 },
+      { id: 'rack-splice-plate', itemCode: 'RACK-SPLICE-PLATE', description: 'Splice plate for ladder rack', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'trapeze-hanger', itemCode: 'TRAPEZE-HANGER', description: 'Trapeze hanger with hardware', unit: 'EA', quantityPer: 0.4, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
   {
@@ -1629,9 +1629,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'ladder-rack-18', description: 'Ladder Rack, 18" wide, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.05 },
-      { id: 'rack-splice-plate', description: 'Splice plate for ladder rack', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'trapeze-hanger', description: 'Trapeze hanger with hardware', unit: 'EA', quantityPer: 0.4, category: 'Fittings', wasteFactor: 1.05 }
+      { id: 'ladder-rack-18', itemCode: 'LADDER-RACK-18', description: 'Ladder Rack, 18" wide, 10 FT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.05 },
+      { id: 'rack-splice-plate', itemCode: 'RACK-SPLICE-PLATE', description: 'Splice plate for ladder rack', unit: 'EA', quantityPer: 1, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'trapeze-hanger', itemCode: 'TRAPEZE-HANGER', description: 'Trapeze hanger with hardware', unit: 'EA', quantityPer: 0.4, category: 'Fittings', wasteFactor: 1.05 }
     ]
   },
 
@@ -1646,9 +1646,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'nvr-16ch', description: 'NVR, 16-channel, 4TB storage', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'recep-20a-125v', description: 'Duplex Receptacle, 20A, 125V', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'cat6-cable', description: 'Cat6 cable for network connection, 25 FT', unit: 'EA', quantityPer: 1, category: 'wire', wasteFactor: 1.10 }
+      { id: 'nvr-16ch', itemCode: 'NVR-16CH', description: 'NVR, 16-channel, 4TB storage', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'recep-20a-125v', itemCode: 'RECEP-20A-125V', description: 'Duplex Receptacle, 20A, 125V', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'cat6-cable', itemCode: 'CAT6-CABLE', description: 'Cat6 cable for network connection, 25 FT', unit: 'EA', quantityPer: 1, category: 'wire', wasteFactor: 1.10 }
     ]
   },
   {
@@ -1659,8 +1659,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'rex-button', description: 'Request-to-Exit button, NO/NC', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'box-1g-ss', description: 'Single-gang box with stainless plate', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+      { id: 'rex-button', itemCode: 'REX-BUTTON', description: 'Request-to-Exit button, NO/NC', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'box-1g-ss', itemCode: 'BOX-1G-SS', description: 'Single-gang box with stainless plate', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1671,8 +1671,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'ps-12v-5a', description: 'Power Supply, 12VDC, 5A with battery backup', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'enclosure-12x12', description: 'Enclosure, 12x12, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+      { id: 'ps-12v-5a', itemCode: 'PS-12V-5A', description: 'Power Supply, 12VDC, 5A with battery backup', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'enclosure-12x12', itemCode: 'ENCLOSURE-12X12', description: 'Enclosure, 12x12, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
     ]
   },
 
@@ -1687,9 +1687,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'vol-control-70v', description: 'Volume Control, 70V, 100W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'box-1g', description: 'Single-gang box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'plate-ny-1g', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
+      { id: 'vol-control-70v', itemCode: 'VOL-CONTROL-70V', description: 'Volume Control, 70V, 100W', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'box-1g', itemCode: 'BOX-1G', description: 'Single-gang box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'plate-ny-1g', itemCode: 'PLATE-NY-1G', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1700,9 +1700,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'screen-motor-100', description: 'Motorized Screen, 100" diagonal', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'switch-mom-1g', description: 'Momentary switch for screen control', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'box-4sq-1.5', description: '4" Square Box, 1-1/2" deep', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+      { id: 'screen-motor-100', itemCode: 'SCREEN-MOTOR-100', description: 'Motorized Screen, 100" diagonal', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'switch-mom-1g', itemCode: 'SWITCH-MOM-1G', description: 'Momentary switch for screen control', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1713,8 +1713,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'dsp-amp-8ch', description: 'DSP Amplifier, 8-channel, 500W', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'recep-20a-125v', description: 'Duplex Receptacle, 20A, 125V', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
+      { id: 'dsp-amp-8ch', itemCode: 'DSP-AMP-8CH', description: 'DSP Amplifier, 8-channel, 500W', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'recep-20a-125v', itemCode: 'RECEP-20A-125V', description: 'Duplex Receptacle, 20A, 125V', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1725,9 +1725,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'hdbaset-tx', description: 'HDBaseT Transmitter', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'hdbaset-rx', description: 'HDBaseT Receiver', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'poe-injector', description: 'PoE injector for HDBaseT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
+      { id: 'hdbaset-tx', itemCode: 'HDBASET-TX', description: 'HDBaseT Transmitter', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'hdbaset-rx', itemCode: 'HDBASET-RX', description: 'HDBaseT Receiver', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'poe-injector', itemCode: 'POE-INJECTOR', description: 'PoE injector for HDBaseT', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1738,9 +1738,9 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'rack-wall-12u', description: 'Wall Mount Rack, 12U', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'rack-shelf', description: 'Rack shelf for equipment', unit: 'EA', quantityPer: 2, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'fan-unit-1u', description: 'Cooling fan unit, 1U', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
+      { id: 'rack-wall-12u', itemCode: 'RACK-WALL-12U', description: 'Wall Mount Rack, 12U', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'rack-shelf', itemCode: 'RACK-SHELF', description: 'Rack shelf for equipment', unit: 'EA', quantityPer: 2, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'fan-unit-1u', itemCode: 'FAN-UNIT-1U', description: 'Cooling fan unit, 1U', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 }
     ]
   },
 
@@ -1755,8 +1755,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'tstat-digital', description: 'Thermostat, programmable, 24VAC', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'box-1g', description: 'Single-gang box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+      { id: 'tstat-digital', itemCode: 'TSTAT-DIGITAL', description: 'Thermostat, programmable, 24VAC', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'box-1g', itemCode: 'BOX-1G', description: 'Single-gang box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1767,8 +1767,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'temp-sensor', description: 'Temperature Sensor, 0-10VDC output', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'box-1g', description: 'Single-gang box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+      { id: 'temp-sensor', itemCode: 'TEMP-SENSOR', description: 'Temperature Sensor, 0-10VDC output', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'box-1g', itemCode: 'BOX-1G', description: 'Single-gang box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1779,8 +1779,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'humidity-sensor', description: 'Humidity Sensor, 0-10VDC output', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'box-1g', description: 'Single-gang box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+      { id: 'humidity-sensor', itemCode: 'HUMIDITY-SENSOR', description: 'Humidity Sensor, 0-10VDC output', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'box-1g', itemCode: 'BOX-1G', description: 'Single-gang box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1791,8 +1791,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'co2-sensor', description: 'CO2 Sensor, 0-2000ppm, 0-10VDC', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'box-1g', description: 'Single-gang box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+      { id: 'co2-sensor', itemCode: 'CO2-SENSOR', description: 'CO2 Sensor, 0-2000ppm, 0-10VDC', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'box-1g', itemCode: 'BOX-1G', description: 'Single-gang box', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1803,8 +1803,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'ddc-panel-16io', description: 'DDC Controller, 16 I/O points', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'enclosure-12x12', description: 'Enclosure, 12x12, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+      { id: 'ddc-panel-16io', itemCode: 'DDC-PANEL-16IO', description: 'DDC Controller, 16 I/O points', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'enclosure-12x12', itemCode: 'ENCLOSURE-12X12', description: 'Enclosure, 12x12, NEMA 1', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1815,8 +1815,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'vav-controller', description: 'VAV Controller with actuator', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'temp-sensor', description: 'Temperature Sensor for VAV', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
+      { id: 'vav-controller', itemCode: 'VAV-CONTROLLER', description: 'VAV Controller with actuator', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'temp-sensor', itemCode: 'TEMP-SENSOR', description: 'Temperature Sensor for VAV', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1827,8 +1827,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'ps-24vac-100va', description: 'Power Supply, 24VAC, 100VA', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
-      { id: 'box-4x4', description: '4x4 box for power supply', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+      { id: 'ps-24vac-100va', itemCode: 'PS-24VAC-100VA', description: 'Power Supply, 24VAC, 100VA', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.02 },
+      { id: 'box-4x4', itemCode: 'BOX-4X4', description: '4x4 box for power supply', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
     ]
   },
 
@@ -1843,8 +1843,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'pole-head-led-150w', description: 'LED Area Light, 150W, Type III', unit: 'EA', quantityPer: 1, category: 'Lighting', wasteFactor: 1.02 },
-      { id: 'photocell-twist', description: 'Photocell, twist-lock', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
+      { id: 'pole-head-led-150w', itemCode: 'POLE-HEAD-LED-150W', description: 'LED Area Light, 150W, Type III', unit: 'EA', quantityPer: 1, category: 'Lighting', wasteFactor: 1.02 },
+      { id: 'photocell-twist', itemCode: 'PHOTOCELL-TWIST', description: 'Photocell, twist-lock', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1855,8 +1855,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'handhole-24x36', description: 'Handhole, 24x36, polymer concrete', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'hh-cover-traffic', description: 'Handhole cover, traffic rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
+      { id: 'handhole-24x36', itemCode: 'HANDHOLE-24X36', description: 'Handhole, 24x36, polymer concrete', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'hh-cover-traffic', itemCode: 'HH-COVER-TRAFFIC', description: 'Handhole cover, traffic rated', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 }
     ]
   },
 
@@ -1871,7 +1871,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'demo-labor', description: 'Demolition labor allowance', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.0 }
+      { id: 'demo-labor', itemCode: 'DEMO-LABOR', description: 'Demolition labor allowance', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.0 }
     ]
   },
   {
@@ -1882,7 +1882,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'demo-labor-sm', description: 'Demolition labor small device', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.0 }
+      { id: 'demo-labor-sm', itemCode: 'DEMO-LABOR-SM', description: 'Demolition labor small device', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.0 }
     ]
   },
   {
@@ -1893,7 +1893,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'demo-labor-lg', description: 'Demolition labor large equipment', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.0 }
+      { id: 'demo-labor-lg', itemCode: 'DEMO-LABOR-LG', description: 'Demolition labor large equipment', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.0 }
     ]
   },
   {
@@ -1904,7 +1904,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'temp-pole-100a', description: 'Temporary Power Pole, 100A, (4) 20A circuits', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.0 }
+      { id: 'temp-pole-100a', itemCode: 'TEMP-POLE-100A', description: 'Temporary Power Pole, 100A, (4) 20A circuits', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.0 }
     ]
   },
 
@@ -1919,7 +1919,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'plate-blank-1g', description: 'Blank Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Plates', wasteFactor: 1.02 }
+      { id: 'plate-blank-1g', itemCode: 'PLATE-BLANK-1G', description: 'Blank Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Plates', wasteFactor: 1.02 }
     ]
   },
   {
@@ -1930,7 +1930,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'custom',
     isActive: true,
     items: [
-      { id: 'label-engraved', description: 'Engraved label, 2x4"', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.05 }
+      { id: 'label-engraved', itemCode: 'LABEL-ENGRAVED', description: 'Engraved label, 2x4"', unit: 'EA', quantityPer: 1, category: 'Electrical Materials', wasteFactor: 1.05 }
     ]
   }
 ];
