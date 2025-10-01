@@ -72,6 +72,7 @@ async function resolvePageLabels(doc: any): Promise<string[]> {
 export default function App() {
   /* ---------- refs ---------- */
   const pdfFileRef = useRef<HTMLInputElement>(null);
+  const addSheetRef = useRef<HTMLInputElement>(null);
   const projFileRef = useRef<HTMLInputElement>(null);
 
   /* ---------- viewer/pdf ---------- */
@@ -351,6 +352,67 @@ export default function App() {
       setProjectName('Untitled Project');
     }
   }, [setFileName, setPages, setPageCount, setPageLabels, setActivePage, setSelectedIds]);
+
+  /* Add individual PDF sheet to current project */
+  const addSheet = useCallback(async (file: File) => {
+    if (!pdf || !pdfBytesBase64) {
+      alert('Please open a project first before adding sheets');
+      return;
+    }
+
+    try {
+      // Import pdf-lib for merging
+      const { PDFDocument } = await import('pdf-lib');
+
+      // Load current PDF from base64
+      const currentPdfBytes = b64ToAb(pdfBytesBase64);
+      const currentPdfDoc = await PDFDocument.load(currentPdfBytes);
+
+      // Load new sheet
+      const newSheetBytes = await file.arrayBuffer();
+      const newSheetDoc = await PDFDocument.load(newSheetBytes);
+
+      // Copy all pages from new sheet to current PDF
+      const newPageCount = newSheetDoc.getPageCount();
+      const copiedPages = await currentPdfDoc.copyPages(newSheetDoc, Array.from({ length: newPageCount }, (_, i) => i));
+      copiedPages.forEach(page => currentPdfDoc.addPage(page));
+
+      // Save merged PDF
+      const mergedPdfBytes = await currentPdfDoc.save();
+
+      // Convert to base64
+      let b64 = '';
+      {
+        const v = new Uint8Array(mergedPdfBytes);
+        let s = '';
+        for (let i = 0; i < v.length; i++) s += String.fromCharCode(v[i]);
+        b64 = btoa(s);
+      }
+
+      // Reload the merged PDF
+      const doc = await loadPdfFromBytes(new Uint8Array(mergedPdfBytes));
+      setPdf(doc);
+      setPdfBytesBase64(b64);
+
+      // Create custom page labels for the new sheet
+      const sheetName = file.name.replace(/\.pdf$/i, '').trim();
+      const newLabels = Array.from({ length: newPageCount }, (_, i) =>
+        `${sheetName} - Page ${i + 1}`
+      );
+
+      // Append new page labels to existing ones
+      setPageLabels([...pageLabels, ...newLabels]);
+      setPageCount(pageCount + newPageCount);
+
+      // Navigate to first page of the new sheet
+      setActivePage(pageCount);
+
+      alert(`Added ${newPageCount} page(s) from "${sheetName}"`);
+    } catch (err: any) {
+      console.error('Error adding sheet:', err);
+      alert(`Failed to add sheet: ${err?.message || 'Unknown error'}`);
+    }
+  }, [pdf, pdfBytesBase64, pageLabels, pageCount, setPageLabels, setPageCount, setActivePage]);
 
   /* =========================================================================================
      AI DOCUMENT ANALYSIS
@@ -954,6 +1016,7 @@ export default function App() {
             >
               <MenuItem label="New" onClick={()=>{setFileMenuOpen(false); doNewProject();}} />
               <MenuItem label="Open…" onClick={()=>{ setFileMenuOpen(false); projFileRef.current?.click(); }} />
+              <MenuItem label="Add Sheet…" onClick={()=>{ setFileMenuOpen(false); addSheetRef.current?.click(); }} />
               <MenuItem label="Save" onClick={()=>{setFileMenuOpen(false); doSave();}} />
               <MenuItem label="Save As…" onClick={()=>{setFileMenuOpen(false); doSaveAs();}} />
               <MenuItem label="Print" onClick={()=>{setFileMenuOpen(false); doPrint();}} />
@@ -1029,6 +1092,13 @@ export default function App() {
           accept="application/pdf"
           style={{display:'none'}}
           onChange={async (e)=>{ const input=e.currentTarget; const f=input.files?.[0]; input.value=''; if (f) await openPdf(f); }}
+        />
+        <input
+          ref={addSheetRef}
+          type="file"
+          accept="application/pdf"
+          style={{display:'none'}}
+          onChange={async (e)=>{ const input=e.currentTarget; const f=input.files?.[0]; input.value=''; if (f) await addSheet(f); }}
         />
         <button className="btn" onClick={()=>pdfFileRef.current?.click()}>Open PDF</button>
         <span style={{marginLeft:8, maxWidth:320, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}} title={pdfName || fileName}>

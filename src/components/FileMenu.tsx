@@ -1,6 +1,6 @@
 // src/components/FileMenu.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown, FolderOpen, Save, Download, BookOpen, Clock } from 'lucide-react';
+import { ChevronDown, FolderOpen, Save, Download, BookOpen, Clock, FilePlus } from 'lucide-react';
 import { useToast } from '@/ui/Toast';
 import { openProjectFromFile } from '@/features/project/openProject';
 import { useStore } from '@/state/store';
@@ -38,9 +38,10 @@ function addRecentProject(name: string) {
 interface FileMenuProps {
   onAction?: (action: string) => void;
   onOpenGuide?: () => void;
+  onAddSheet?: () => void;
 }
 
-export const FileMenu: React.FC<FileMenuProps> = ({ onAction, onOpenGuide }) => {
+export const FileMenu: React.FC<FileMenuProps> = ({ onAction, onOpenGuide, onAddSheet }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -140,6 +141,13 @@ export const FileMenu: React.FC<FileMenuProps> = ({ onAction, onOpenGuide }) => 
             title="Open .skdproj"
           >
             <FolderOpen size={16} /> Open Project…
+          </button>
+          <button
+            onClick={() => { onAddSheet?.(); setIsOpen(false); }}
+            style={itemStyle}
+            title="Add individual PDF sheet to current project"
+          >
+            <FilePlus size={16} /> Add Sheet…
           </button>
           <button
             onClick={downloadCurrent}
