@@ -25,6 +25,10 @@ const FALLBACK_PRICES: Record<string, { price: number; laborHours: number }> = {
   'downlight': { price: 80.00, laborHours: 0.75 },
   'recessed': { price: 100.00, laborHours: 1.0 },
 
+  // Owner-supplied sensors - $0 material but labor to install
+  'occupancy sensor - owner': { price: 0.00, laborHours: 0.5 },
+  'sensor - owner': { price: 0.00, laborHours: 0.5 },
+
   // Fittings - EMT Connectors
   'emt connector': { price: 2.50, laborHours: 0.05 },
   'compression connector': { price: 3.00, laborHours: 0.05 },

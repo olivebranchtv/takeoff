@@ -1340,6 +1340,17 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     ]
   },
   {
+    id: 'light-occ-sensor-owner',
+    code: 'M1',
+    name: 'Occupancy Sensor - Owner Supplied',
+    description: 'Occupancy sensor provided by owner (lighting schedule) - labor only, no material cost',
+    type: 'fixture',
+    isActive: true,
+    items: [
+      { id: 'occ-sensor-owner', description: 'Occupancy Sensor - Owner Supplied (install only)', unit: 'EA', quantityPer: 1, category: 'Lights', wasteFactor: 1.0, notes: 'Owner-provided sensor, labor only' }
+    ]
+  },
+  {
     id: 'daylight-sensor',
     code: 'DAYLIGHT-SENSOR',
     name: 'Daylight Harvesting Sensor Assembly',

@@ -11,6 +11,14 @@ export function getAssemblyIdForTag(tagCode: string, tagCategory?: string): stri
   const code = tagCode.toUpperCase().trim();
   const category = (tagCategory || '').toLowerCase();
 
+  // ===== OCCUPANCY SENSORS (Owner-Supplied from Lighting Schedule) =====
+  // Check for M1, OS, or similar codes that indicate owner-supplied sensors
+  if (code === 'M1' || code === 'OS' || code === 'M1-OS' ||
+      (code.includes('M1') && (category.includes('light') || category.includes('sensor'))) ||
+      (code.includes('OS') && (category.includes('light') || category.includes('sensor')))) {
+    return 'light-occ-sensor-owner';
+  }
+
   // ===== LIGHTS =====
   if (category.includes('light')) {
     // Letter codes A-Z for lights (customer-supplied) - NO ASSEMBLY
