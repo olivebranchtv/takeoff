@@ -260,20 +260,24 @@ export class PricingDatabase {
     const keyTerms = normDesc.split(/[,\/]/).filter(t => t.length > 2);
 
     // Category mapping for fuzzy matching
-    const normCategory = category.toLowerCase();
+    const normCategory = category.toLowerCase().replace(/[&\s]/g, '');
     const categoryMatches = (dbCat: string): boolean => {
-      const dbCatLower = dbCat.toLowerCase();
+      const dbCatLower = dbCat.toLowerCase().replace(/[&\s]/g, '');
 
-      // Direct category matches
+      // Direct category matches (ignore spaces, ampersands, etc.)
       if (normCategory === dbCatLower) return true;
 
       // Map common assembly categories to database categories
-      if (normCategory === 'fittings' && (dbCatLower.includes('flex') || dbCatLower.includes('conduit') || dbCatLower.includes('coupling') || dbCatLower.includes('fitting'))) return true;
+      if ((normCategory === 'fittings' || normCategory === 'fitting') && (dbCatLower.includes('flex') || dbCatLower.includes('conduit') || dbCatLower.includes('coupling') || dbCatLower.includes('fitting'))) return true;
       if (normCategory === 'devices' && (dbCatLower.includes('box') || dbCatLower.includes('plate') || dbCatLower.includes('device'))) return true;
-      if (normCategory === 'boxes' && (dbCatLower.includes('box') || dbCatLower.includes('ring'))) return true;
-      if (normCategory === 'plates' && dbCatLower.includes('plate')) return true;
-      if (normCategory === 'wire' && (dbCatLower.includes('cable') || dbCatLower.includes('wire') || dbCatLower.includes('cord'))) return true;
-      if (normCategory === 'conduit' && (dbCatLower.includes('conduit') || dbCatLower.includes('emt') || dbCatLower.includes('tubing'))) return true;
+      if ((normCategory === 'boxes' || normCategory === 'box') && (dbCatLower.includes('box') || dbCatLower.includes('ring'))) return true;
+      if ((normCategory === 'plates' || normCategory === 'plate') && dbCatLower.includes('plate')) return true;
+      // Wire matching: "wire" should match "Wire & Cable", "wire", "cable", etc.
+      if ((normCategory === 'wire' || normCategory === 'wirecable' || normCategory === 'wire&cable') &&
+          (dbCatLower.includes('cable') || dbCatLower.includes('wire') || dbCatLower.includes('cord'))) return true;
+      // Conduit matching: "EMT CONDUIT" should match "Conduit", "conduit", "emt", etc.
+      if ((normCategory === 'conduit' || normCategory === 'emtconduit' || normCategory.includes('conduit')) &&
+          (dbCatLower.includes('conduit') || dbCatLower.includes('emt') || dbCatLower.includes('tubing'))) return true;
       if (normCategory === 'grounding' && (dbCatLower.includes('ground') || dbCatLower.includes('wire'))) return true;
 
       return false;
@@ -397,12 +401,18 @@ export function calculateProjectCosts(
       console.log(`⚙️ Material labor: ${mat.category}::${mat.description} = ${mat.totalQty} × ${laborPerUnit} hrs = ${materialLaborHours} hrs`);
     }
 
-    // Track ALL materials in divisions (even without labor, they have material cost)
-    if (matCost > 0 || materialLaborHours > 0) {
-      console.log(`💰 Material cost: ${mat.category}::${mat.description} = ${mat.totalQty} × $${price} = $${matCost}`);
+    // Track materials in divisions - ALWAYS add, even if no price found yet
+    // This ensures wire shows up even if pricing is missing
+    const division = mat.category || 'General';
+    const existing = divisionMap.get(division);
 
-      const division = mat.category || 'General';
-      const existing = divisionMap.get(division);
+    if (matCost > 0 || materialLaborHours > 0 || mat.totalQty > 0) {
+      if (matCost === 0 && price === 0 && mat.totalQty > 0) {
+        console.warn(`⚠️ NO PRICE: ${mat.category}::${mat.description} (qty: ${mat.totalQty}) - will show $0 in division`);
+      } else {
+        console.log(`💰 Material cost: ${mat.category}::${mat.description} = ${mat.totalQty} × $${price} = $${matCost}`);
+      }
+
       if (existing) {
         existing.materialCost += matCost;
         existing.laborHours += materialLaborHours;
@@ -464,6 +474,10 @@ export function calculateProjectCosts(
 
   // Calculate division breakdown with markup
   const divisionBreakdown: DivisionCost[] = [];
+
+  // Log all divisions to debug
+  console.log('📊 Division Map:', Array.from(divisionMap.keys()));
+
   for (const [division, cost] of divisionMap.entries()) {
     cost.laborCost = cost.laborHours * laborRate;
     cost.totalCost = cost.materialCost + cost.laborCost;
@@ -472,8 +486,13 @@ export function calculateProjectCosts(
     const divisionWithOH = cost.totalCost * (1 + overheadPercentage / 100);
     cost.sellPrice = divisionWithOH * (1 + profitPercentage / 100);
 
+    console.log(`📊 Division "${division}": $${cost.materialCost.toFixed(2)} mat + ${cost.laborHours.toFixed(2)} hrs = $${cost.sellPrice.toFixed(2)} sell`);
+
     divisionBreakdown.push(cost);
   }
+
+  // Sort divisions for consistent export
+  divisionBreakdown.sort((a, b) => a.division.localeCompare(b.division));
 
   return {
     materialCostTotal,
