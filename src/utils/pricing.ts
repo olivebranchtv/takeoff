@@ -241,13 +241,23 @@ export class PricingDatabase {
    * Get material price by description (with fuzzy matching)
    */
   getMaterialPrice(category: string, description: string): number | undefined {
-    // Try exact match first
+    // Try exact match first (case-sensitive)
     const exactKey = `${category}::${description}`;
     const exact = this.materialPrices.get(exactKey);
-    const result = exact && exact.materialCost > 0 ? `$${exact.materialCost}` : 'NOT FOUND';
-    console.log(`🔍 [${category}] "${description}" → ${result}`);
     if (exact && exact.materialCost > 0) {
+      console.log(`🔍 ✓ EXACT [${category}] "${description}" → $${exact.materialCost}`);
       return exact.materialCost;
+    }
+
+    // Try case-insensitive exact match
+    for (const [key, price] of this.materialPrices.entries()) {
+      const [dbCat, dbDesc] = key.split('::');
+      if (dbCat.toLowerCase() === category.toLowerCase() &&
+          dbDesc.toLowerCase() === description.toLowerCase() &&
+          price.materialCost > 0) {
+        console.log(`🔍 ✓ CASE-INSENSITIVE [${category}] "${description}" → $${price.materialCost}`);
+        return price.materialCost;
+      }
     }
 
     // Fuzzy match - normalize and find similar items
@@ -255,6 +265,7 @@ export class PricingDatabase {
       .replace(/["']/g, '')
       .replace(/\s+/g, '')
       .replace(/-/g, '')
+      .replace(/type/g, '')  // Remove "type" variations
       .trim();
 
     const keyTerms = normDesc.split(/[,\/]/).filter(t => t.length > 2);
@@ -359,11 +370,23 @@ export class PricingDatabase {
    * Get labor hours per unit for a material (e.g., wire, conduit)
    */
   getMaterialLaborHours(category: string, description: string): number {
+    // Try exact match first
     const exactKey = `${category}::${description}`;
     const exact = this.materialPrices.get(exactKey);
     if (exact && exact.laborHours && exact.laborHours > 0) {
       return exact.laborHours;
     }
+
+    // Try case-insensitive match
+    for (const [key, price] of this.materialPrices.entries()) {
+      const [dbCat, dbDesc] = key.split('::');
+      if (dbCat.toLowerCase() === category.toLowerCase() &&
+          dbDesc.toLowerCase() === description.toLowerCase() &&
+          price.laborHours && price.laborHours > 0) {
+        return price.laborHours;
+      }
+    }
+
     return 0;
   }
 
