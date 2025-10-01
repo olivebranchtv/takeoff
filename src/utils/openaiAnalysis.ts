@@ -294,16 +294,24 @@ CRITICAL INSTRUCTIONS:
 - DO NOT guess or infer information not explicitly shown
 - ONLY report what is actually visible in the documents
 
-LIGHTING SCHEDULE EXTRACTION:
+LIGHTING SCHEDULE EXTRACTION - CRITICAL:
 - Read the ENTIRE lighting fixture schedule table from top to bottom
 - Extract EVERY ROW - do not skip any fixture types
 - Common fixture types include: L1, L2, L3, EM, EE, EMX, A, B, C, D, E1, E2, etc.
-- If the schedule has 10 rows, you must extract all 10 fixtures
-- If the schedule has 4 rows (like L1, EM, EE, EMX), you must extract all 4
+- COPY THE EXACT TEXT FROM THE SCHEDULE - DO NOT PARAPHRASE OR SIMPLIFY
+- If the TYPE column says "L1", use "L1" not "L" or "L-1"
+- If the TYPE column says "EM", use "EM" not "E1" or "EMERGENCY"
+- If the TYPE column says "EE", use "EE" not "E2" or "EXIT"
+- If the TYPE column says "EMX", use "EMX" not "E3" or "COMBO"
+- Copy the DESCRIPTION exactly as written, word for word, including all caps
+- If description says "MANUFACTURER TBD", include those exact words
+- If description says "LITHONIA EU2L (WALL), ELR2 (CEILING)", include the complete text
 - Look carefully at multi-line descriptions - they may span multiple lines
 - Copy manufacturer names exactly as shown (Lithonia, Philips, Cooper, etc.)
 - Record "TBD" or "---" or blank exactly when cells are empty
+- If a cell contains "---", leave that field empty or null
 - Double-check you extracted every single row before finishing
+- COUNT the rows in the schedule and verify you extracted that exact number
 
 For each page, identify:
 1. Page type (lighting schedule, panel schedule, floor plan, details, notes, cover)
@@ -322,13 +330,18 @@ Extract the following information:
    - Which fixtures are explicitly marked as CONTRACTOR PROVIDED
    - Specific notes about fixture responsibilities from the drawings
 
-3. LIGHTING SCHEDULE:
+3. LIGHTING SCHEDULE - READ EXACTLY AS WRITTEN:
    - Extract EVERY SINGLE ROW from the lighting fixture schedule table
    - Look for tables with headers like "TYPE", "DESCRIPTION", "LAMP", "VOLT", "WATT", "MANUFACTURER", "MODEL"
    - Read ALL fixture types listed (L1, L2, EM, EE, EMX, A, B, C, etc.)
+   - THE TYPE MUST MATCH EXACTLY: If schedule says "EM", write "EM" not "E1"
+   - THE TYPE MUST MATCH EXACTLY: If schedule says "EE", write "EE" not "E2"
+   - THE TYPE MUST MATCH EXACTLY: If schedule says "EMX", write "EMX" not "E3"
    - Include: Type, Description, Manufacturer, Model, Quantity, Wattage, Voltage, Mounting
-   - Copy the exact text from each cell - do not paraphrase or summarize
-   - If a cell is empty or has "---", record it as empty
+   - Copy the COMPLETE description text - do not shorten or paraphrase
+   - If description spans multiple lines, include all text
+   - If a cell is empty or has "---", leave that field empty/null
+   - Do not add lumens, color temperatures, or specs not in the schedule
    - Count ALL rows in the schedule - do not stop early
    - If no lighting schedule is found, return empty array
 
