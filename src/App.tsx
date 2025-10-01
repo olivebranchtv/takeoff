@@ -14,6 +14,7 @@ import { useStore } from '@/state/store';
 import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
 import { pathLength } from '@/utils/geometry';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { useInitialize } from '@/hooks/useInitialize';
 
 /* NEW: raceway BOM helpers */
 import {
@@ -101,6 +102,9 @@ export default function App() {
 
   /* ---------- sidebar collapse ---------- */
   const [leftOpen, setLeftOpen] = useState<boolean>(true);
+
+  /* ---------- Initialize: Load tags from Supabase ---------- */
+  useInitialize();
 
   /* ---------- Auto-save to Supabase ---------- */
   useAutoSave();
