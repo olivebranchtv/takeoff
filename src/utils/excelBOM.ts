@@ -38,6 +38,7 @@ export function calculateAssemblyMaterials(
 ): { materials: MaterialLine[]; assemblyUsage: AssemblyUsage[] } {
   const tagMap = new Map(tags.map(t => [t.code.toUpperCase(), t]));
   const assemblyMap = new Map(assemblies.map(a => [a.id, a]));
+  const assemblyCodeMap = new Map(assemblies.map(a => [a.code, a])); // Also index by code
   const assemblyUsage: AssemblyUsage[] = [];
   const materialAcc: Map<string, MaterialLine> = new Map();
 
@@ -80,7 +81,9 @@ export function calculateAssemblyMaterials(
       continue;
     }
 
-    const assembly = assemblyMap.get(tag.assemblyId);
+    // Try to find assembly by ID first, then by CODE (for compatibility)
+    let assembly = assemblyMap.get(tag.assemblyId);
+    if (!assembly) assembly = assemblyCodeMap.get(tag.assemblyId);
     if (!assembly || !assembly.isActive) continue;
 
     // Track assembly usage
@@ -158,7 +161,7 @@ export function calculateAssemblyMaterials(
     console.log(`🔌 Adding ${totalHomerunsNeeded} 100ft homerun assemblies for ${totalLightingFixtures} lighting fixtures (GFCI homeruns built into assembly)`);
 
     // Find the 100ft homerun assembly by code
-    const homerunAssembly = Array.from(assemblyMap.values()).find(a => a.code === 'HOMERUN-100FT');
+    const homerunAssembly = assemblyCodeMap.get('HOMERUN-100FT');
 
     if (homerunAssembly && homerunAssembly.isActive) {
       // Track homerun assembly usage
