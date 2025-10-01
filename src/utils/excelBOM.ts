@@ -133,6 +133,78 @@ export function calculateAssemblyMaterials(
   }
 
   // ============================================================================
+  // ADD LIGHTING HOMERUN ASSEMBLIES (1 per 8 fixtures)
+  // ============================================================================
+  // Count total lighting fixtures
+  let totalLightingFixtures = 0;
+  for (const row of bomRows) {
+    const tag = tagMap.get(row.tagCode);
+    if (tag && tag.category?.toLowerCase().includes('light')) {
+      totalLightingFixtures += row.qty;
+    }
+  }
+
+  // Calculate number of homeruns needed (1 per 8 fixtures)
+  const homerunsNeeded = Math.ceil(totalLightingFixtures / 8);
+
+  if (homerunsNeeded > 0) {
+    console.log(`🔌 Adding ${homerunsNeeded} lighting homerun assemblies for ${totalLightingFixtures} total fixtures`);
+
+    const homerunAssembly = assemblyMap.get('light-homerun');
+    if (homerunAssembly && homerunAssembly.isActive) {
+      // Track homerun assembly usage
+      const homerunUsage: AssemblyUsage = {
+        code: homerunAssembly.code,
+        name: homerunAssembly.name,
+        description: homerunAssembly.description,
+        count: homerunsNeeded,
+        materials: []
+      };
+
+      // Add homerun materials
+      for (const item of homerunAssembly.items) {
+        const baseQty = item.quantityPer * homerunsNeeded;
+        const totalQty = baseQty * item.wasteFactor;
+
+        const matKey = `${item.category}::${item.description}::${item.unit}`;
+        const existing = materialAcc.get(matKey);
+
+        if (existing) {
+          existing.quantity += baseQty;
+          existing.totalQty += totalQty;
+        } else {
+          materialAcc.set(matKey, {
+            category: item.category,
+            description: item.description,
+            unit: item.unit,
+            quantity: baseQty,
+            wasteFactor: item.wasteFactor,
+            totalQty,
+            itemCode: item.itemCode,
+            assemblyCode: homerunAssembly.code,
+            assemblyName: homerunAssembly.name,
+            notes: item.notes
+          });
+        }
+
+        // Add to usage tracking
+        homerunUsage.materials.push({
+          category: item.category,
+          description: item.description,
+          unit: item.unit,
+          quantity: baseQty,
+          wasteFactor: item.wasteFactor,
+          totalQty,
+          itemCode: item.itemCode,
+          notes: item.notes
+        });
+      }
+
+      assemblyUsage.push(homerunUsage);
+    }
+  }
+
+  // ============================================================================
   // ADD RACEWAY AND WIRE MATERIALS FROM HOME RUNS
   // ============================================================================
   const racewayRows = buildBOMRows(pages, 'summarized').filter(r => r.shape !== 'count');

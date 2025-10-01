@@ -21,28 +21,9 @@ export function getAssemblyIdForTag(tagCode: string, tagCategory?: string): stri
 
   // ===== LIGHTS =====
   if (category.includes('light')) {
-    // Letter codes A-Z for lights (customer-supplied) - NO ASSEMBLY
-    // These should use the pricing database only, not assemblies
-    if (code.match(/^[A-Z]$/) || code.match(/^[A-Z]\d+$/)) return undefined;
-
-    // Specific fixture types (only assign assemblies for descriptive codes)
-    if (code.includes('2X4') || code === 'LT-2X4') return 'light-troffer-2x4-led';
-    if (code.includes('2X2') || code === 'LT-2X2') return 'light-troffer-2x2-led';
-    if (code.includes('1X4') || code === 'LT-1X4') return 'light-troffer-2x4-led';
-    if (code.includes('DN') || code.includes('DOWN') || code === 'LT-DN') return 'light-downlight-6in';
-    if (code.includes('HB') || code.includes('HIGHBAY') || code === 'LT-HB') return 'light-highbay-led';
-    if (code.includes('STRIP') || code === 'LT-STRIP') return 'light-troffer-2x4-led';
-    if (code.includes('PEND') || code === 'LT-PEND') return 'light-troffer-2x4-led';
-    if (code.includes('LINEAR') || code === 'LT-LINEAR') return 'light-troffer-2x4-led';
-    if (code.includes('TRACK') || code === 'LT-TRACK') return 'light-troffer-2x4-led';
-    if (code.includes('UC') || code === 'LT-UC') return 'light-troffer-2x4-led';
-    if (code.includes('COVE') || code === 'LT-COVE') return 'light-troffer-2x4-led';
-    if (code.includes('WP') || code === 'LT-WP') return 'light-troffer-2x4-led';
-    if (code.includes('CANOPY') || code === 'LT-CANOPY') return 'light-troffer-2x4-led';
-    if (code.includes('STEP') || code === 'LT-STEP') return 'bollard-light';
-
-    // No assembly for generic light tags - use pricing DB only
-    return undefined;
+    // ALL lighting tags now get the standard installation assembly
+    // This includes boxes, raceway, conductors, flex, and hardware
+    return 'light-standard-install';
   }
 
   // ===== EMERGENCY & EXIT =====
