@@ -221,7 +221,7 @@ export async function exportProfessionalBOM(
     });
   }
 
-  console.log(`Loaded ${pricingData?.length || 0} pricing records from database`);
+  console.log(`🔥 BOM EXPORTER v2.1 - Loaded ${pricingData?.length || 0} pricing records from database`);
 
   // Category matcher - maps assembly categories to database categories
   function categoryMatches(assemblyCategory: string, dbCategory: string): boolean {
