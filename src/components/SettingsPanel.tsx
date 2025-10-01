@@ -74,6 +74,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
       }
 
       const exportData = data.map(item => ({
+        'Item Code': item.item_code || '',
         'Category': item.category,
         'Description': item.description,
         'Unit': item.unit,
@@ -85,13 +86,14 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
       const ws = XLSX.utils.json_to_sheet(exportData);
       ws['!cols'] = [
-        { wch: 25 },
-        { wch: 60 },
-        { wch: 8 },
-        { wch: 12 },
-        { wch: 12 },
-        { wch: 20 },
-        { wch: 30 }
+        { wch: 15 },  // Item Code
+        { wch: 25 },  // Category
+        { wch: 60 },  // Description
+        { wch: 8 },   // Unit
+        { wch: 12 },  // Material Cost
+        { wch: 12 },  // Labor Hours
+        { wch: 20 },  // Vendor
+        { wch: 30 }   // Notes
       ];
 
       const wb = XLSX.utils.book_new();
@@ -134,6 +136,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
       }
 
       const items = jsonData.map((row: any) => ({
+        item_code: row['Item Code'] || row['item_code'] || null,
         category: String(row['Category'] || row['category'] || ''),
         description: String(row['Description'] || row['description'] || ''),
         unit: String(row['Unit'] || row['unit'] || 'EA'),
