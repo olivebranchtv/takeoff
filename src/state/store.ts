@@ -451,12 +451,6 @@ export const useStore = create<State>()(
         // CRITICAL: Check if assemblyId property EXISTS in patch, not just if it's undefined
         let nextAssemblyId = 'assemblyId' in patch ? patch.assemblyId : tags[currentIdx].assemblyId;
 
-        // NEVER allow assemblies on Lights category
-        const isLightCategory = nextCat?.toLowerCase().includes('light');
-        if (isLightCategory) {
-          nextAssemblyId = undefined;
-        }
-
         console.log('[Store] updateTag - nextAssemblyId:', nextAssemblyId);
 
         // Merge into canonical if code collides with another
