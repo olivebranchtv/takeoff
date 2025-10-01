@@ -48,6 +48,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const [error, setError] = useState<string>('');
   const [catSelect, setCatSelect] = useState<string>('');
   const [customCategory, setCustomCategory] = useState<string>('');
+  const [editorCollapsed, setEditorCollapsed] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const editorCardRef = useRef<HTMLDivElement>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
@@ -74,9 +75,12 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       setError('');
       setCatSelect('');
       setCustomCategory('');
+      setEditorCollapsed(false);
       onDragEnd(); // safety: remove listeners when closed
       return;
     }
+    // Start with editor collapsed to show more tags
+    setEditorCollapsed(true);
     try {
       const existing = new Set<string>((tags as Tag[]).map(t => (t.code || '').toUpperCase()));
       const missing = DEFAULT_MASTER_TAGS.filter(t => !existing.has((t.code || '').toUpperCase()));
@@ -188,6 +192,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     setError('');
     setCatSelect('');
     setCustomCategory('');
+    setEditorCollapsed(false);
     requestAnimationFrame(() => {
       editorCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       codeInputRef.current?.focus();
@@ -198,6 +203,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     setEditId(t.id);
     setDraft({ code: t.code, name: t.name, category: t.category, color: t.color, assemblyId: t.assemblyId });
     setError('');
+    setEditorCollapsed(false);
     const cat = t.category || '';
     if (cat && sortedCategories.includes(cat)) {
       setCatSelect(cat);
@@ -442,12 +448,15 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             <option value="">Jump to category…</option>
             {sortedCategories.map(c => <option value={c} key={c}>{c}</option>)}
           </select>
+          <button className="btn" onClick={() => setEditorCollapsed(!editorCollapsed)} title={editorCollapsed ? "Show editor" : "Hide editor"}>
+            {editorCollapsed ? '▼' : '▲'} Editor
+          </button>
           <button className="btn" onClick={startNew}>New Tag</button>
         </div>
 
         {/* BIGGER, SCROLLABLE CONTENT: editor (compact) + tall table */}
         <div style={S.content}>
-          <div style={S.card} ref={editorCardRef}>
+          {!editorCollapsed && <div style={S.card} ref={editorCardRef}>
             <div style={S.formRow}>
               <div style={{ minWidth: 232 }}>
                 <div style={S.label}>Color</div>
@@ -562,7 +571,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             </div>
 
             {error && <div style={S.error}>{error}</div>}
-          </div>
+          </div>}
 
           {/* Tall table area */}
           <div style={S.tableWrap}>
