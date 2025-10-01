@@ -235,7 +235,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         </div>
 
         {/* Content */}
-        <div style={{ padding: '24px' }}>
+        <div style={{ padding: '24px', maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}>
           <div style={{ marginBottom: '32px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px', color: '#1e3a8a' }}>
               🤖 OpenAI API Key
