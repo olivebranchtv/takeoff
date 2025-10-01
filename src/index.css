@@ -1,6 +1,17 @@
-html, body, #root { height: 100%; margin: 0; }
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  min-width: 1200px;
+}
 
 * { box-sizing: border-box; }
+
+body {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
 
 .btn {
   padding:6px 10px;
@@ -31,16 +42,11 @@ html, body, #root { height: 100%; margin: 0; }
 .sticky-top { position: sticky; top: 0; z-index: 1000; }
 .sticky-under { position: sticky; top: 52px; z-index: 999; }
 
-/* Responsive design for all screens */
-@media (max-width: 1200px) {
-  .btn {
-    padding:5px 8px;
-    font-size:13px;
-  }
-}
-
+/* Large screens (TVs and high-res displays) */
 @media (min-width: 1920px) {
-  /* Large screens (TVs) */
+  body {
+    font-size: 18px;
+  }
   .btn {
     padding:8px 14px;
     font-size:16px;
@@ -48,5 +54,11 @@ html, body, #root { height: 100%; margin: 0; }
   .toolbar, .quickbar {
     padding:10px 16px;
     gap:10px;
+  }
+  .badge {
+    font-size: 14px;
+  }
+  .label {
+    font-size: 15px;
   }
 }
