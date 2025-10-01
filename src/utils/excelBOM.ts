@@ -223,6 +223,58 @@ export async function exportProfessionalBOM(
 
   console.log(`Loaded ${pricingData?.length || 0} pricing records from database`);
 
+  // Category matcher - maps assembly categories to database categories
+  function categoryMatches(assemblyCategory: string, dbCategory: string): boolean {
+    const normAssembly = assemblyCategory.toLowerCase().replace(/[&\s]/g, '');
+    const normDb = dbCategory.toLowerCase().replace(/[&\s]/g, '');
+
+    // Exact match
+    if (normAssembly === normDb) return true;
+
+    // Assembly → Database category mappings (match ALL 28 database categories)
+
+    // Boxes: "Boxes" → "Boxes", "Plaster Rings"
+    if ((normAssembly === 'boxes' || normAssembly === 'box') &&
+        (normDb.includes('box') || normDb.includes('ring'))) return true;
+
+    // Devices: "Devices" → "Devices", "Plates", "PLATES/Lexan", "PLATES/Plastic", "PLATES/Stainless"
+    if (normAssembly === 'devices' &&
+        (normDb.includes('device') || normDb.includes('plate'))) return true;
+
+    // Fittings: "Fittings" → "Fittings", "FLEX CONDUIT & FITTINGS", "Galvanized Coupling",
+    //           "PVC 90 degree", "PVC Sch.40 Coupling", "Rigid Stl Elbow", "Wing Nuts"
+    if ((normAssembly === 'fittings' || normAssembly === 'fitting') &&
+        (normDb.includes('fitting') || normDb.includes('coupling') ||
+         normDb.includes('flex') || normDb.includes('pvc') ||
+         normDb.includes('rigid') || normDb.includes('wingnut') ||
+         normDb.includes('elbow'))) return true;
+
+    // Wire: "wire" → "wire", "MC Cable", "NM Cable", "SO Cord"
+    if ((normAssembly === 'wire' || normAssembly === 'wirecable' || normAssembly === 'wire&cable') &&
+        (normDb.includes('wire') || normDb.includes('cable') || normDb.includes('cord'))) return true;
+
+    // Conduit: "EMT CONDUIT" → "EMT CONDUIT", "PVC CONDUIT Sch 40", "PVC CONDUIT Sch 80",
+    //          "RIGID CONDUIT", "Electrical Non Metallic Tubing", "FLEX CONDUIT & FITTINGS"
+    if ((normAssembly === 'conduit' || normAssembly === 'emtconduit' || normAssembly.includes('conduit')) &&
+        (normDb.includes('conduit') || normDb.includes('emt') ||
+         normDb.includes('tubing') || normDb.includes('pvc') ||
+         normDb.includes('rigid') || normDb.includes('flex'))) return true;
+
+    // Grounding: "Grounding" → "Grounding"
+    if (normAssembly === 'grounding' && normDb.includes('ground')) return true;
+
+    // Lighting: "Lighting" → "Lighting"
+    if (normAssembly === 'lighting' && normDb.includes('light')) return true;
+
+    // Panels: "Panels" → "Panels"
+    if (normAssembly === 'panels' && normDb.includes('panel')) return true;
+
+    // Electrical Materials: catch-all
+    if (normAssembly === 'electricalmaterials' && normDb.includes('electrical')) return true;
+
+    return false;
+  }
+
   // Fuzzy matcher - finds closest match in database
   function findPrice(category: string, description: string): { cost: number; laborHours: number } {
     // Try exact match first
@@ -240,11 +292,13 @@ export async function exportProfessionalBOM(
       .replace(/-/g, '')
       .trim();
 
-    // Find matches in same category by checking if database description contains key terms
+    // Find matches using category mapping + description matching
     const keyTerms = normDesc.split(/[,\/]/).filter(t => t.length > 2);
 
     const candidates = pricingArray.filter(p => {
-      if (p.category !== category) return false;
+      // Use category mapper instead of strict equality
+      if (!categoryMatches(category, p.category)) return false;
+
       const dbDesc = p.description.toLowerCase().replace(/["']/g, '').replace(/\s+/g, '').replace(/-/g, '');
       // Check if database description contains assembly key terms
       return keyTerms.some(term => dbDesc.includes(term));
@@ -253,11 +307,11 @@ export async function exportProfessionalBOM(
     // Return first match with pricing
     const match = candidates.find(c => c.cost > 0 || c.laborHours > 0);
     if (match) {
-      console.log(`✓ Fuzzy match for ${description} → ${match.description} = $${match.cost}`);
+      console.log(`✓ Fuzzy match for ${description} → ${match.description} (${match.category}) = $${match.cost}, ${match.laborHours}hrs`);
       return { cost: match.cost, laborHours: match.laborHours };
     }
 
-    console.log(`✗ No match for ${category}::${description}`);
+    console.warn(`❌ No match found for: "${description}" (category: "${category}")`);
     return { cost: 0, laborHours: 0 };
   }
 
