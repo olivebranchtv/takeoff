@@ -138,27 +138,31 @@ export function calculateAssemblyMaterials(
   // ============================================================================
   // ADD 100FT HOMERUN ASSEMBLIES
   // - 1 per 8 lighting fixtures (minimum 1 if any lights)
-  // - GFCI homeruns are now built into RECEP-GFCI-20A-HOMERUN assembly
+  // - 1 per 6 GFCI receptacles (minimum 1 if any GFCIs)
   // ============================================================================
 
-  // Count total lighting fixtures
+  // Count total lighting fixtures and GFCI receptacles
   let totalLightingFixtures = 0;
+  let totalGFCIReceptacles = 0;
 
   for (const row of bomRows) {
     const tag = tagMap.get(row.tagCode);
     if (tag) {
       if (tag.category?.toLowerCase().includes('light')) {
         totalLightingFixtures += row.qty;
+      } else if (row.tagCode.includes('GFCI') || row.tagCode.includes('GFI')) {
+        totalGFCIReceptacles += row.qty;
       }
     }
   }
 
-  // Calculate number of homeruns needed (only for lights now)
+  // Calculate number of homeruns needed
   const lightHomeruns = totalLightingFixtures > 0 ? Math.ceil(totalLightingFixtures / 8) : 0;
-  const totalHomerunsNeeded = lightHomeruns;
+  const gfciHomeruns = totalGFCIReceptacles > 0 ? Math.ceil(totalGFCIReceptacles / 6) : 0;
+  const totalHomerunsNeeded = lightHomeruns + gfciHomeruns;
 
   if (totalHomerunsNeeded > 0) {
-    console.log(`🔌 Adding ${totalHomerunsNeeded} 100ft homerun assemblies for ${totalLightingFixtures} lighting fixtures (GFCI homeruns built into assembly)`);
+    console.log(`🔌 Adding ${totalHomerunsNeeded} 100ft homerun assemblies: ${lightHomeruns} for lights (${totalLightingFixtures} fixtures), ${gfciHomeruns} for GFCIs (${totalGFCIReceptacles} receptacles)`);
 
     // Find the 100ft homerun assembly by code
     const homerunAssembly = assemblyCodeMap.get('HOMERUN-100FT');
