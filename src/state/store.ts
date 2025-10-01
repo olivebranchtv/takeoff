@@ -789,7 +789,7 @@ export const useStore = create<State>()(
     {
       name: 'skd.mastertags.v1',
       storage: createJSONStorage(() => localStorage),
-      version: 1,
+      version: 2,
       // persist master DB, palette, overrides, lastMeasureOptions, aiAnalysisResult, AND assemblies
       partialize: (s) => ({
         tags: s.tags,
@@ -799,6 +799,26 @@ export const useStore = create<State>()(
         aiAnalysisResult: s.aiAnalysisResult,
         assemblies: s.assemblies,
       }),
+      migrate: (persistedState: any, version: number) => {
+        // Migration from version 1 to 2: Add itemCode to assembly items
+        if (version === 1) {
+          if (persistedState.assemblies && Array.isArray(persistedState.assemblies)) {
+            persistedState.assemblies = persistedState.assemblies.map((assembly: any) => {
+              if (assembly.items && Array.isArray(assembly.items)) {
+                assembly.items = assembly.items.map((item: any) => {
+                  // If item doesn't have itemCode, generate it from id
+                  if (!item.itemCode && item.id) {
+                    return { ...item, itemCode: item.id.toUpperCase() };
+                  }
+                  return item;
+                });
+              }
+              return assembly;
+            });
+          }
+        }
+        return persistedState;
+      },
     }
   )
 );
