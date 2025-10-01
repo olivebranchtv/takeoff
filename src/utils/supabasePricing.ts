@@ -60,11 +60,14 @@ export async function loadMaterialPricingFromSupabase(): Promise<MaterialPricing
 
 export async function saveMaterialPricingToSupabase(materials: Omit<MaterialPricing, 'id' | 'user_id' | 'created_at'>[]): Promise<boolean> {
   if (!supabase) {
-    console.warn('Supabase not configured. Cannot save pricing data.');
+    console.warn('❌ Supabase not configured. Cannot save pricing data.');
+    alert('Supabase is not configured. Please check your .env file.');
     return false;
   }
 
   try {
+    console.log(`🔄 Starting to save ${materials.length} materials to Supabase...`);
+
     // Use a default user_id since this app doesn't have authentication
     const defaultUserId = '00000000-0000-0000-0000-000000000000';
 
@@ -75,32 +78,47 @@ export async function saveMaterialPricingToSupabase(materials: Omit<MaterialPric
     }));
 
     // Delete old pricing for this user
+    console.log('🗑️ Deleting old pricing data...');
     const { error: deleteError } = await supabase
       .from('material_pricing')
       .delete()
       .eq('user_id', defaultUserId);
 
     if (deleteError) {
-      console.error('Error deleting old pricing:', deleteError);
+      console.error('❌ Error deleting old pricing:', deleteError);
+      alert(`Failed to delete old pricing: ${deleteError.message}\n\nPlease check the console for details.`);
+      return false;
     }
+    console.log('✅ Old pricing deleted successfully');
 
     // Insert new pricing in batches to avoid size limits
     const batchSize = 100;
+    const totalBatches = Math.ceil(materialsWithUserId.length / batchSize);
+
     for (let i = 0; i < materialsWithUserId.length; i += batchSize) {
       const batch = materialsWithUserId.slice(i, i + batchSize);
+      const batchNumber = Math.floor(i / batchSize) + 1;
+
+      console.log(`📦 Saving batch ${batchNumber}/${totalBatches} (${batch.length} items)...`);
+
       const { error: insertError } = await supabase
         .from('material_pricing')
         .insert(batch);
 
       if (insertError) {
-        console.error(`Error saving material pricing batch ${i / batchSize + 1}:`, insertError);
+        console.error(`❌ Error saving batch ${batchNumber}:`, insertError);
+        alert(`Failed to save pricing data at batch ${batchNumber}/${totalBatches}\n\nError: ${insertError.message}\n\nDetails: ${insertError.hint || 'Check console for more info'}`);
         return false;
       }
+
+      console.log(`✅ Batch ${batchNumber}/${totalBatches} saved successfully`);
     }
 
+    console.log(`✅ All ${materials.length} materials saved successfully to Supabase!`);
     return true;
-  } catch (error) {
-    console.error('Error saving material pricing:', error);
+  } catch (error: any) {
+    console.error('❌ Unexpected error saving material pricing:', error);
+    alert(`Unexpected error: ${error.message || error}\n\nCheck console for details.`);
     return false;
   }
 }
