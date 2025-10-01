@@ -102,6 +102,8 @@ export default function App() {
   const [projectTags, setProjectTags] = useState<TagLite[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSel, setPickerSel] = useState<string>('');
+  const [draggedTagIndex, setDraggedTagIndex] = useState<number | null>(null);
+  const [dragOverTagIndex, setDragOverTagIndex] = useState<number | null>(null);
 
   /* ---------- sidebar collapse ---------- */
   const [leftOpen, setLeftOpen] = useState<boolean>(true);
@@ -125,10 +127,35 @@ export default function App() {
     currentTag, setCurrentTag,
     setSelectedIds,
     setProjectName,
+    reorderProjectTags,
   } = useStore();
 
   /* ---------- scroll container + content ---------- */
   const viewerScrollRef = useRef<HTMLDivElement>(null);
+
+  /* ---------- Project Tag Drag and Drop Handlers ---------- */
+  const handleTagDragStart = (index: number) => {
+    setDraggedTagIndex(index);
+  };
+
+  const handleTagDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverTagIndex(index);
+  };
+
+  const handleTagDragEnd = () => {
+    if (draggedTagIndex !== null && dragOverTagIndex !== null && draggedTagIndex !== dragOverTagIndex) {
+      const reordered = [...projectTags];
+      const [movedTag] = reordered.splice(draggedTagIndex, 1);
+      reordered.splice(dragOverTagIndex, 0, movedTag);
+      setProjectTags(reordered);
+
+      // Sync with store's tag order
+      reorderProjectTags(reordered.map(t => t.id));
+    }
+    setDraggedTagIndex(null);
+    setDragOverTagIndex(null);
+  };
 
   /* ---------- Hand panning ---------- */
   const panStateRef = useRef<{
@@ -958,15 +985,31 @@ export default function App() {
 
         <div style={{display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', flex:1}}>
           {projectTags.length === 0 && <span style={{color:'#777'}}>None — add from Tag DB ▼</span>}
-          {projectTags.map(t => {
+          {projectTags.map((t, index) => {
             const active = (t.code || '').toUpperCase() === (currentTag || '').toUpperCase();
+            const isDragging = draggedTagIndex === index;
+            const isDragOver = dragOverTagIndex === index;
             return (
               <button
                 key={t.id}
+                draggable
+                onDragStart={() => handleTagDragStart(index)}
+                onDragOver={(e) => handleTagDragOver(e, index)}
+                onDragEnd={handleTagDragEnd}
                 className={`btn ${active ? 'active' : ''}`}
                 onClick={()=>{ setTool('count'); setCurrentTag(t.code); }}
-                title={`${t.code} — ${t.name}`}
-                style={{display:'flex', alignItems:'center', gap:6, position:'relative'}}
+                title={`${t.code} — ${t.name} (drag to reorder)`}
+                style={{
+                  display:'flex',
+                  alignItems:'center',
+                  gap:6,
+                  position:'relative',
+                  opacity: isDragging ? 0.5 : 1,
+                  cursor: 'move',
+                  outline: isDragOver ? '2px dashed #0066FF' : 'none',
+                  outlineOffset: isDragOver ? '2px' : '0',
+                  transition: 'opacity 0.2s, outline 0.2s'
+                }}
               >
                 <span style={{width:20, height:20, borderRadius:4, border:'1px solid #444', background: (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color}} />
                 <span style={{minWidth:26, textAlign:'center', fontWeight: active ? 700 : 600}}>{t.code}</span>
