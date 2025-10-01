@@ -12,17 +12,17 @@ import { calculateAssemblyMaterials, type MaterialLine, type AssemblyUsage } fro
  */
 const FALLBACK_PRICES: Record<string, { price: number; laborHours: number }> = {
   // Lighting Fixtures - Customer supplied get $0 cost but we still need labor
-  'light': { price: 0.00, laborHours: 1.5 },
-  'fixture': { price: 0.00, laborHours: 1.5 },
-  'led': { price: 180.00, laborHours: 1.5 },
-  'troffer': { price: 200.00, laborHours: 2.0 },
-  'highbay': { price: 250.00, laborHours: 2.5 },
-  'high bay': { price: 250.00, laborHours: 2.5 },
-  'wall pack': { price: 150.00, laborHours: 1.5 },
+  'light': { price: 0.00, laborHours: 1.0 },
+  'fixture': { price: 0.00, laborHours: 1.0 },
+  'led': { price: 180.00, laborHours: 1.0 },
+  'troffer': { price: 200.00, laborHours: 1.0 },
+  'highbay': { price: 250.00, laborHours: 1.0 },
+  'high bay': { price: 250.00, laborHours: 1.0 },
+  'wall pack': { price: 150.00, laborHours: 1.0 },
   'exit': { price: 100.00, laborHours: 1.0 },
   'emergency': { price: 120.00, laborHours: 1.0 },
-  'canopy': { price: 180.00, laborHours: 1.5 },
-  'downlight': { price: 80.00, laborHours: 0.75 },
+  'canopy': { price: 180.00, laborHours: 1.0 },
+  'downlight': { price: 80.00, laborHours: 1.0 },
   'recessed': { price: 100.00, laborHours: 1.0 },
 
   // Owner-supplied sensors - $0 material but labor to install
@@ -67,8 +67,8 @@ function getFallbackPrice(category: string, description: string): { price: numbe
 
   // Check if this is a generic fixture (e.g., "Fixture A", "Fixture B")
   if (desc.match(/^fixture [a-z0-9]+$/i) || cat.includes('light')) {
-    console.log(`💡 Generic light fixture "${description}" → $0.00 (owner-provided), 1.5hrs labor`);
-    return { price: 0.00, laborHours: 1.5 };
+    console.log(`💡 Generic light fixture "${description}" → $0.00 (owner-provided), 1.0hr labor`);
+    return { price: 0.00, laborHours: 1.0 };
   }
 
   // Try exact match first
