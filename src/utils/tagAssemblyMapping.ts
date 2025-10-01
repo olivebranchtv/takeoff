@@ -206,7 +206,9 @@ export function getAssemblyIdForTag(tagCode: string, tagCategory?: string): stri
   if (code === 'TEMP-PP') return 'temp-power-pole';
 
   // ===== STUB-UPS =====
-  if (code === 'TP' || code === 'D' || code === 'FSU' || (code === 'CATV' && category.includes('stub'))) {
+  // NOTE: 'D' is excluded here because it conflicts with generic light tag 'D'
+  // Use 'DATA-SU' or 'DSU' for data stub-ups instead
+  if (code === 'TP' || code === 'DATA-SU' || code === 'DSU' || code === 'FSU' || (code === 'CATV' && category.includes('stub'))) {
     return 'jbox-4x4';
   }
 

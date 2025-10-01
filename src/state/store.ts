@@ -75,8 +75,11 @@ const DEFAULT_MEASURE_OPTIONS: MeasureOptions = {
 /** ================================================================ */
 
 const DEFAULT_TAGS: Tag[] = [
-  { id: crypto.randomUUID(), code: 'A',   name: 'Fixture A',      category: 'Lights',      color: '#FF9900', assemblyId: 'light-troffer-2x4-led' },
-  { id: crypto.randomUUID(), code: 'A1',  name: 'Fixture A1',     category: 'Lights',      color: '#FF9900', assemblyId: 'light-troffer-2x2-led' },
+  { id: crypto.randomUUID(), code: 'A',   name: 'Fixture A',      category: 'Lights',      color: '#FF9900' },
+  { id: crypto.randomUUID(), code: 'B',   name: 'Fixture B',      category: 'Lights',      color: '#FF9900' },
+  { id: crypto.randomUUID(), code: 'C',   name: 'Fixture C',      category: 'Lights',      color: '#FF9900' },
+  { id: crypto.randomUUID(), code: 'D',   name: 'Fixture D',      category: 'Lights',      color: '#FF9900' },
+  { id: crypto.randomUUID(), code: 'A1',  name: 'Fixture A1',     category: 'Lights',      color: '#FF9900' },
   { id: crypto.randomUUID(), code: 'EM',  name: 'Emergency',      category: 'Emergency',   color: '#CC0000', assemblyId: 'light-emergency-led' },
   { id: crypto.randomUUID(), code: 'SP',  name: 'Switch',         category: 'Switches',    color: '#0066FF', assemblyId: 'switch-sp-20a' },
   { id: crypto.randomUUID(), code: 'GFCI',name: 'GFCI Recept.',   category: 'Receptacles', color: '#2E8B57', assemblyId: 'recep-gfci-20a' },
@@ -366,19 +369,28 @@ export const useStore = create<State>()(
         const incomingColor = t.color || ORANGE;
         const incomingCat = (t.category || '').trim();
 
-        // Auto-assign assembly if not already set (but skip Lights category)
+        // NEVER auto-assign assembly to Lights category
         const isLightCategory = incomingCat?.toLowerCase().includes('light');
-        const tagWithAssembly = isLightCategory ? { assemblyId: undefined } : autoAssignAssembly({
-          code: codeKey,
-          category: incomingCat,
-          assemblyId: t.assemblyId
-        });
+        let finalAssemblyId = t.assemblyId;
+
+        if (!isLightCategory && !t.assemblyId) {
+          // Only auto-assign for non-light categories that don't already have an assembly
+          const result = autoAssignAssembly({
+            code: codeKey,
+            category: incomingCat,
+            assemblyId: t.assemblyId
+          });
+          finalAssemblyId = result.assemblyId;
+        } else if (isLightCategory) {
+          // Force undefined for lights - NEVER allow assemblies on lights
+          finalAssemblyId = undefined;
+        }
 
         const tags = [...s.tags];
         if (idx >= 0) {
-          tags[idx] = { ...tags[idx], code: codeKey, name: t.name || '', category: incomingCat, color: incomingColor, assemblyId: tagWithAssembly.assemblyId };
+          tags[idx] = { ...tags[idx], code: codeKey, name: t.name || '', category: incomingCat, color: incomingColor, assemblyId: finalAssemblyId };
         } else {
-          tags.push({ id: nextId(), code: codeKey, name: t.name || '', category: incomingCat, color: incomingColor, assemblyId: tagWithAssembly.assemblyId });
+          tags.push({ id: nextId(), code: codeKey, name: t.name || '', category: incomingCat, color: incomingColor, assemblyId: finalAssemblyId });
         }
 
         const overrides = { ...s.colorOverrides };
