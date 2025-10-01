@@ -39,23 +39,6 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     ]
   },
   {
-    id: 'recep-gfci-20a',
-    code: 'RECEP-GFCI-20A',
-    name: 'GFCI Receptacle 20A Assembly',
-    description: 'Ground Fault Circuit Interrupter receptacle for wet locations, kitchens, bathrooms per NEC 210.8',
-    type: 'device',
-    isActive: true,
-    items: [
-      { id: 'box-4sq-2.125', itemCode: 'BOX-4SQ-2.125', description: '4" Square Box, 2-1/8" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02, notes: 'Deeper box for GFCI device' },
-      { id: 'mudring-1g-deep', itemCode: 'MUDRING-1G-DEEP', description: 'Raised Device Cover / Mud Ring, single-gang, 5/8" depth', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
-      { id: 'recep-gfci-20a', itemCode: 'RECEP-GFCI-20A', description: 'GFCI Duplex Receptacle, 20A, 125V, self-test', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02, notes: 'UL listed, tamper resistant' },
-      { id: 'plate-ss-1g', itemCode: 'PLATE-SS-1G', description: 'Device Cover Plate, single-gang, stainless steel', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
-      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'emt-coupling-3/4', itemCode: 'EMT-COUPLING-3/4', description: 'EMT Coupling, 3/4", steel', unit: 'EA', quantityPer: 0.1, category: 'Fittings', wasteFactor: 1.05 },
-      { id: 'ground-pigtail-12', itemCode: 'GROUND-PIGTAIL-12', description: '#12 CU pigtail w/ green screw', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
-    ]
-  },
-  {
     id: 'recep-iso-gnd-20a',
     code: 'RECEP-IG-20A',
     name: 'Isolated Ground Receptacle 20A Assembly',
