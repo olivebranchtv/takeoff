@@ -717,7 +717,7 @@ export default function App() {
 
   const flatPickerList = useMemo(
     () => pickerGroups.flatMap(g => g.items.map(t => ({
-      id: t.id, code: t.code, name: t.name, color: t.color, category: t.category
+      id: t.id, code: t.code, name: t.name, color: t.color, category: t.category, assemblyId: t.assemblyId
     }))),
     [pickerGroups]
   );
