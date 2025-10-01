@@ -495,10 +495,20 @@ export function calculateProjectCosts(
 
   // Add all materials to divisions (wire, conduit, boxes, devices, etc.)
   for (const mat of materials) {
+    // Debug: log what we're looking up
+    if (mat.category.toLowerCase() === 'wire' || mat.itemCode?.startsWith('ITEM-089') || mat.itemCode?.startsWith('ITEM-090')) {
+      console.log(`🔍 Looking up WIRE: category="${mat.category}", desc="${mat.description}", itemCode="${mat.itemCode}", qty=${mat.totalQty}`);
+    }
+
     const laborPerUnit = pricingDb.getMaterialLaborHours(mat.category, mat.description, mat.itemCode);
     const price = pricingDb.getMaterialPrice(mat.category, mat.description, mat.itemCode) || 0;
     const matCost = mat.totalQty * price;
     const materialLaborHours = laborPerUnit * mat.totalQty;
+
+    // Debug: log result
+    if (mat.category.toLowerCase() === 'wire' || mat.itemCode?.startsWith('ITEM-089') || mat.itemCode?.startsWith('ITEM-090')) {
+      console.log(`🔍 WIRE lookup result: price=$${price}, laborPerUnit=${laborPerUnit}hrs, matCost=$${matCost}, totalLabor=${materialLaborHours}hrs`);
+    }
 
     // Add to labor total if this material has labor hours
     if (laborPerUnit > 0) {
