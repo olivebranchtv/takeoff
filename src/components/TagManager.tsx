@@ -275,6 +275,27 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     alert(`Auto-assigned assemblies to ${updated} tags.`);
   }
 
+  function clearLightAssemblies() {
+    if (!confirm('Remove assemblies from all generic light tags (A-Z)? This is required for customer-supplied fixtures to work correctly.\n\nThis will clear assemblies from tags like "A", "B", "C", "D", etc. in the Lights category.')) return;
+
+    let cleared = 0;
+    (tags as Tag[]).forEach((tag: Tag) => {
+      // Check if it's a Lights category tag with a single letter code or letter+number
+      const isLightCategory = tag.category?.toLowerCase().includes('light');
+      const isGenericCode = /^[A-Z]$/.test(tag.code) || /^[A-Z]\d+$/.test(tag.code);
+
+      if (isLightCategory && isGenericCode && (tag as any).assemblyId) {
+        // Remove the assembly
+        const updatedTag = { ...tag };
+        delete (updatedTag as any).assemblyId;
+        updateTag(tag.id, updatedTag as any);
+        cleared++;
+      }
+    });
+
+    alert(`Cleared assemblies from ${cleared} generic light tags. These will now use pricing database only (for customer-supplied fixtures).`);
+  }
+
   function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -363,6 +384,14 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
           <div style={{ display: 'flex', gap: 8, flexWrap:'wrap' }}>
             <button className="btn" onClick={loadDefaults}>Load Defaults</button>
             <button className="btn" onClick={autoPopulateAssemblies} title="Auto-assign assemblies to tags that don't have them">Auto-Assign Assemblies</button>
+            <button
+              className="btn"
+              onClick={clearLightAssemblies}
+              title="Remove assemblies from generic light tags (A-Z) for customer-supplied fixtures"
+              style={{ background: '#fbbf24', color: '#000' }}
+            >
+              Clear Light Assemblies
+            </button>
             <button className="btn" onClick={() => fileRef.current?.click()}>Import JSON</button>
             <button className="btn" onClick={() => downloadTagsFile('tags.json', exportTags())}>Export JSON</button>
             <button className="btn" onClick={onClose}>Close</button>

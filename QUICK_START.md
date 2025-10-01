@@ -1,5 +1,21 @@
 # Quick Start Guide - Electrical Takeoff & Bidding System
 
+## ⚡ CUSTOMER-SUPPLIED FIXTURES - ONE-CLICK FIX
+
+### Problem
+Light tags (A, B, C, D, etc.) might have assemblies assigned. For customer-supplied fixtures, we need NO assemblies - only labor from pricing database.
+
+### Solution (30 seconds)
+1. Click **Tag Database** button
+2. Click yellow **"Clear Light Assemblies"** button
+3. Confirm → Done!
+4. All generic light tags (A-Z) now have NO assemblies
+5. Go to **Pricing & Bidding** → Enter fixture cost in **"Lighting Package Cost"** field
+
+**Result:** $0 materials from tags + labor hours from database + your lighting package cost = correct bid!
+
+---
+
 ## 🚀 Get Started in 3 Steps
 
 ### Step 1: Do Your Takeoff (5-15 minutes)
