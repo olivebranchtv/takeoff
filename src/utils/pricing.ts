@@ -260,25 +260,67 @@ export class PricingDatabase {
     const keyTerms = normDesc.split(/[,\/]/).filter(t => t.length > 2);
 
     // Category mapping for fuzzy matching
+    // This MUST match ALL 28 categories in the Supabase database EXACTLY
     const normCategory = category.toLowerCase().replace(/[&\s]/g, '');
     const categoryMatches = (dbCat: string): boolean => {
       const dbCatLower = dbCat.toLowerCase().replace(/[&\s]/g, '');
 
-      // Direct category matches (ignore spaces, ampersands, etc.)
+      // EXACT category matches (ignore spaces, ampersands, special chars)
       if (normCategory === dbCatLower) return true;
 
-      // Map common assembly categories to database categories
-      if ((normCategory === 'fittings' || normCategory === 'fitting') && (dbCatLower.includes('flex') || dbCatLower.includes('conduit') || dbCatLower.includes('coupling') || dbCatLower.includes('fitting'))) return true;
-      if (normCategory === 'devices' && (dbCatLower.includes('box') || dbCatLower.includes('plate') || dbCatLower.includes('device'))) return true;
-      if ((normCategory === 'boxes' || normCategory === 'box') && (dbCatLower.includes('box') || dbCatLower.includes('ring'))) return true;
+      // ASSEMBLY → DATABASE CATEGORY MAPPINGS
+      // Map assembly-generated categories to all possible database category variations
+
+      // Boxes: "Boxes" → "Boxes", "Plaster Rings"
+      if ((normCategory === 'boxes' || normCategory === 'box') &&
+          (dbCatLower.includes('box') || dbCatLower.includes('ring'))) return true;
+
+      // Devices: "Devices" → "Devices"
+      if (normCategory === 'devices' && dbCatLower.includes('device')) return true;
+
+      // Fittings: "Fittings" → "Fittings", "FLEX CONDUIT & FITTINGS", "Galvanized Coupling"
+      if ((normCategory === 'fittings' || normCategory === 'fitting') &&
+          (dbCatLower.includes('fitting') || dbCatLower.includes('coupling') ||
+           dbCatLower.includes('flex'))) return true;
+
+      // Plates: "Devices" → "Plates", "PLATES/Lexan", "PLATES/Plastic", "PLATES/Stainless"
+      if (normCategory === 'devices' && dbCatLower.includes('plate')) return true;
       if ((normCategory === 'plates' || normCategory === 'plate') && dbCatLower.includes('plate')) return true;
-      // Wire matching: "wire" should match "Wire & Cable", "wire", "cable", etc.
+
+      // Wire: "wire" → "wire", "MC Cable", "NM Cable", "SO Cord"
       if ((normCategory === 'wire' || normCategory === 'wirecable' || normCategory === 'wire&cable') &&
-          (dbCatLower.includes('cable') || dbCatLower.includes('wire') || dbCatLower.includes('cord'))) return true;
-      // Conduit matching: "EMT CONDUIT" should match "Conduit", "conduit", "emt", etc.
+          (dbCatLower.includes('wire') || dbCatLower.includes('cable') || dbCatLower.includes('cord'))) return true;
+
+      // Conduit: "EMT CONDUIT" → "EMT CONDUIT", "PVC CONDUIT Sch 40", "PVC CONDUIT Sch 80",
+      //          "RIGID CONDUIT", "Electrical Non Metallic Tubing"
       if ((normCategory === 'conduit' || normCategory === 'emtconduit' || normCategory.includes('conduit')) &&
-          (dbCatLower.includes('conduit') || dbCatLower.includes('emt') || dbCatLower.includes('tubing'))) return true;
-      if (normCategory === 'grounding' && (dbCatLower.includes('ground') || dbCatLower.includes('wire'))) return true;
+          (dbCatLower.includes('conduit') || dbCatLower.includes('emt') ||
+           dbCatLower.includes('tubing') || dbCatLower.includes('pvc') ||
+           dbCatLower.includes('rigid'))) return true;
+
+      // Grounding: "Grounding" → "Grounding"
+      if (normCategory === 'grounding' && dbCatLower.includes('ground')) return true;
+
+      // Lighting: Map if assemblies ever generate lighting materials
+      if (normCategory === 'lighting' && dbCatLower.includes('light')) return true;
+
+      // Panels: Map if assemblies ever generate panel materials
+      if (normCategory === 'panels' && dbCatLower.includes('panel')) return true;
+
+      // PVC fittings: "Fittings" → "PVC 90 degree,Sch.40", "PVC 90 degree,Sch.80", "PVC Sch.40 Coupling"
+      if ((normCategory === 'fittings' || normCategory === 'fitting') &&
+          dbCatLower.includes('pvc')) return true;
+
+      // Rigid fittings: "Fittings" → "Rigid Stl Elbow,90"
+      if ((normCategory === 'fittings' || normCategory === 'fitting') &&
+          dbCatLower.includes('rigid')) return true;
+
+      // Wing Nuts / Wire Connectors: "Fittings" or "Electrical Materials" → "Wing Nuts"
+      if ((normCategory === 'fittings' || normCategory === 'electricalmaterials') &&
+          dbCatLower.includes('wingnut')) return true;
+
+      // Electrical Materials: Catch-all for misc items
+      if (normCategory === 'electricalmaterials' && dbCatLower.includes('electrical')) return true;
 
       return false;
     };
@@ -430,26 +472,25 @@ export function calculateProjectCosts(
   }
 
   // Add labor hours from assemblies
+  // Note: Assembly materials are already counted in the materials loop above,
+  // this just adds the assembly-level labor hours
   for (const usage of assemblyUsage) {
     const hoursPerUnit = pricingDb.getLaborHours(usage.code);
     const totalHours = hoursPerUnit * usage.count;
     laborHoursTotal += totalHours;
 
     // Track by division (category of first material in assembly)
+    // This adds labor hours to existing division entries
     const division = usage.materials[0]?.category || 'General';
-    const materialCost = usage.materials.reduce((sum, m) => {
-      const price = pricingDb.getMaterialPrice(m.category, m.description) || 0;
-      return sum + (m.totalQty * price);
-    }, 0);
 
     const existing = divisionMap.get(division);
     if (existing) {
-      existing.materialCost += materialCost;
       existing.laborHours += totalHours;
     } else {
+      // Create division if it doesn't exist (shouldn't happen since materials are processed first)
       divisionMap.set(division, {
         division,
-        materialCost,
+        materialCost: 0,
         laborHours: totalHours,
         laborCost: 0,
         totalCost: 0,
