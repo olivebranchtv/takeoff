@@ -397,10 +397,16 @@ export const useStore = create<State>()(
         // Merge into canonical if code collides with another
         const canonicalIdx = tags.findIndex(t => norm(t.code) === nextCode);
         if (canonicalIdx >= 0 && canonicalIdx !== currentIdx) {
-          tags[canonicalIdx] = { ...tags[canonicalIdx], code: nextCode, name: nextName, category: nextCat, color: nextColor, assemblyId: nextAssemblyId };
+          const updatedTag = { ...tags[canonicalIdx], code: nextCode, name: nextName, category: nextCat, color: nextColor, assemblyId: nextAssemblyId };
+          // Remove assemblyId if explicitly set to undefined
+          if (nextAssemblyId === undefined) delete (updatedTag as any).assemblyId;
+          tags[canonicalIdx] = updatedTag;
           tags.splice(currentIdx, 1);
         } else {
-          tags[currentIdx] = { ...tags[currentIdx], code: nextCode, name: nextName, category: nextCat, color: nextColor, assemblyId: nextAssemblyId };
+          const updatedTag = { ...tags[currentIdx], code: nextCode, name: nextName, category: nextCat, color: nextColor, assemblyId: nextAssemblyId };
+          // Remove assemblyId if explicitly set to undefined
+          if (nextAssemblyId === undefined) delete (updatedTag as any).assemblyId;
+          tags[currentIdx] = updatedTag;
         }
 
         const overrides = { ...s.colorOverrides };

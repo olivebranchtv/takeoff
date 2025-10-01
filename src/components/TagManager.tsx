@@ -290,13 +290,11 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     (tags as Tag[]).forEach((tag: Tag) => {
       // Check if it's a Lights category tag with a single letter code or letter+number
       const isLightCategory = tag.category?.toLowerCase().includes('light');
-      const isGenericCode = /^[A-Z]$/.test(tag.code) || /^[A-Z]\d+$/.test(tag.code);
+      const isGenericCode = /^[A-Z]$/.test(tag.code) || /^[A-Z]\d+$/.test(tag.code) || /^[A-Z]\d*-[A-Z]+$/.test(tag.code);
 
       if (isLightCategory && isGenericCode && (tag as any).assemblyId) {
-        // Remove the assembly
-        const updatedTag = { ...tag };
-        delete (updatedTag as any).assemblyId;
-        updateTag(tag.id, updatedTag as any);
+        // Remove the assembly by explicitly passing assemblyId: undefined
+        updateTag(tag.id, { assemblyId: undefined } as any);
         cleared++;
       }
     });
