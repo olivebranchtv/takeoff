@@ -258,10 +258,18 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   }
 
   function autoPopulateAssemblies() {
-    if (!confirm('Auto-assign assemblies to all tags based on their codes and categories? This will update tags that don\'t have assemblies assigned.')) return;
+    if (!confirm('Auto-assign assemblies to all tags based on their codes and categories?\n\nNote: Lights category will be SKIPPED (use pricing database only for customer-supplied fixtures).')) return;
 
     let updated = 0;
+    let skipped = 0;
     (tags as Tag[]).forEach((tag: Tag) => {
+      // Skip Lights category entirely (customer-supplied fixtures)
+      const isLightCategory = tag.category?.toLowerCase().includes('light');
+      if (isLightCategory) {
+        skipped++;
+        return;
+      }
+
       // Only auto-assign if no assembly is currently set
       if (!(tag as any).assemblyId) {
         const assemblyId = getAssemblyIdForTag(tag.code, tag.category);
@@ -272,7 +280,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       }
     });
 
-    alert(`Auto-assigned assemblies to ${updated} tags.`);
+    alert(`Auto-assigned assemblies to ${updated} tags.\nSkipped ${skipped} Lights category tags (use pricing database for customer-supplied fixtures).`);
   }
 
   function clearLightAssemblies() {
