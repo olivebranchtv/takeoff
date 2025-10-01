@@ -57,6 +57,7 @@ export const DEFAULT_MASTER_TAGS: MasterTag[] = [
   // --------------------------- RECEPTACLES ---------------------------
   { code: 'REC', name: 'Duplex Receptacle', color: '#3B82F6', category: 'Receptacles' },
   { code: 'QR', name: 'Quad Receptacle', color: '#3B82F6', category: 'Receptacles' },
+  { code: 'GFI', name: 'GFCI Receptacle (Homerun every 6)', color: '#1D4ED8', category: 'Receptacles' },
   { code: 'REC-GFCI', name: 'GFCI Receptacle (Homerun every 6)', color: '#1D4ED8', category: 'Receptacles' },
   { code: 'REC-WP-GFCI', name: 'GFCI (Weatherproof)', color: '#1D4ED8', category: 'Receptacles' },
   { code: 'REC-IG', name: 'Isolated Ground Receptacle', color: '#1E40AF', category: 'Receptacles' },
