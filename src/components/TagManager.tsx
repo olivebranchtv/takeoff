@@ -304,18 +304,10 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   }
 
   function autoPopulateAssemblies() {
-    if (!confirm('Auto-assign assemblies to all tags based on their codes and categories?\n\nNote: Lights category will be SKIPPED (use pricing database only for customer-supplied fixtures).')) return;
+    if (!confirm('Auto-assign assemblies to all tags based on their codes and categories?\n\nNote: ALL lights will get the Standard Lighting Fixture Installation assembly (box, conduit, wire, fittings).')) return;
 
     let updated = 0;
-    let skipped = 0;
     (tags as Tag[]).forEach((tag: Tag) => {
-      // Skip Lights category entirely (customer-supplied fixtures)
-      const isLightCategory = tag.category?.toLowerCase().includes('light');
-      if (isLightCategory) {
-        skipped++;
-        return;
-      }
-
       // Only auto-assign if no assembly is currently set
       if (!(tag as any).assemblyId) {
         const assemblyId = getAssemblyIdForTag(tag.code, tag.category);
@@ -326,26 +318,25 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       }
     });
 
-    alert(`Auto-assigned assemblies to ${updated} tags.\nSkipped ${skipped} Lights category tags (use pricing database for customer-supplied fixtures).`);
+    alert(`Auto-assigned assemblies to ${updated} tags.`);
   }
 
-  function clearLightAssemblies() {
-    if (!confirm('Remove assemblies from all generic light tags (A-Z)? This is required for customer-supplied fixtures to work correctly.\n\nThis will clear assemblies from tags like "A", "B", "C", "D", etc. in the Lights category.')) return;
+  function assignLightAssemblies() {
+    if (!confirm('Assign Standard Lighting Assembly to ALL light tags?\n\nThis will add the Standard Lighting Fixture Installation assembly (box, conduit, wire, fittings) to all lights category tags.')) return;
 
-    let cleared = 0;
+    let assigned = 0;
     (tags as Tag[]).forEach((tag: Tag) => {
-      // Check if it's a Lights category tag with a single letter code or letter+number
+      // Check if it's a Lights category tag
       const isLightCategory = tag.category?.toLowerCase().includes('light');
-      const isGenericCode = /^[A-Z]$/.test(tag.code) || /^[A-Z]\d+$/.test(tag.code) || /^[A-Z]\d*-[A-Z]+$/.test(tag.code);
 
-      if (isLightCategory && isGenericCode && (tag as any).assemblyId) {
-        // Remove the assembly by explicitly passing assemblyId: undefined
-        updateTag(tag.id, { assemblyId: undefined } as any);
-        cleared++;
+      if (isLightCategory) {
+        // Assign the standard lighting assembly
+        updateTag(tag.id, { ...tag, assemblyId: 'light-standard-install' } as any);
+        assigned++;
       }
     });
 
-    alert(`Cleared assemblies from ${cleared} generic light tags. These will now use pricing database only (for customer-supplied fixtures).`);
+    alert(`Assigned Standard Lighting Assembly to ${assigned} light tags. Each light now includes installation materials (box, conduit, wire, fittings).`);
   }
 
   function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -438,11 +429,11 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             <button className="btn" onClick={autoPopulateAssemblies} title="Auto-assign assemblies to tags that don't have them">Auto-Assign Assemblies</button>
             <button
               className="btn"
-              onClick={clearLightAssemblies}
-              title="Remove assemblies from generic light tags (A-Z) for customer-supplied fixtures"
+              onClick={assignLightAssemblies}
+              title="Assign Standard Lighting Assembly to all light tags"
               style={{ background: '#fbbf24', color: '#000' }}
             >
-              Clear Light Assemblies
+              Assign Light Assemblies
             </button>
             <button className="btn" onClick={() => fileRef.current?.click()}>Import JSON</button>
             <button className="btn" onClick={() => downloadTagsFile('tags.json', exportTags())}>Export JSON</button>
