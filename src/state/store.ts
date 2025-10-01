@@ -415,19 +415,25 @@ export const useStore = create<State>()(
         const nextCat  = (patch.category ?? (tags[currentIdx].category || '')).trim();
         const nextName = patch.name ?? tags[currentIdx].name;
         const nextColor= patch.color ?? tags[currentIdx].color;
-        const nextAssemblyId = patch.assemblyId !== undefined ? patch.assemblyId : tags[currentIdx].assemblyId;
+        let nextAssemblyId = patch.assemblyId !== undefined ? patch.assemblyId : tags[currentIdx].assemblyId;
+
+        // NEVER allow assemblies on Lights category
+        const isLightCategory = nextCat?.toLowerCase().includes('light');
+        if (isLightCategory) {
+          nextAssemblyId = undefined;
+        }
 
         // Merge into canonical if code collides with another
         const canonicalIdx = tags.findIndex(t => norm(t.code) === nextCode);
         if (canonicalIdx >= 0 && canonicalIdx !== currentIdx) {
           const updatedTag = { ...tags[canonicalIdx], code: nextCode, name: nextName, category: nextCat, color: nextColor, assemblyId: nextAssemblyId };
-          // Remove assemblyId if explicitly set to undefined
+          // Remove assemblyId if explicitly set to undefined or is light category
           if (nextAssemblyId === undefined) delete (updatedTag as any).assemblyId;
           tags[canonicalIdx] = updatedTag;
           tags.splice(currentIdx, 1);
         } else {
           const updatedTag = { ...tags[currentIdx], code: nextCode, name: nextName, category: nextCat, color: nextColor, assemblyId: nextAssemblyId };
-          // Remove assemblyId if explicitly set to undefined
+          // Remove assemblyId if explicitly set to undefined or is light category
           if (nextAssemblyId === undefined) delete (updatedTag as any).assemblyId;
           tags[currentIdx] = updatedTag;
         }

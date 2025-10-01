@@ -147,6 +147,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         name: next.name || '',
         category: (next.category || '').trim(),
         color: next.color || '#FFA500',
+        assemblyId: next.assemblyId || undefined,
       });
 
       // If user was editing a different duplicate record, remove it to avoid twins
@@ -161,6 +162,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         name: next.name || '',
         category: (next.category || '').trim(),
         color: next.color || '#FFA500',
+        assemblyId: next.assemblyId || undefined,
       });
       return null;
     }
@@ -181,7 +183,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   function startEdit(t: Tag) {
     setEditId(t.id);
-    setDraft({ code: t.code, name: t.name, category: t.category, color: t.color });
+    setDraft({ code: t.code, name: t.name, category: t.category, color: t.color, assemblyId: t.assemblyId });
     setError('');
     const cat = t.category || '';
     if (cat && sortedCategories.includes(cat)) {
