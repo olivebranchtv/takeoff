@@ -521,6 +521,8 @@ export function calculateProjectCosts(
     const division = mat.category || 'General';
     const existing = divisionMap.get(division);
 
+    console.log(`📊 Adding to division "${division}": ${mat.description} (qty=${mat.totalQty}, $${matCost}, ${materialLaborHours}hrs)`);
+
     if (matCost > 0 || materialLaborHours > 0 || mat.totalQty > 0) {
       if (matCost === 0 && price === 0 && mat.totalQty > 0) {
         console.warn(`⚠️ NO PRICE: ${mat.category}::${mat.description} (qty: ${mat.totalQty}) - will show $0 in division`);
@@ -529,9 +531,12 @@ export function calculateProjectCosts(
       }
 
       if (existing) {
+        console.log(`  ➕ Adding to EXISTING division "${division}": was $${existing.materialCost.toFixed(2)}, adding $${matCost.toFixed(2)}`);
         existing.materialCost += matCost;
         existing.laborHours += materialLaborHours;
+        console.log(`  ✅ Division "${division}" now: $${existing.materialCost.toFixed(2)}, ${existing.laborHours.toFixed(2)}hrs`);
       } else {
+        console.log(`  🆕 Creating NEW division "${division}": $${matCost.toFixed(2)}, ${materialLaborHours.toFixed(2)}hrs`);
         divisionMap.set(division, {
           division,
           materialCost: matCost,
