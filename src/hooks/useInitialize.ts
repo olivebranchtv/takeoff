@@ -18,6 +18,9 @@ export function useInitialize() {
     async function initialize() {
       console.log('🔄 Initializing application...');
 
+      // CRITICAL: Wait for Zustand persist to fully load from localStorage
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Load tags from Supabase
       console.log('🔄 Loading tags from Supabase...');
       try {

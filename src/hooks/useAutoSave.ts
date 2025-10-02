@@ -6,6 +6,7 @@ export function useAutoSave() {
   const pages = useStore(s => s.pages);
   const tags = useStore(s => s.tags);
   const colorOverrides = useStore(s => s.colorOverrides);
+  const deletedTagCodes = useStore(s => s.deletedTagCodes);
   const projectName = useStore(s => s.projectName);
   const fileName = useStore(s => s.fileName);
   const pdfBytesBase64 = useStore(s => s.pdfBytesBase64);
@@ -35,27 +36,27 @@ export function useAutoSave() {
       }
     }
 
-    // Save tags separately for faster tag library access
-    if (tags.length > 0) {
-      await saveTagsToSupabase(tags, colorOverrides);
-    }
+    // Save tags separately for faster tag library access (ALWAYS save, even with 0 tags, to persist deletedTagCodes)
+    await saveTagsToSupabase(tags, colorOverrides, deletedTagCodes);
   };
 
+  // AUTOSAVE DISABLED - Manual save only
   // Periodic save every 5 minutes
   useEffect(() => {
-    periodicSaveRef.current = setInterval(() => {
-      if (pages.length > 0) {
-        console.log('⏰ Running periodic autosave (5 minutes)...');
-        saveProject();
-      }
-    }, 5 * 60 * 1000); // 5 minutes
+    console.log('⏸️ Autosave is currently DISABLED');
+    // periodicSaveRef.current = setInterval(() => {
+    //   if (pages.length > 0) {
+    //     console.log('⏰ Running periodic autosave (5 minutes)...');
+    //     saveProject();
+    //   }
+    // }, 5 * 60 * 1000); // 5 minutes
 
     return () => {
       if (periodicSaveRef.current) {
         clearInterval(periodicSaveRef.current);
       }
     };
-  }, [pages, tags, colorOverrides, projectName, fileName, pdfBytesBase64, pdfName]);
+  }, [pages, tags, colorOverrides, deletedTagCodes, projectName, fileName, pdfBytesBase64, pdfName]);
 
   // Warn before closing if there are unsaved changes
   useEffect(() => {
