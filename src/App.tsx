@@ -404,27 +404,21 @@ export default function App() {
           setPdf(pdfDoc);
           setPdfBytesBase64(projectData.pdf.bytesBase64);
           setPdfName(projectData.pdf.name || storeState.fileName);
-          alert(`✅ Project Loaded Successfully!\n\n${storeState.projectName || storeState.fileName}\n\nPDF and all markups restored.`);
         } catch (error) {
           console.error('Error loading PDF from database:', error);
           setPdf(null);
           setPdfBytesBase64(null);
           setPdfName('');
-          const openPdf = confirm(`✅ Project Loaded: ${storeState.projectName || storeState.fileName}\n\n⚠️ Could not restore PDF file.\n\nWould you like to browse for the original PDF?`);
-          if (openPdf) {
-            setTimeout(() => pdfFileRef.current?.click(), 100);
-          }
         }
       } else {
         // No PDF data saved (old project format)
         setPdf(null);
         setPdfBytesBase64(null);
         setPdfName('');
-        const openPdf = confirm(`✅ Project Loaded: ${storeState.projectName || storeState.fileName}\n\n📄 PDF file was not included in this save.\nYour markups and measurements are ready.\n\nWould you like to open the original PDF now?`);
-        if (openPdf) {
-          setTimeout(() => pdfFileRef.current?.click(), 100);
-        }
       }
+
+      // Show simple success message
+      alert(`✅ Loaded: ${storeState.projectName || storeState.fileName}`);
     } else {
       alert('❌ Failed to load project from database');
     }
