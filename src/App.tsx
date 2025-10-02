@@ -1473,8 +1473,17 @@ function SidebarBOM({ bom, onToggle }:{
   };
   onToggle: () => void;
 }) {
-  const { pages, tags: storeTags } = useStore();
+  const { pages, tags: storeTags, manualItems, addManualItem, deleteManualItem } = useStore();
   const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(new Set(['Lights', 'Receptacles', 'Switches', 'Panels']));
+  const [showManualEntry, setShowManualEntry] = React.useState(false);
+  const [newItem, setNewItem] = React.useState({
+    description: '',
+    quantity: 0,
+    unit: 'EA',
+    category: '',
+    itemCode: '',
+    notes: ''
+  });
 
   const itemized = React.useMemo(() => {
     const allRows = buildBOMRows(pages, 'itemized');
@@ -1659,6 +1668,124 @@ function SidebarBOM({ bom, onToggle }:{
               </div>
             );
           })}
+        </div>
+
+        {/* Manual Items (not on drawing) */}
+        <div style={{marginBottom:16, padding:'12px', background:'#f8f9fa', border:'1px solid #dee2e6', borderRadius:8}}>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10}}>
+            <div style={{fontWeight:700, fontSize:15, color:'#495057'}}>Manual Items</div>
+            <button
+              className="btn"
+              onClick={() => {
+                setShowManualEntry(!showManualEntry);
+                if (!showManualEntry) {
+                  setNewItem({description:'',quantity:0,unit:'EA',category:'',itemCode:'',notes:''});
+                }
+              }}
+              style={{fontSize:12, padding:'4px 8px', background:'#10b981', color:'white', border:'none', borderRadius:4}}
+            >
+              + Add
+            </button>
+          </div>
+
+          {showManualEntry && (
+            <div style={{padding:10, background:'#fff', border:'1px solid #dee2e6', borderRadius:6, marginBottom:10}}>
+              <div style={{marginBottom:8}}>
+                <input
+                  type="text"
+                  placeholder="Description (e.g., 200 LF Trenching)"
+                  value={newItem.description}
+                  onChange={(e) => setNewItem({...newItem, description: e.target.value})}
+                  style={{width:'100%', padding:'6px 8px', border:'1px solid #ced4da', borderRadius:4, fontSize:13, marginBottom:8}}
+                />
+              </div>
+              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8}}>
+                <input
+                  type="number"
+                  placeholder="Quantity"
+                  value={newItem.quantity || ''}
+                  onChange={(e) => setNewItem({...newItem, quantity: parseFloat(e.target.value) || 0})}
+                  style={{padding:'6px 8px', border:'1px solid #ced4da', borderRadius:4, fontSize:13}}
+                />
+                <select
+                  value={newItem.unit}
+                  onChange={(e) => setNewItem({...newItem, unit: e.target.value})}
+                  style={{padding:'6px 8px', border:'1px solid #ced4da', borderRadius:4, fontSize:13}}
+                >
+                  <option value="EA">EA</option>
+                  <option value="LF">LF</option>
+                  <option value="HR">HR</option>
+                  <option value="LS">LS</option>
+                  <option value="SF">SF</option>
+                </select>
+              </div>
+              <div style={{display:'flex', gap:6}}>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    if (newItem.description && newItem.quantity > 0) {
+                      addManualItem(newItem);
+                      setNewItem({description:'',quantity:0,unit:'EA',category:'',itemCode:'',notes:''});
+                      setShowManualEntry(false);
+                    } else {
+                      alert('Please enter description and quantity');
+                    }
+                  }}
+                  style={{flex:1, padding:'6px', fontSize:12, background:'#10b981', color:'white', border:'none', borderRadius:4}}
+                >
+                  Save
+                </button>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    setShowManualEntry(false);
+                    setNewItem({description:'',quantity:0,unit:'EA',category:'',itemCode:'',notes:''});
+                  }}
+                  style={{flex:1, padding:'6px', fontSize:12, background:'#6c757d', color:'white', border:'none', borderRadius:4}}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {manualItems.length > 0 ? (
+            <div style={{marginTop:10}}>
+              {manualItems.map(item => (
+                <div
+                  key={item.id}
+                  style={{
+                    display:'flex',
+                    justifyContent:'space-between',
+                    alignItems:'center',
+                    padding:'8px',
+                    marginBottom:6,
+                    background:'#fff',
+                    border:'1px solid #dee2e6',
+                    borderRadius:4,
+                    fontSize:13
+                  }}
+                >
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:600, marginBottom:2}}>{item.description}</div>
+                    <div style={{fontSize:12, color:'#6c757d'}}>{item.quantity} {item.unit}</div>
+                  </div>
+                  <button
+                    className="btn"
+                    onClick={() => deleteManualItem(item.id)}
+                    style={{padding:'4px 8px', fontSize:11, background:'#dc3545', color:'white', border:'none', borderRadius:4}}
+                    title="Delete"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{fontSize:12, color:'#6c757d', textAlign:'center', padding:'10px'}}>
+              No manual items. Click + Add for trenching, transformers, generators, etc.
+            </div>
+          )}
         </div>
 
         {/* NEW: Itemized Measurements */}
