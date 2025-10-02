@@ -1485,17 +1485,33 @@ function SidebarBOM({ bom, onToggle }:{
     notes: ''
   });
 
-  // Common manual items with assemblies
-  const commonManualItems = React.useMemo(() => {
-    return assemblies.filter(a =>
-      ['TRENCH-6X36', 'BACKHOE-HR', 'XFMR-30KVA', 'XFMR-75KVA', 'XFMR-150KVA', 'XFMR-225KVA', 'XFMR-500KVA',
-       'DISC-200A', 'DISC-400A', 'EV-SINGLE', 'EV-DUAL', 'GEN-INSTALL', 'POLE-LIGHT', 'PWR-POLE', 'STUDY-COORD'].includes(a.code)
-    ).map(a => ({
-      code: a.code,
-      name: a.name,
-      description: a.description
-    }));
-  }, [assemblies]);
+  // Predefined manual items (common items not typically on drawings)
+  const manualItemTemplates = [
+    { code: 'TRENCH-6X36', name: 'Trenching 6x36 per LF', unit: 'LF', category: 'Site Work' },
+    { code: 'BACKHOE-HR', name: 'Backhoe Work per Hour', unit: 'HR', category: 'Site Work' },
+    { code: 'XFMR-30KVA', name: '30 kVA Transformer', unit: 'EA', category: 'Transformers' },
+    { code: 'XFMR-75KVA', name: '75 kVA Transformer', unit: 'EA', category: 'Transformers' },
+    { code: 'XFMR-150KVA', name: '150 kVA Transformer', unit: 'EA', category: 'Transformers' },
+    { code: 'XFMR-225KVA', name: '225 kVA Transformer', unit: 'EA', category: 'Transformers' },
+    { code: 'XFMR-500KVA', name: '500 kVA Transformer', unit: 'EA', category: 'Transformers' },
+    { code: 'DISC-200A', name: '200A Disconnect', unit: 'EA', category: 'Disconnects' },
+    { code: 'DISC-400A', name: '400A Disconnect', unit: 'EA', category: 'Disconnects' },
+    { code: 'EV-SINGLE', name: 'Single Unit EV Charger', unit: 'EA', category: 'EV & Generators' },
+    { code: 'EV-DUAL', name: 'Dual Unit EV Charger', unit: 'EA', category: 'EV & Generators' },
+    { code: 'GEN-INSTALL', name: 'Generator Installation', unit: 'EA', category: 'EV & Generators' },
+    { code: 'POLE-LIGHT', name: 'Pole Light Complete', unit: 'EA', category: 'Site Lighting' },
+    { code: 'PWR-POLE', name: 'Power Pole Installation', unit: 'EA', category: 'Site Lighting' },
+    { code: 'STUDY-COORD', name: 'Coordination Study', unit: 'EA', category: 'Engineering' },
+  ];
+
+  const groupedTemplates = React.useMemo(() => {
+    const groups: Record<string, typeof manualItemTemplates> = {};
+    manualItemTemplates.forEach(item => {
+      if (!groups[item.category]) groups[item.category] = [];
+      groups[item.category].push(item);
+    });
+    return groups;
+  }, []);
 
   const itemized = React.useMemo(() => {
     const allRows = buildBOMRows(pages, 'itemized');
@@ -1711,15 +1727,14 @@ function SidebarBOM({ bom, onToggle }:{
                   onChange={(e) => {
                     const code = e.target.value;
                     if (code) {
-                      const assembly = assemblies.find(a => a.code === code);
-                      if (assembly) {
-                        const unit = code.includes('TRENCH') ? 'LF' : code.includes('BACKHOE') ? 'HR' : 'EA';
+                      const template = manualItemTemplates.find(t => t.code === code);
+                      if (template) {
                         setNewItem({
                           ...newItem,
                           itemCode: code,
-                          description: assembly.name,
-                          unit: unit,
-                          category: assembly.type
+                          description: template.name,
+                          unit: template.unit,
+                          category: template.category
                         });
                       }
                     } else {
@@ -1729,36 +1744,13 @@ function SidebarBOM({ bom, onToggle }:{
                   style={{width:'100%', padding:'6px 8px', border:'1px solid #ced4da', borderRadius:4, fontSize:13, marginBottom:8}}
                 >
                   <option value="">-- Select Common Item --</option>
-                  <optgroup label="Site Work">
-                    {commonManualItems.filter(i => i.code.includes('TRENCH') || i.code.includes('BACKHOE')).map(item => (
-                      <option key={item.code} value={item.code}>{item.name}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Transformers">
-                    {commonManualItems.filter(i => i.code.includes('XFMR')).map(item => (
-                      <option key={item.code} value={item.code}>{item.name}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Disconnects">
-                    {commonManualItems.filter(i => i.code.includes('DISC')).map(item => (
-                      <option key={item.code} value={item.code}>{item.name}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="EV & Generators">
-                    {commonManualItems.filter(i => i.code.includes('EV') || i.code.includes('GEN')).map(item => (
-                      <option key={item.code} value={item.code}>{item.name}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Site Lighting & Poles">
-                    {commonManualItems.filter(i => i.code.includes('POLE') || i.code.includes('PWR')).map(item => (
-                      <option key={item.code} value={item.code}>{item.name}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Engineering">
-                    {commonManualItems.filter(i => i.code.includes('STUDY')).map(item => (
-                      <option key={item.code} value={item.code}>{item.name}</option>
-                    ))}
-                  </optgroup>
+                  {Object.entries(groupedTemplates).map(([category, items]) => (
+                    <optgroup key={category} label={category}>
+                      {items.map(item => (
+                        <option key={item.code} value={item.code}>{item.name}</option>
+                      ))}
+                    </optgroup>
+                  ))}
                 </select>
               </div>
               <div style={{marginBottom:8}}>
