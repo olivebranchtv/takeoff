@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PDFDoc } from '@/lib/pdf';
 import { loadPdfFromBytes } from '@/lib/pdf';
 import PDFViewport from '@/components/PDFViewport';
@@ -98,6 +98,7 @@ export default function App() {
   const [fileMenuOpen, setFileMenuOpen] = useState(false);
   const [lastSaveBase, setLastSaveBase] = useState<string | null>(null);
   const [userGuideOpen, setUserGuideOpen] = useState(false);
+  const [timeSinceLastSave, setTimeSinceLastSave] = useState<string>('');
 
   /* ---------- per-project "Project Tags" ---------- */
   const [projectTags, setProjectTags] = useState<TagLite[]>([]);
@@ -133,6 +134,7 @@ export default function App() {
     setSelectedIds,
     setProjectName,
     reorderProjectTags,
+    lastSaveTime,
   } = useStore();
 
   /* ---------- scroll container + content ---------- */
@@ -207,6 +209,26 @@ export default function App() {
     URL.revokeObjectURL(url);
     setLastSaveBase(base);
   }, [makeBundle, lastSaveBase]);
+
+  // Update time since last save display
+  useEffect(() => {
+    const updateTimeSince = () => {
+      if (!lastSaveTime) {
+        setTimeSinceLastSave('Not saved');
+        return;
+      }
+      const saveDate = lastSaveTime instanceof Date ? lastSaveTime : new Date(lastSaveTime);
+      const seconds = Math.floor((Date.now() - saveDate.getTime()) / 1000);
+      if (seconds < 10) setTimeSinceLastSave('Just now');
+      else if (seconds < 60) setTimeSinceLastSave(`${seconds}s ago`);
+      else if (seconds < 3600) setTimeSinceLastSave(`${Math.floor(seconds / 60)}m ago`);
+      else setTimeSinceLastSave(`${Math.floor(seconds / 3600)}h ago`);
+    };
+
+    updateTimeSince();
+    const interval = setInterval(updateTimeSince, 5000);
+    return () => clearInterval(interval);
+  }, [lastSaveTime]);
 
   function doNewProject() {
     if (!confirm('Start a new project? Unsaved changes will be lost.')) return;
@@ -361,8 +383,24 @@ export default function App() {
 
     const projectData = await loadProjectByIdFromSupabase(projects[index].id);
     if (projectData) {
+      // Load project into store
       useStore.getState().fromProject(projectData);
-      alert(`✅ Loaded: ${projectData.projectName || projectData.name}`);
+
+      // Sync local state with store
+      const storeState = useStore.getState();
+      setPages(storeState.pages);
+      setPageCount(storeState.pages.length);
+      setPageLabels(storeState.pages.map((p: any) => p.pageLabel || `Page ${p.pageIndex + 1}`));
+      setActivePage(0);
+      setFileName(storeState.fileName);
+      setProjectName(storeState.projectName);
+
+      // Clear PDF view (project data loaded, but no PDF bytes)
+      setPdf(null);
+      setPdfBytesBase64(null);
+      setPdfName('');
+
+      alert(`✅ Loaded: ${storeState.projectName || storeState.fileName}\n\n⚠️ Note: PDF file not included. Pages and markups loaded from database.`);
     } else {
       alert('❌ Failed to load project from database');
     }
@@ -1162,38 +1200,27 @@ export default function App() {
           {pdfName || fileName}
         </span>
         {/* Autosave Status Indicator */}
-        {pageCount > 0 && (() => {
-          const lastSaveTime = useStore.getState().lastSaveTime;
-          const saveDate = lastSaveTime ? (lastSaveTime instanceof Date ? lastSaveTime : new Date(lastSaveTime)) : null;
-          const seconds = saveDate ? Math.floor((Date.now() - saveDate.getTime()) / 1000) : -1;
-          let timeSinceText = 'Not saved';
-          if (seconds >= 0) {
-            if (seconds < 10) timeSinceText = 'Just now';
-            else if (seconds < 60) timeSinceText = `${seconds}s ago`;
-            else if (seconds < 3600) timeSinceText = `${Math.floor(seconds / 60)}m ago`;
-            else timeSinceText = `${Math.floor(seconds / 3600)}h ago`;
-          }
-          return (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 12px',
-                background: lastSaveTime ? '#f0fdf4' : '#f9fafb',
-                border: `1px solid ${lastSaveTime ? '#86efac' : '#e5e7eb'}`,
-                borderRadius: 8,
-                fontSize: '13px',
-                color: lastSaveTime ? '#15803d' : '#6b7280',
-                marginLeft: 12
-              }}
-              title={lastSaveTime ? `Last saved: ${saveDate!.toLocaleString()}` : 'Not saved to database yet'}
-            >
-              <span>{lastSaveTime ? '☁️' : '⊗'}</span>
-              <span style={{fontWeight: 500}}>{timeSinceText}</span>
-            </div>
-          );
-        })()}
+        {pageCount > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 14px',
+              background: lastSaveTime ? '#f0fdf4' : '#fef2f2',
+              border: `2px solid ${lastSaveTime ? '#86efac' : '#fecaca'}`,
+              borderRadius: 8,
+              fontSize: '14px',
+              fontWeight: 600,
+              color: lastSaveTime ? '#15803d' : '#dc2626',
+              marginLeft: 12
+            }}
+            title={lastSaveTime ? `Last saved: ${(lastSaveTime instanceof Date ? lastSaveTime : new Date(lastSaveTime)).toLocaleString()}` : 'Not saved to database yet'}
+          >
+            <span style={{fontSize: '16px'}}>{lastSaveTime ? '☁️' : '⚠️'}</span>
+            <span>{timeSinceLastSave}</span>
+          </div>
+        )}
         <button className="btn" onClick={()=>setSettingsOpen(true)} style={{marginLeft:'auto'}}>⚙️ Settings</button>
       </div>}
 
