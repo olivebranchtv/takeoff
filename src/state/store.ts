@@ -133,6 +133,10 @@ type State = {
   zoom: number;
   currentTag: string;
 
+  // PDF storage
+  pdfBytesBase64: string | null;
+  pdfName: string;
+
   // page navigation
   activePage: number;
   pageCount: number;
@@ -180,6 +184,8 @@ type State = {
   setTool: (t: Tool) => void;
   setZoom: (z: number) => void;
   setCurrentTag: (c: string) => void;
+  setPdfBytesBase64: (bytes: string | null) => void;
+  setPdfName: (name: string) => void;
 
   setActivePage: (i: number) => void;
   setPageCount: (n: number) => void;
@@ -253,6 +259,9 @@ export const useStore = create<State>()(
       zoom: 1,
       currentTag: 'A',
 
+      pdfBytesBase64: null,
+      pdfName: '',
+
       activePage: 0,
       pageCount: 0,
       pageLabels: [],
@@ -288,6 +297,8 @@ export const useStore = create<State>()(
       setTool: (t) => set({ tool: t }),
       setZoom: (z) => set({ zoom: Math.max(0.1, Math.min(6, z)) }),
       setCurrentTag: (c) => set({ currentTag: c }),
+      setPdfBytesBase64: (bytes) => set({ pdfBytesBase64: bytes }),
+      setPdfName: (name) => set({ pdfName: name }),
 
       setActivePage: (i) => {
         const { pageCount } = get();

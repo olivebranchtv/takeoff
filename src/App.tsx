@@ -80,6 +80,17 @@ export default function App() {
   const [pdfName, setPdfName] = useState<string>('');
   const [pdfBytesBase64, setPdfBytesBase64] = useState<string | null>(null);
 
+  // Wrapper functions to update both local state and Zustand store
+  const updatePdfBytesBase64 = (bytes: string | null) => {
+    setPdfBytesBase64(bytes);
+    useStore.getState().setPdfBytesBase64(bytes);
+  };
+
+  const updatePdfName = (name: string) => {
+    setPdfName(name);
+    useStore.getState().setPdfName(name);
+  };
+
   /* ---------- Tag Manager modal ---------- */
   const [tagsOpen, setTagsOpen] = useState(false);
 
@@ -233,8 +244,8 @@ export default function App() {
   function doNewProject() {
     if (!confirm('Start a new project? Unsaved changes will be lost.')) return;
     setPdf(null);
-    setPdfName('');
-    setPdfBytesBase64(null);
+    updatePdfName('');
+    updatePdfBytesBase64(null);
     setFileName('');
     setPages([]);
     setPageCount(0);
@@ -303,9 +314,9 @@ export default function App() {
           const doc = await loadPdfFromBytes(u8);
 
           setPdf(doc);
-          setPdfName(bundle.pdf.name || 'document.pdf');
+          updatePdfName(bundle.pdf.name || 'document.pdf');
           setFileName(bundle.pdf.name || 'document.pdf');
-          setPdfBytesBase64(bundle.pdf.bytesBase64);
+          updatePdfBytesBase64(bundle.pdf.bytesBase64);
 
           setPageCount(doc.numPages);
           setPageLabels(await resolvePageLabels(doc));
@@ -405,8 +416,8 @@ export default function App() {
           const pdfDoc = await loadPdfFromBytes(bytes);
           console.log('[Database Load] PDF loaded, pages:', pdfDoc.numPages);
           setPdf(pdfDoc);
-          setPdfBytesBase64(projectData.pdf.bytesBase64);
-          setPdfName(projectData.pdf.name || storeState.fileName);
+          updatePdfBytesBase64(projectData.pdf.bytesBase64);
+          updatePdfName(projectData.pdf.name || storeState.fileName);
           setFileName(projectData.pdf.name || storeState.fileName);
 
           // Update page count and labels for PDF viewport
@@ -418,15 +429,15 @@ export default function App() {
         } catch (error) {
           console.error('[Database Load] ❌ Error loading PDF:', error);
           setPdf(null);
-          setPdfBytesBase64(null);
-          setPdfName('');
+          updatePdfBytesBase64(null);
+          updatePdfName('');
         }
       } else {
         console.log('[Database Load] ⚠️ No PDF data in project');
         // No PDF data saved (old project format)
         setPdf(null);
-        setPdfBytesBase64(null);
-        setPdfName('');
+        updatePdfBytesBase64(null);
+        updatePdfName('');
       }
 
       // Show simple success message
@@ -451,8 +462,8 @@ export default function App() {
       b64 = btoa(s);
     }
 
-    setPdfBytesBase64(b64);
-    setPdfName(file.name);
+    updatePdfBytesBase64(b64);
+    updatePdfName(file.name);
 
     // Always feed pdf.js a Uint8Array
     const doc = await loadPdfFromBytes(new Uint8Array(buf));
@@ -514,7 +525,7 @@ export default function App() {
       // Reload the merged PDF
       const doc = await loadPdfFromBytes(new Uint8Array(mergedPdfBytes));
       setPdf(doc);
-      setPdfBytesBase64(b64);
+      updatePdfBytesBase64(b64);
 
       // Create custom page labels for the new sheet
       const sheetName = file.name.replace(/\.pdf$/i, '').trim();

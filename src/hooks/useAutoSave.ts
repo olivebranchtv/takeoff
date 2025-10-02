@@ -8,6 +8,8 @@ export function useAutoSave() {
   const colorOverrides = useStore(s => s.colorOverrides);
   const projectName = useStore(s => s.projectName);
   const fileName = useStore(s => s.fileName);
+  const pdfBytesBase64 = useStore(s => s.pdfBytesBase64);
+  const pdfName = useStore(s => s.pdfName);
   const setLastSaveTime = useStore(s => s.setLastSaveTime);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -21,7 +23,11 @@ export function useAutoSave() {
         projectName,
         name: projectName,
         pages,
-        tags
+        tags,
+        pdf: pdfBytesBase64 ? {
+          bytesBase64: pdfBytesBase64,
+          name: pdfName || fileName
+        } : undefined
       };
       const success = await saveProjectToSupabase(projectData);
       if (success) {
@@ -49,7 +55,7 @@ export function useAutoSave() {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [pages, tags, colorOverrides, projectName, fileName]);
+  }, [pages, tags, colorOverrides, projectName, fileName, pdfBytesBase64, pdfName]);
 
   // Periodic save every 5 minutes
   useEffect(() => {
@@ -65,7 +71,7 @@ export function useAutoSave() {
         clearInterval(periodicSaveRef.current);
       }
     };
-  }, [pages, tags, colorOverrides, projectName, fileName]);
+  }, [pages, tags, colorOverrides, projectName, fileName, pdfBytesBase64, pdfName]);
 
   // Warn before closing if there are unsaved changes
   useEffect(() => {
