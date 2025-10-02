@@ -473,8 +473,8 @@ export const useStore = create<State>()(
           else delete overrides[codeKey];
         }
 
-        // Save to Supabase asynchronously
-        saveTagsToSupabase(tags, overrides).catch(err => console.error('Failed to save tags to Supabase:', err));
+        // Save to Supabase asynchronously (include deletedTagCodes)
+        saveTagsToSupabase(tags, overrides, s.deletedTagCodes).catch(err => console.error('Failed to save tags to Supabase:', err));
 
         return { tags, colorOverrides: overrides };
       }),
@@ -556,8 +556,8 @@ export const useStore = create<State>()(
           delete overrides[nextCode];
         }
 
-        // Save to Supabase asynchronously
-        saveTagsToSupabase(tags, overrides).catch(err => console.error('Failed to save tags to Supabase:', err));
+        // Save to Supabase asynchronously (include deletedTagCodes)
+        saveTagsToSupabase(tags, overrides, s.deletedTagCodes).catch(err => console.error('Failed to save tags to Supabase:', err));
 
         return { tags, colorOverrides: overrides, projectTagIds: s.projectTagIds.filter(pid => pid !== id) };
       }),
@@ -673,8 +673,8 @@ export const useStore = create<State>()(
         }
         const keep = s.projectTagIds.filter(id => merged.some(t => t.id === id));
 
-        // Save to Supabase asynchronously
-        saveTagsToSupabase(merged, overrides).catch(err => console.error('Failed to save tags to Supabase:', err));
+        // Save to Supabase asynchronously (include deletedTagCodes)
+        saveTagsToSupabase(merged, overrides, s.deletedTagCodes).catch(err => console.error('Failed to save tags to Supabase:', err));
 
         return { tags: merged, projectTagIds: keep, colorOverrides: overrides };
       }),
@@ -921,13 +921,14 @@ export const useStore = create<State>()(
     {
       name: 'skd.mastertags.v1',
       storage: createJSONStorage(() => localStorage),
-      version: 5,
-      // persist palette, overrides, tags, lastMeasureOptions, aiAnalysisResult, manualItems
+      version: 6,
+      // persist palette, overrides, tags, deletedTagCodes, lastMeasureOptions, aiAnalysisResult, manualItems
       // Tags are saved to BOTH Supabase and localStorage for redundancy
       partialize: (s) => ({
         palette: s.palette,
         colorOverrides: s.colorOverrides,
         tags: s.tags,
+        deletedTagCodes: s.deletedTagCodes,
         lastMeasureOptions: s.lastMeasureOptions,
         aiAnalysisResult: s.aiAnalysisResult,
         manualItems: s.manualItems,
@@ -963,6 +964,13 @@ export const useStore = create<State>()(
         // Tags will be loaded from Supabase on next initialization and saved to both locations
         if (version === 4) {
           console.log('🔄 Migration v4→v5: Tags now saved to both Supabase and localStorage');
+        }
+        // Migration from version 5 to 6: Add deletedTagCodes to track permanently deleted tags
+        if (version === 5) {
+          console.log('🔄 Migration v5→v6: Adding deletedTagCodes tracking');
+          if (!persistedState.deletedTagCodes) {
+            persistedState.deletedTagCodes = [];
+          }
         }
         return persistedState;
       },
