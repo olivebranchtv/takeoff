@@ -99,12 +99,18 @@ export function calculateAssemblyMaterials(
     // Check if tag has custom pricing that overrides the assembly
     if (tag.customMaterialCost !== undefined || tag.customLaborHours !== undefined) {
       console.log(`🎯 Tag "${row.tagCode}" has custom pricing - overriding assembly "${assembly.code}"`);
+      console.log(`   Custom Material Cost: $${tag.customMaterialCost ?? 0}`);
+      console.log(`   Custom Labor Hours: ${tag.customLaborHours ?? 'not set'} hrs`);
+      console.log(`   Quantity: ${count} units`);
 
       // Use custom values if set, otherwise fall back to assembly totals
       const materialCost = tag.customMaterialCost ?? 0;
       const isLight = tag.category?.toLowerCase().includes('light');
       const defaultLaborHours = isLight ? 1.0 : 0.5;
       const laborHours = tag.customLaborHours ?? defaultLaborHours;
+
+      console.log(`   Final Material Cost: $${materialCost}/unit × ${count} = $${materialCost * count}`);
+      console.log(`   Final Labor Hours: ${laborHours} hrs/unit × ${count} = ${laborHours * count} hrs`);
 
       const matKey = `${tag.category || assembly.name}::${tag.name || assembly.name}::EA`;
       const existing = materialAcc.get(matKey);

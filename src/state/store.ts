@@ -593,7 +593,7 @@ export const useStore = create<State>()(
           }
           // Keep raw.assemblyId as-is for lights (preserve user assignments)
 
-          // Create tag object - only include assemblyId if defined
+          // Create tag object - only include optional fields if defined
           const t: Tag = {
             id: (raw as Tag).id || nextId(),
             code: (raw as any).code,
@@ -604,17 +604,28 @@ export const useStore = create<State>()(
           if (finalAssemblyId !== undefined) {
             t.assemblyId = finalAssemblyId;
           }
+          // Preserve custom pricing fields
+          if ('customMaterialCost' in raw) {
+            t.customMaterialCost = (raw as any).customMaterialCost;
+          }
+          if ('customLaborHours' in raw) {
+            t.customLaborHours = (raw as any).customLaborHours;
+          }
 
           const key = norm(t.code);
           const idx = merged.findIndex(x => norm(x.code) === key);
           if (idx >= 0) {
             // Merge tags but PRESERVE existing assemblyId unless explicitly overriding
+            // Also preserve custom pricing from incoming tag
             const updatedTag: Tag = {
               ...merged[idx],
               ...t,
               code: key,
               // CRITICAL: Only override assemblyId if incoming tag has one
-              assemblyId: finalAssemblyId !== undefined ? finalAssemblyId : merged[idx].assemblyId
+              assemblyId: finalAssemblyId !== undefined ? finalAssemblyId : merged[idx].assemblyId,
+              // Preserve custom pricing if present in incoming tag
+              customMaterialCost: t.customMaterialCost !== undefined ? t.customMaterialCost : merged[idx].customMaterialCost,
+              customLaborHours: t.customLaborHours !== undefined ? t.customLaborHours : merged[idx].customLaborHours
             };
             merged[idx] = updatedTag;
           } else {
