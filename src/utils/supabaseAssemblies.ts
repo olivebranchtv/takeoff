@@ -59,13 +59,15 @@ export async function loadAssembliesFromSupabase(): Promise<Assembly[]> {
       return [];
     }
 
-    // Get all material IDs from all assemblies
+    // Get all material IDs from all assemblies (check both material_id and id fields)
     const materialIds = new Set<string>();
     data.forEach((row: DbAssembly) => {
       if (Array.isArray(row.items)) {
         row.items.forEach((item: any) => {
-          if (item.material_id) {
-            materialIds.add(item.material_id);
+          // Try both material_id (new format) and id (legacy format)
+          const materialId = item.material_id || item.id;
+          if (materialId) {
+            materialIds.add(materialId);
           }
         });
       }
@@ -116,19 +118,25 @@ export async function loadAssembliesFromSupabase(): Promise<Assembly[]> {
           };
         }
 
-        // If no material found, use item data directly (no "Unknown material")
-        return {
-          id: materialId || crypto.randomUUID(),
-          description: item.description || '',
-          unit: item.unit || 'EA',
-          quantityPer: item.quantityPer || item.quantity || 1,
-          category: item.category || '',
-          wasteFactor: item.wasteFactor || 1.02,
-          itemCode: item.itemCode || undefined,
-          laborOverride: item.laborOverride || undefined,
-          notes: item.notes || undefined
-        };
-      }) : []
+        // If no material found but item has description, use item data directly
+        if (item.description) {
+          return {
+            id: materialId || crypto.randomUUID(),
+            description: item.description,
+            unit: item.unit || 'EA',
+            quantityPer: item.quantityPer || item.quantity || 1,
+            category: item.category || '',
+            wasteFactor: item.wasteFactor || 1.02,
+            itemCode: item.itemCode || undefined,
+            laborOverride: item.laborOverride || undefined,
+            notes: item.notes || undefined
+          };
+        }
+
+        // Missing both material reference and description - skip this item
+        console.warn(`⚠️ Assembly ${row.code} has item with no material_id/id and no description:`, item);
+        return null;
+      }).filter((item): item is NonNullable<typeof item> => item !== null) : []
     }));
   } catch (err) {
     console.error('Exception loading assemblies:', err);
