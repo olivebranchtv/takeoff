@@ -97,15 +97,34 @@ export async function loadAssembliesFromSupabase(): Promise<Assembly[]> {
       type: row.type as Assembly['type'],
       isActive: row.is_active,
       items: Array.isArray(row.items) ? row.items.map((item: any) => {
-        const material = materialMap.get(item.material_id);
+        // Try both material_id (new format) and id (legacy format)
+        const materialId = item.material_id || item.id;
+        const material = materialMap.get(materialId);
+
+        // If material found in database, use that data
+        if (material) {
+          return {
+            id: materialId,
+            description: material.description,
+            unit: material.unit,
+            quantityPer: item.quantityPer || item.quantity || 1,
+            category: material.category,
+            wasteFactor: item.wasteFactor || 1.02,
+            itemCode: material.item_code,
+            laborOverride: item.laborOverride || undefined,
+            notes: item.notes || undefined
+          };
+        }
+
+        // If no material found, use item data directly (no "Unknown material")
         return {
-          id: item.material_id || crypto.randomUUID(),
-          description: material?.description || item.description || 'Unknown material',
-          unit: material?.unit || item.unit || 'EA',
+          id: materialId || crypto.randomUUID(),
+          description: item.description || '',
+          unit: item.unit || 'EA',
           quantityPer: item.quantityPer || item.quantity || 1,
-          category: material?.category || item.category || '',
+          category: item.category || '',
           wasteFactor: item.wasteFactor || 1.02,
-          itemCode: material?.item_code || item.itemCode || undefined,
+          itemCode: item.itemCode || undefined,
           laborOverride: item.laborOverride || undefined,
           notes: item.notes || undefined
         };
