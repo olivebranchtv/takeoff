@@ -28,6 +28,7 @@ const MASTER_CATEGORY_ORDER = [
   'Disconnects',
   'Raceways & Pathways',
   'Conductors & Feeders',
+  'Electrical Materials',
   'Data/Communications',
   'Security',
   'AV / Sound',

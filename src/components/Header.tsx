@@ -1,14 +1,35 @@
 // src/components/Header.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@/state/store';
-import { Pencil } from 'lucide-react';
+import { Pencil, Cloud, CloudOff } from 'lucide-react';
 
 export const Header: React.FC = () => {
   const name = useStore(s => s.projectName);
   const rename = useStore(s => s.setProjectName);
+  const lastSaveTime = useStore(s => s.lastSaveTime);
+  const pages = useStore(s => s.pages);
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(name ?? '');
+  const [timeSinceLastSave, setTimeSinceLastSave] = useState<string>('');
+
+  useEffect(() => {
+    const updateTimeSince = () => {
+      if (!lastSaveTime) {
+        setTimeSinceLastSave('Not saved');
+        return;
+      }
+      const seconds = Math.floor((Date.now() - new Date(lastSaveTime).getTime()) / 1000);
+      if (seconds < 10) setTimeSinceLastSave('Just now');
+      else if (seconds < 60) setTimeSinceLastSave(`${seconds}s ago`);
+      else if (seconds < 3600) setTimeSinceLastSave(`${Math.floor(seconds / 60)}m ago`);
+      else setTimeSinceLastSave(`${Math.floor(seconds / 3600)}h ago`);
+    };
+
+    updateTimeSince();
+    const interval = setInterval(updateTimeSince, 5000);
+    return () => clearInterval(interval);
+  }, [lastSaveTime]);
 
   const startEdit = () => {
     setDraft(name ?? '');
@@ -79,6 +100,28 @@ export const Header: React.FC = () => {
           </button>
         </div>
       )}
+
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+        {pages.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 12px',
+              background: lastSaveTime ? '#0f172a' : '#1f2937',
+              border: '1px solid #2b364a',
+              borderRadius: 8,
+              fontSize: '13px',
+              color: lastSaveTime ? '#10b981' : '#94a3b8'
+            }}
+            title={lastSaveTime ? `Last saved: ${new Date(lastSaveTime).toLocaleString()}` : 'Not saved to database yet'}
+          >
+            {lastSaveTime ? <Cloud size={14} /> : <CloudOff size={14} />}
+            <span>{timeSinceLastSave}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
