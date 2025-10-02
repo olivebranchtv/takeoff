@@ -50,7 +50,7 @@ const CUSTOM_CAT_VALUE = '__CUSTOM__';
 
 export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const store = useStore() as any;
-  const { tags, palette, addTag, updateTag, deleteTag, importTags, exportTags, assemblies } = store;
+  const { tags, palette, addTag, updateTag, deleteTag, importTags, exportTags, assemblies, deletedTagCodes } = store;
 
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -93,8 +93,16 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     setEditorCollapsed(true);
     try {
       const existing = new Set<string>((tags as Tag[]).map(t => (t.code || '').toUpperCase()));
-      const missing = DEFAULT_MASTER_TAGS.filter(t => !existing.has((t.code || '').toUpperCase()));
-      if (missing.length) importTags(missing);
+      const deleted = new Set<string>((deletedTagCodes || []).map((c: string) => c.toUpperCase()));
+      // Filter out tags that are already present OR were permanently deleted
+      const missing = DEFAULT_MASTER_TAGS.filter(t => {
+        const code = (t.code || '').toUpperCase();
+        return !existing.has(code) && !deleted.has(code);
+      });
+      if (missing.length) {
+        console.log(`📥 Auto-importing ${missing.length} missing master tags (skipping ${Array.from(deleted).length} deleted tags)`);
+        importTags(missing);
+      }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -444,8 +452,19 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   function loadDefaults() {
     let added = 0;
+    let skipped = 0;
+    const deleted = new Set<string>((deletedTagCodes || []).map((c: string) => c.toUpperCase()));
+
     DEFAULT_MASTER_TAGS.forEach(mt => {
-      const exists = (tags as Tag[]).find(t => (t.code || '').toUpperCase() === mt.code.toUpperCase());
+      const codeUpper = mt.code.toUpperCase();
+      const exists = (tags as Tag[]).find(t => (t.code || '').toUpperCase() === codeUpper);
+
+      // Skip if tag exists OR was permanently deleted
+      if (deleted.has(codeUpper)) {
+        skipped++;
+        return;
+      }
+
       if (!exists) {
         const tagToAdd: any = { code: mt.code, name: mt.name, category: mt.category, color: mt.color };
         if (mt.customMaterialCost !== undefined) tagToAdd.customMaterialCost = mt.customMaterialCost;
@@ -454,7 +473,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         added++;
       }
     });
-    alert(`Default master tags loaded. Added ${added} new tag(s). Total master: ${DEFAULT_MASTER_TAGS.length}.`);
+    alert(`Default master tags loaded. Added ${added} new tag(s), skipped ${skipped} deleted tag(s). Total master: ${DEFAULT_MASTER_TAGS.length}.`);
   }
 
   const headerNote = 'Edits here permanently override defaults for matching codes in the master database.';
