@@ -22,6 +22,10 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
   const [pricingDb] = useState(() => new PricingDatabase(30.0));
   const [overheadPct, setOverheadPct] = useState(10);
   const [profitPct, setProfitPct] = useState(10);
+  const [lightingOverheadPct, setLightingOverheadPct] = useState(10);
+  const [lightingProfitPct, setLightingProfitPct] = useState(10);
+  const [gearOverheadPct, setGearOverheadPct] = useState(10);
+  const [gearProfitPct, setGearProfitPct] = useState(10);
   const [taxRate, setTaxRate] = useState(9.5);
   const [shipping, setShipping] = useState(0);
   const [equipment, setEquipment] = useState(0);
@@ -253,7 +257,11 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
           materialShipping: shipping,
           equipmentCost: equipment,
           lightingPackageCost: lightingPackage,
-          gearPackageCost: gearPackage
+          gearPackageCost: gearPackage,
+          lightingOverheadPercentage: lightingOverheadPct,
+          lightingProfitPercentage: lightingProfitPct,
+          gearOverheadPercentage: gearOverheadPct,
+          gearProfitPercentage: gearProfitPct
         }
       );
       setCosts(calculated);
@@ -285,7 +293,11 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
             materialShipping: shipping,
             equipmentCost: equipment,
             lightingPackageCost: lightingPackage,
-            gearPackageCost: gearPackage
+            gearPackageCost: gearPackage,
+            lightingOverheadPercentage: lightingOverheadPct,
+            lightingProfitPercentage: lightingProfitPct,
+            gearOverheadPercentage: gearOverheadPct,
+            gearProfitPercentage: gearProfitPct
           }
         );
         setAdjustedCosts(calculatedAdjusted);
@@ -295,7 +307,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
     } catch (error) {
       console.error('Error calculating costs:', error);
     }
-  }, [pages, tags, assemblies, manualItems, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment, lightingPackage, gearPackage, pricesLoaded, priceCount, competitiveBidEnabled, adjustedLaborRate]);
+  }, [pages, tags, assemblies, manualItems, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment, lightingPackage, gearPackage, lightingOverheadPct, lightingProfitPct, gearOverheadPct, gearProfitPct, pricesLoaded, priceCount, competitiveBidEnabled, adjustedLaborRate]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -496,6 +508,100 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
               <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
                 Standard rate: $30/hr • Current: ${adjustedLaborRate}/hr
               </div>
+
+              {/* Lighting Package Markup */}
+              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #ddd' }}>
+                <div style={{ fontSize: '13px', fontWeight: '500', marginBottom: '10px', color: '#333' }}>
+                  💡 Lighting Package Markup
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: '#666' }}>
+                      Overhead %
+                    </label>
+                    <input
+                      type="number"
+                      value={lightingOverheadPct}
+                      onChange={(e) => setLightingOverheadPct(parseFloat(e.target.value) || 0)}
+                      step="0.5"
+                      min="0"
+                      style={{
+                        width: '100%',
+                        padding: '6px',
+                        border: '1px solid #1976d2',
+                        borderRadius: '4px',
+                        fontSize: '13px'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: '#666' }}>
+                      Profit %
+                    </label>
+                    <input
+                      type="number"
+                      value={lightingProfitPct}
+                      onChange={(e) => setLightingProfitPct(parseFloat(e.target.value) || 0)}
+                      step="0.5"
+                      min="0"
+                      style={{
+                        width: '100%',
+                        padding: '6px',
+                        border: '1px solid #1976d2',
+                        borderRadius: '4px',
+                        fontSize: '13px'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Gear Package Markup */}
+              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #ddd' }}>
+                <div style={{ fontSize: '13px', fontWeight: '500', marginBottom: '10px', color: '#333' }}>
+                  ⚡ Gear Package Markup
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: '#666' }}>
+                      Overhead %
+                    </label>
+                    <input
+                      type="number"
+                      value={gearOverheadPct}
+                      onChange={(e) => setGearOverheadPct(parseFloat(e.target.value) || 0)}
+                      step="0.5"
+                      min="0"
+                      style={{
+                        width: '100%',
+                        padding: '6px',
+                        border: '1px solid #1976d2',
+                        borderRadius: '4px',
+                        fontSize: '13px'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: '#666' }}>
+                      Profit %
+                    </label>
+                    <input
+                      type="number"
+                      value={gearProfitPct}
+                      onChange={(e) => setGearProfitPct(parseFloat(e.target.value) || 0)}
+                      step="0.5"
+                      min="0"
+                      style={{
+                        width: '100%',
+                        padding: '6px',
+                        border: '1px solid #1976d2',
+                        borderRadius: '4px',
+                        fontSize: '13px'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -687,24 +793,50 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
 
           {costs.lightingPackageCost > 0 && (
             <div style={{ background: '#fef3c7', padding: '15px', borderRadius: '6px', marginBottom: '15px', border: '1px solid #fbbf24' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px' }}>
                 <span>💡 Lighting Package (By Contractor):</span>
                 <strong>{formatCurrency(costs.lightingPackageCost)}</strong>
               </div>
-              <div style={{ fontSize: '12px', color: '#92400e', marginTop: '6px' }}>
-                Cost of fixtures supplied by contractor (when contractor purchases and provides fixtures)
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#92400e', marginBottom: '6px' }}>
+                <span style={{ paddingLeft: '10px' }}>+ Tax ({taxRate}%):</span>
+                <span>{formatCurrency(costs.lightingPackageTax)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#92400e', marginBottom: '6px' }}>
+                <span style={{ paddingLeft: '10px' }}>+ Overhead ({costs.lightingOverheadPercentage}%):</span>
+                <span>{formatCurrency(costs.lightingOverheadAmount)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#92400e', marginBottom: '6px' }}>
+                <span style={{ paddingLeft: '10px' }}>+ Profit ({costs.lightingProfitPercentage}%):</span>
+                <span>{formatCurrency(costs.lightingProfitAmount)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold', color: '#92400e', paddingTop: '6px', borderTop: '1px solid #fbbf24' }}>
+                <span>Lighting Total:</span>
+                <span>{formatCurrency(costs.lightingPackageTotal)}</span>
               </div>
             </div>
           )}
 
           {costs.gearPackageCost > 0 && (
             <div style={{ background: '#e0f2fe', padding: '15px', borderRadius: '6px', marginBottom: '15px', border: '1px solid #0284c7' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px' }}>
                 <span>⚡ Gear Package Quote:</span>
                 <strong>{formatCurrency(costs.gearPackageCost)}</strong>
               </div>
-              <div style={{ fontSize: '12px', color: '#075985', marginTop: '6px' }}>
-                Vendor quotes for electrical gear (panels, switchboards, transformers, etc.)
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#075985', marginBottom: '6px' }}>
+                <span style={{ paddingLeft: '10px' }}>+ Tax ({taxRate}%):</span>
+                <span>{formatCurrency(costs.gearPackageTax)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#075985', marginBottom: '6px' }}>
+                <span style={{ paddingLeft: '10px' }}>+ Overhead ({costs.gearOverheadPercentage}%):</span>
+                <span>{formatCurrency(costs.gearOverheadAmount)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#075985', marginBottom: '6px' }}>
+                <span style={{ paddingLeft: '10px' }}>+ Profit ({costs.gearProfitPercentage}%):</span>
+                <span>{formatCurrency(costs.gearProfitAmount)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold', color: '#075985', paddingTop: '6px', borderTop: '1px solid #0284c7' }}>
+                <span>Gear Total:</span>
+                <span>{formatCurrency(costs.gearPackageTotal)}</span>
               </div>
             </div>
           )}

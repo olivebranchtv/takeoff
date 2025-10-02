@@ -162,6 +162,10 @@ export interface ProjectCosts {
   equipmentCostTotal: number;
   lightingPackageCost: number;
   gearPackageCost: number;
+  lightingPackageTax: number;
+  gearPackageTax: number;
+  lightingPackageWithTax: number;
+  gearPackageWithTax: number;
 
   // Subtotal before markup
   subtotal: number;
@@ -174,6 +178,20 @@ export interface ProjectCosts {
   // Profit
   profitPercentage: number;
   profitAmount: number;
+
+  // Lighting Package Markup
+  lightingOverheadPercentage: number;
+  lightingOverheadAmount: number;
+  lightingProfitPercentage: number;
+  lightingProfitAmount: number;
+  lightingPackageTotal: number;
+
+  // Gear Package Markup
+  gearOverheadPercentage: number;
+  gearOverheadAmount: number;
+  gearProfitPercentage: number;
+  gearProfitAmount: number;
+  gearPackageTotal: number;
 
   // Final Bid
   totalBidPrice: number;
@@ -602,6 +620,10 @@ export function calculateProjectCosts(
     equipmentCost?: number;
     lightingPackageCost?: number;
     gearPackageCost?: number;
+    lightingOverheadPercentage?: number;
+    lightingProfitPercentage?: number;
+    gearOverheadPercentage?: number;
+    gearProfitPercentage?: number;
   } = {}
 ): ProjectCosts {
   const {
@@ -612,6 +634,10 @@ export function calculateProjectCosts(
     equipmentCost = 0,
     lightingPackageCost = 0,
     gearPackageCost = 0,
+    lightingOverheadPercentage = 15.0,
+    lightingProfitPercentage = 12.0,
+    gearOverheadPercentage = 15.0,
+    gearProfitPercentage = 12.0,
   } = options;
 
   // Get material breakdown
@@ -832,16 +858,34 @@ export function calculateProjectCosts(
   const laborRate = pricingDb.getDefaultLaborRate();
   const laborCostTotal = laborHoursTotal * laborRate;
 
-  // Calculate subtotal (includes material, labor, equipment, lighting package, and gear package)
-  const subtotal = materialSubtotal + laborCostTotal + equipmentCost + lightingPackageCost + gearPackageCost;
+  // Apply tax to lighting and gear packages
+  const lightingPackageTax = lightingPackageCost * materialTaxRate;
+  const lightingPackageWithTax = lightingPackageCost + lightingPackageTax;
+  const gearPackageTax = gearPackageCost * materialTaxRate;
+  const gearPackageWithTax = gearPackageCost + gearPackageTax;
 
-  // Calculate overhead
-  const overheadAmount = subtotal * (overheadPercentage / 100);
-  const subtotalWithOverhead = subtotal + overheadAmount;
+  // Calculate subtotal for materials and labor (NOT including lighting/gear packages yet)
+  const subtotalBeforePackages = materialSubtotal + laborCostTotal + equipmentCost;
 
-  // Calculate profit
+  // Calculate overhead and profit for materials and labor
+  const overheadAmount = subtotalBeforePackages * (overheadPercentage / 100);
+  const subtotalWithOverhead = subtotalBeforePackages + overheadAmount;
   const profitAmount = subtotalWithOverhead * (profitPercentage / 100);
-  const totalBidPrice = subtotalWithOverhead + profitAmount;
+
+  // Calculate separate overhead and profit for lighting package
+  const lightingOverheadAmount = lightingPackageWithTax * (lightingOverheadPercentage / 100);
+  const lightingWithOverhead = lightingPackageWithTax + lightingOverheadAmount;
+  const lightingProfitAmount = lightingWithOverhead * (lightingProfitPercentage / 100);
+  const lightingPackageTotal = lightingWithOverhead + lightingProfitAmount;
+
+  // Calculate separate overhead and profit for gear package
+  const gearOverheadAmount = gearPackageWithTax * (gearOverheadPercentage / 100);
+  const gearWithOverhead = gearPackageWithTax + gearOverheadAmount;
+  const gearProfitAmount = gearWithOverhead * (gearProfitPercentage / 100);
+  const gearPackageTotal = gearWithOverhead + gearProfitAmount;
+
+  // Total bid price includes everything
+  const totalBidPrice = subtotalWithOverhead + profitAmount + lightingPackageTotal + gearPackageTotal;
 
   // Calculate division breakdown with markup
   const divisionBreakdown: DivisionCost[] = [];
@@ -877,12 +921,26 @@ export function calculateProjectCosts(
     equipmentCostTotal: equipmentCost,
     lightingPackageCost,
     gearPackageCost,
-    subtotal,
+    lightingPackageTax,
+    gearPackageTax,
+    lightingPackageWithTax,
+    gearPackageWithTax,
+    subtotal: subtotalBeforePackages,
     overheadPercentage,
     overheadAmount,
     subtotalWithOverhead,
     profitPercentage,
     profitAmount,
+    lightingOverheadPercentage,
+    lightingOverheadAmount,
+    lightingProfitPercentage,
+    lightingProfitAmount,
+    lightingPackageTotal,
+    gearOverheadPercentage,
+    gearOverheadAmount,
+    gearProfitPercentage,
+    gearProfitAmount,
+    gearPackageTotal,
     totalBidPrice,
     divisionBreakdown
   };
