@@ -369,6 +369,68 @@ export async function loadProjectFromSupabase(): Promise<any | null> {
   }
 }
 
+export async function loadAllProjectsFromSupabase(): Promise<Array<{ id: string; project_name: string; file_name: string; updated_at: string; is_active: boolean }>> {
+  if (!supabase) return [];
+
+  try {
+    const defaultUserId = '00000000-0000-0000-0000-000000000000';
+
+    const { data, error } = await supabase
+      .from('project_data')
+      .select('id, project_name, file_name, updated_at, is_active')
+      .eq('user_id', defaultUserId)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading projects list:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error loading projects list:', error);
+    return [];
+  }
+}
+
+export async function loadProjectByIdFromSupabase(projectId: string): Promise<any | null> {
+  if (!supabase) return null;
+
+  try {
+    const defaultUserId = '00000000-0000-0000-0000-000000000000';
+
+    const { data, error } = await supabase
+      .from('project_data')
+      .select('project_data')
+      .eq('id', projectId)
+      .eq('user_id', defaultUserId)
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error loading project by ID:', error);
+      return null;
+    }
+
+    if (data) {
+      // Set this project as active and deactivate others
+      await supabase
+        .from('project_data')
+        .update({ is_active: false })
+        .eq('user_id', defaultUserId);
+
+      await supabase
+        .from('project_data')
+        .update({ is_active: true })
+        .eq('id', projectId);
+    }
+
+    return data?.project_data || null;
+  } catch (error) {
+    console.error('Error loading project by ID:', error);
+    return null;
+  }
+}
+
 export async function saveTagsToSupabase(tags: any[], colorOverrides: any): Promise<boolean> {
   if (!supabase) return false;
 

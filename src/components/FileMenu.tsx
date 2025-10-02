@@ -1,9 +1,10 @@
 // src/components/FileMenu.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown, FolderOpen, Save, Download, BookOpen, Clock, FilePlus } from 'lucide-react';
+import { ChevronDown, FolderOpen, Save, Download, BookOpen, Clock, FilePlus, Database } from 'lucide-react';
 import { useToast } from '@/ui/Toast';
 import { openProjectFromFile } from '@/features/project/openProject';
 import { useStore } from '@/state/store';
+import { loadProjectFromSupabase, loadAllProjectsFromSupabase } from '@/utils/supabasePricing';
 
 type RecentProject = {
   name: string;
@@ -44,12 +45,16 @@ interface FileMenuProps {
 export const FileMenu: React.FC<FileMenuProps> = ({ onAction, onOpenGuide, onAddSheet }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
+  const [showDatabaseProjects, setShowDatabaseProjects] = useState(false);
+  const [databaseProjects, setDatabaseProjects] = useState<Array<{ id: string; project_name: string; file_name: string; updated_at: string; is_active: boolean }>>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
 
   const toProject = useStore(s => s.toProject);
   const projectName = useStore(s => s.projectName);
+  const fromProject = useStore(s => s.fromProject);
 
   useEffect(() => {
     setRecentProjects(getRecentProjects());
@@ -100,6 +105,31 @@ export const FileMenu: React.FC<FileMenuProps> = ({ onAction, onOpenGuide, onAdd
     setIsOpen(false);
   };
 
+  const openDatabaseProjectsDialog = async () => {
+    setIsOpen(false);
+    setShowDatabaseProjects(true);
+    setLoadingProjects(true);
+    const projects = await loadAllProjectsFromSupabase();
+    setDatabaseProjects(projects);
+    setLoadingProjects(false);
+  };
+
+  const loadDatabaseProject = async (projectId: string) => {
+    setLoadingProjects(true);
+    const { loadProjectByIdFromSupabase } = await import('@/utils/supabasePricing');
+    const projectData = await loadProjectByIdFromSupabase(projectId);
+
+    if (projectData) {
+      fromProject(projectData);
+      addToast(`Project "${projectData.projectName || projectData.name}" loaded from database`, 'info');
+    } else {
+      addToast('Failed to load project from database', 'error');
+    }
+
+    setShowDatabaseProjects(false);
+    setLoadingProjects(false);
+  };
+
   return (
     <div style={{ position: 'relative' }} ref={menuRef}>
       <button
@@ -141,6 +171,13 @@ export const FileMenu: React.FC<FileMenuProps> = ({ onAction, onOpenGuide, onAdd
             title="Open .skdproj"
           >
             <FolderOpen size={16} /> Open Project…
+          </button>
+          <button
+            onClick={openDatabaseProjectsDialog}
+            style={itemStyle}
+            title="Open project from database"
+          >
+            <Database size={16} /> Open from Database…
           </button>
           <button
             onClick={() => { onAddSheet?.(); setIsOpen(false); }}
@@ -207,6 +244,119 @@ export const FileMenu: React.FC<FileMenuProps> = ({ onAction, onOpenGuide, onAdd
         style={{ display: 'none' }}
         onChange={onPick}
       />
+
+      {showDatabaseProjects && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000
+          }}
+          onClick={() => setShowDatabaseProjects(false)}
+        >
+          <div
+            style={{
+              background: '#0f172a',
+              border: '1px solid #142034',
+              borderRadius: 12,
+              width: '90%',
+              maxWidth: 600,
+              maxHeight: '80vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid #142034',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h3 style={{ color: 'white', margin: 0, fontSize: '18px', fontWeight: 600 }}>
+                Open Project from Database
+              </h3>
+              <button
+                onClick={() => setShowDatabaseProjects(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  fontSize: '20px',
+                  padding: '4px 8px'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+              {loadingProjects ? (
+                <div style={{ color: '#94a3b8', textAlign: 'center', padding: '40px' }}>
+                  Loading projects...
+                </div>
+              ) : databaseProjects.length === 0 ? (
+                <div style={{ color: '#94a3b8', textAlign: 'center', padding: '40px' }}>
+                  No saved projects found in database
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {databaseProjects.map((project) => (
+                    <button
+                      key={project.id}
+                      onClick={() => loadDatabaseProject(project.id)}
+                      style={{
+                        background: project.is_active ? '#1e293b' : '#0f172a',
+                        border: project.is_active ? '1px solid #3b82f6' : '1px solid #334155',
+                        borderRadius: 8,
+                        padding: '16px',
+                        color: 'white',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ fontSize: '16px', fontWeight: 600 }}>
+                          {project.project_name}
+                          {project.is_active && (
+                            <span style={{
+                              marginLeft: '8px',
+                              fontSize: '12px',
+                              color: '#3b82f6',
+                              fontWeight: 500
+                            }}>
+                              (Active)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#94a3b8' }}>
+                        {project.file_name}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>
+                        Last updated: {new Date(project.updated_at).toLocaleString()}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -170,6 +170,9 @@ type State = {
   // AI ANALYSIS RESULTS (persisted)
   aiAnalysisResult: ProjectAnalysis | null;
 
+  // SAVE STATUS
+  lastSaveTime: Date | null;
+
   // setters & actions
   setFileName: (n: string) => void;
   setProjectName: (n: string) => void;
@@ -234,6 +237,10 @@ type State = {
   // AI analysis helpers
   setAiAnalysisResult: (result: ProjectAnalysis | null) => void;
   getAiAnalysisResult: () => ProjectAnalysis | null;
+
+  // Save status helpers
+  setLastSaveTime: (time: Date | null) => void;
+  getLastSaveTime: () => Date | null;
 };
 
 export const useStore = create<State>()(
@@ -271,6 +278,9 @@ export const useStore = create<State>()(
 
       // initialize AI analysis result as null
       aiAnalysisResult: null,
+
+      // initialize last save time as null
+      lastSaveTime: null,
 
       setFileName: (n) => set({ fileName: n, projectName: get().projectName || baseNameNoExt(n) }),
       setProjectName: (n) => set({ projectName: n || 'Untitled Project' }),
@@ -715,6 +725,10 @@ export const useStore = create<State>()(
       /** ===== AI Analysis helpers ===== */
       setAiAnalysisResult: (result) => set({ aiAnalysisResult: result }),
       getAiAnalysisResult: () => get().aiAnalysisResult,
+
+      /** ===== Save status helpers ===== */
+      setLastSaveTime: (time) => set({ lastSaveTime: time }),
+      getLastSaveTime: () => get().lastSaveTime,
 
       /** ===== Assembly management ===== */
       addAssembly: (assembly) => set((s) => ({
