@@ -28,16 +28,32 @@ export function useInitialize() {
           // Check if TCLK has custom pricing
           const tclk = result.tags.find(t => t.code === 'TCLK');
           if (tclk) {
-            console.log('🔍 TCLK tag loaded from DB:', {
-              code: tclk.code,
-              name: tclk.name,
-              customMaterialCost: tclk.customMaterialCost,
-              customLaborHours: tclk.customLaborHours
-            });
+            console.log('🔍 TCLK tag loaded from Supabase DB:');
+            console.log('   Code:', tclk.code);
+            console.log('   Name:', tclk.name);
+            console.log('   customMaterialCost:', tclk.customMaterialCost, typeof tclk.customMaterialCost);
+            console.log('   customLaborHours:', tclk.customLaborHours, typeof tclk.customLaborHours);
+          } else {
+            console.warn('⚠️ TCLK tag NOT found in Supabase tags!');
           }
 
-          // Import tags into store (this will trigger a save back, but that's OK)
+          console.log('📥 About to importTags() - this will merge with store and save to localStorage');
+          // Import tags into store (this will trigger localStorage persist AND Supabase save)
           importTags(result.tags);
+
+          // Verify TCLK was imported correctly
+          console.log('🔍 Verifying TCLK after importTags():');
+          const storeTags = useStore.getState().tags;
+          const tclkInStore = storeTags.find(t => t.code === 'TCLK');
+          if (tclkInStore) {
+            console.log('   ✅ TCLK in store:', {
+              code: tclkInStore.code,
+              customMaterialCost: tclkInStore.customMaterialCost,
+              customLaborHours: tclkInStore.customLaborHours
+            });
+          } else {
+            console.error('   ❌ TCLK NOT FOUND in store after import!');
+          }
 
           // Apply color overrides
           if (result.colorOverrides) {
