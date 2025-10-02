@@ -54,6 +54,36 @@ const FALLBACK_PRICES: Record<string, { price: number; laborHours: number }> = {
   'grounding bushing': { price: 4.00, laborHours: 0.08 },
   'bonding bushing': { price: 4.50, laborHours: 0.08 },
 
+  // Transformers & Large Equipment
+  'transformer': { price: 5000.00, laborHours: 20.0 },
+  '500 kva': { price: 20000.00, laborHours: 80.0 },
+  '400 kva': { price: 16000.00, laborHours: 70.0 },
+  '300 kva': { price: 12000.00, laborHours: 60.0 },
+  '200 kva': { price: 9000.00, laborHours: 50.0 },
+  '150 kva': { price: 7000.00, laborHours: 40.0 },
+  '100 kva': { price: 5000.00, laborHours: 30.0 },
+  '75 kva': { price: 4000.00, laborHours: 25.0 },
+
+  // Disconnects
+  'disconnect': { price: 400.00, laborHours: 4.0 },
+  '400a disconnect': { price: 800.00, laborHours: 8.0 },
+  '600a disconnect': { price: 1200.00, laborHours: 10.0 },
+  '800a disconnect': { price: 1600.00, laborHours: 12.0 },
+  '1200a disconnect': { price: 2400.00, laborHours: 16.0 },
+
+  // EV Chargers & Generators
+  'ev charger': { price: 800.00, laborHours: 8.0 },
+  'ev charging': { price: 800.00, laborHours: 8.0 },
+  'generator': { price: 3000.00, laborHours: 20.0 },
+  'standby generator': { price: 5000.00, laborHours: 30.0 },
+
+  // Labor Services
+  'backhoe': { price: 150.00, laborHours: 1.0 },
+  'excavation': { price: 150.00, laborHours: 1.0 },
+  'trenching': { price: 10.00, laborHours: 0.5 },
+  'coordination': { price: 100.00, laborHours: 1.0 },
+  'study': { price: 150.00, laborHours: 2.0 },
+
   // Default fallback for any unknown item
   'default': { price: 2.00, laborHours: 0.05 }
 };
@@ -81,16 +111,19 @@ function getFallbackPrice(category: string, description: string): { price: numbe
     return { price: 0.00, laborHours: 1.0 };
   }
 
-  // Try exact match first
-  for (const [key, value] of Object.entries(FALLBACK_PRICES)) {
+  // Try to find best match from fallback prices
+  // Sort by key length (longest first) to match more specific patterns first
+  const sortedEntries = Object.entries(FALLBACK_PRICES)
+    .filter(([key]) => key !== 'default')
+    .sort(([a], [b]) => b.length - a.length);
+
+  for (const [key, value] of sortedEntries) {
     if (desc.includes(key) || cat.includes(key)) {
-      console.log(`💡 Using fallback price for "${description}": $${value.price}, ${value.laborHours}hrs`);
       return value;
     }
   }
 
   // Use default
-  // Using default fallback price (expected for custom items)
   return FALLBACK_PRICES.default;
 }
 
