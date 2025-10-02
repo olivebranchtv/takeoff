@@ -667,7 +667,11 @@ export function calculateProjectCosts(
 
     // Track materials in divisions - ALWAYS add, even if no price found yet
     // This ensures wire shows up even if pricing is missing
-    const division = mat.category || 'General';
+    // NORMALIZE category name to prevent duplicates (wire vs Wire, boxes vs Boxes, etc.)
+    const division = (mat.category || 'General').toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
     const existing = divisionMap.get(division);
 
     console.log(`📊 Adding to division "${division}": ${mat.description} (qty=${mat.totalQty}, $${matCost}, ${materialLaborHours}hrs)`);
@@ -708,7 +712,11 @@ export function calculateProjectCosts(
 
     // Track by division (category of first material in assembly)
     // This adds labor hours to existing division entries
-    const division = usage.materials[0]?.category || 'General';
+    // NORMALIZE category name to prevent duplicates
+    const division = (usage.materials[0]?.category || 'General').toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
 
     const existing = divisionMap.get(division);
     if (existing) {
@@ -780,7 +788,11 @@ export function calculateProjectCosts(
     laborHoursTotal += itemLaborHours;
 
     // Add to division breakdown
-    const division = item.category || 'Manual Items';
+    // NORMALIZE category name to prevent duplicates
+    const division = (item.category || 'Manual Items').toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
     const existing = divisionMap.get(division);
 
     if (existing) {
