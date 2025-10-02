@@ -26,6 +26,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
   const [shipping, setShipping] = useState(0);
   const [equipment, setEquipment] = useState(0);
   const [lightingPackage, setLightingPackage] = useState(0);
+  const [gearPackage, setGearPackage] = useState(0);
   const [pricesLoaded, setPricesLoaded] = useState(false);
   const [priceCount, setPriceCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -251,7 +252,8 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
           materialTaxRate: taxRate / 100,
           materialShipping: shipping,
           equipmentCost: equipment,
-          lightingPackageCost: lightingPackage
+          lightingPackageCost: lightingPackage,
+          gearPackageCost: gearPackage
         }
       );
       setCosts(calculated);
@@ -282,7 +284,8 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
             materialTaxRate: taxRate / 100,
             materialShipping: shipping,
             equipmentCost: equipment,
-            lightingPackageCost: lightingPackage
+            lightingPackageCost: lightingPackage,
+            gearPackageCost: gearPackage
           }
         );
         setAdjustedCosts(calculatedAdjusted);
@@ -292,7 +295,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
     } catch (error) {
       console.error('Error calculating costs:', error);
     }
-  }, [pages, tags, assemblies, manualItems, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment, lightingPackage, pricesLoaded, priceCount, competitiveBidEnabled, adjustedLaborRate]);
+  }, [pages, tags, assemblies, manualItems, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment, lightingPackage, gearPackage, pricesLoaded, priceCount, competitiveBidEnabled, adjustedLaborRate]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -327,6 +330,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
         [''],
         ['Equipment', formatCurrency(costs.equipmentCostTotal)],
         ['Lighting Package (By Contractor)', formatCurrency(costs.lightingPackageCost)],
+        ['Gear Package Quote', formatCurrency(costs.gearPackageCost)],
         [''],
         ['SUBTOTAL', formatCurrency(costs.subtotal)],
         [''],
@@ -612,6 +616,28 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
             💡 Add the cost of lighting fixtures supplied by contractor (if purchasing and providing fixtures)
           </div>
         </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: '500' }}>
+            Gear Package Quote $ <span style={{ fontSize: '12px', color: '#666' }}>(panels, switchboards, transformers)</span>
+          </label>
+          <input
+            type="number"
+            value={gearPackage}
+            onChange={(e) => setGearPackage(parseFloat(e.target.value) || 0)}
+            step="100"
+            style={{
+              width: '100%',
+              padding: '8px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '14px'
+            }}
+          />
+          <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+            ⚡ Add vendor quotes for electrical gear packages (panels, switchgear, transformers, etc.)
+          </div>
+        </div>
       </div>
 
       {costs && (
@@ -667,6 +693,18 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
               </div>
               <div style={{ fontSize: '12px', color: '#92400e', marginTop: '6px' }}>
                 Cost of fixtures supplied by contractor (when contractor purchases and provides fixtures)
+              </div>
+            </div>
+          )}
+
+          {costs.gearPackageCost > 0 && (
+            <div style={{ background: '#e0f2fe', padding: '15px', borderRadius: '6px', marginBottom: '15px', border: '1px solid #0284c7' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                <span>⚡ Gear Package Quote:</span>
+                <strong>{formatCurrency(costs.gearPackageCost)}</strong>
+              </div>
+              <div style={{ fontSize: '12px', color: '#075985', marginTop: '6px' }}>
+                Vendor quotes for electrical gear (panels, switchboards, transformers, etc.)
               </div>
             </div>
           )}
