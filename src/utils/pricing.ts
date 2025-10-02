@@ -586,7 +586,7 @@ export function calculateProjectCosts(
   // Get material breakdown
   const { materials, assemblyUsage } = calculateAssemblyMaterials(pages, tags, assemblies);
 
-  // Calculate material costs
+  // Calculate material costs from tagged/measured items
   let materialCostTotal = 0;
   for (const mat of materials) {
     const price = pricingDb.getMaterialPrice(mat.category, mat.description, mat.itemCode);
@@ -596,9 +596,6 @@ export function calculateProjectCosts(
       console.log(`⚠️ No price found for: ${mat.itemCode || ''} ${mat.category}::${mat.description} (qty: ${mat.totalQty})`);
     }
   }
-
-  const materialTax = materialCostTotal * materialTaxRate;
-  const materialSubtotal = materialCostTotal + materialTax + materialShipping;
 
   // Calculate labor costs
   let laborHoursTotal = 0;
@@ -773,6 +770,10 @@ export function calculateProjectCosts(
       });
     }
   }
+
+  // Now calculate material tax and subtotal AFTER manual items have been added
+  const materialTax = materialCostTotal * materialTaxRate;
+  const materialSubtotal = materialCostTotal + materialTax + materialShipping;
 
   const laborRate = pricingDb.getDefaultLaborRate();
   const laborCostTotal = laborHoursTotal * laborRate;
