@@ -348,7 +348,8 @@ export default function App() {
       projectName: state.projectName || 'Untitled Project',
       name: state.projectName || 'Untitled Project',
       pages: state.pages,
-      tags: state.tags
+      tags: state.tags,
+      pdf: pdfBytesBase64 ? { name: pdfName || fileName || 'document.pdf', bytesBase64: pdfBytesBase64 } : undefined
     };
     const success = await saveProjectToSupabase(projectData);
     if (success) {
@@ -395,12 +396,29 @@ export default function App() {
       setFileName(storeState.fileName);
       setProjectName(storeState.projectName);
 
-      // Clear PDF view (project data loaded, but no PDF bytes)
-      setPdf(null);
-      setPdfBytesBase64(null);
-      setPdfName('');
-
-      alert(`✅ Loaded: ${storeState.projectName || storeState.fileName}\n\n⚠️ Note: PDF file not included. Pages and markups loaded from database.`);
+      // Restore PDF if it was saved
+      if (projectData.pdf?.bytesBase64) {
+        try {
+          const bytes = Uint8Array.from(atob(projectData.pdf.bytesBase64), c => c.charCodeAt(0));
+          const pdfDoc = await loadPdfFromBytes(bytes);
+          setPdf(pdfDoc);
+          setPdfBytesBase64(projectData.pdf.bytesBase64);
+          setPdfName(projectData.pdf.name || storeState.fileName);
+          alert(`✅ Loaded: ${storeState.projectName || storeState.fileName}\n\nPDF and all markups restored successfully!`);
+        } catch (error) {
+          console.error('Error loading PDF from database:', error);
+          setPdf(null);
+          setPdfBytesBase64(null);
+          setPdfName('');
+          alert(`✅ Loaded: ${storeState.projectName || storeState.fileName}\n\n⚠️ Warning: Could not restore PDF. Please re-open the original PDF file.`);
+        }
+      } else {
+        // No PDF data saved
+        setPdf(null);
+        setPdfBytesBase64(null);
+        setPdfName('');
+        alert(`✅ Loaded: ${storeState.projectName || storeState.fileName}\n\n⚠️ Note: PDF was not saved. Please re-open the PDF file to view markups.`);
+      }
     } else {
       alert('❌ Failed to load project from database');
     }
@@ -1161,15 +1179,6 @@ export default function App() {
 
         <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap: 20}}>
           <span style={{
-            fontSize: 20,
-            fontWeight: 700,
-            color: '#fff',
-            textShadow: '0 2px 4px rgba(0,0,0,0.2)',
-            letterSpacing: '0.5px'
-          }}>
-            ⭐ SKD Rockstar Team ⭐ {new Date().getDay() === 5 ? 'TGIF' : ''}
-          </span>
-          <span style={{
             fontSize: 16,
             fontWeight: 600,
             color: '#fff',
@@ -1200,12 +1209,12 @@ export default function App() {
           {pdfName || fileName}
         </span>
         {/* Autosave Status Indicator */}
-        {pageCount > 0 && (
+        {(pageCount > 0 || pages.length > 0) && (
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 8,
               padding: '8px 14px',
               background: lastSaveTime ? '#f0fdf4' : '#fef2f2',
               border: `2px solid ${lastSaveTime ? '#86efac' : '#fecaca'}`,
@@ -1213,12 +1222,13 @@ export default function App() {
               fontSize: '14px',
               fontWeight: 600,
               color: lastSaveTime ? '#15803d' : '#dc2626',
-              marginLeft: 12
+              marginLeft: 12,
+              whiteSpace: 'nowrap'
             }}
             title={lastSaveTime ? `Last saved: ${(lastSaveTime instanceof Date ? lastSaveTime : new Date(lastSaveTime)).toLocaleString()}` : 'Not saved to database yet'}
           >
             <span style={{fontSize: '16px'}}>{lastSaveTime ? '☁️' : '⚠️'}</span>
-            <span>{timeSinceLastSave}</span>
+            <span>{timeSinceLastSave || 'Not saved'}</span>
           </div>
         )}
         <button className="btn" onClick={()=>setSettingsOpen(true)} style={{marginLeft:'auto'}}>⚙️ Settings</button>
