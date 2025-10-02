@@ -617,18 +617,35 @@ export const useStore = create<State>()(
           const key = norm(t.code);
           const idx = merged.findIndex(x => norm(x.code) === key);
           if (idx >= 0) {
-            // Merge tags but PRESERVE existing assemblyId unless explicitly overriding
-            // Also preserve custom pricing from incoming tag
+            // Merge tags but PRESERVE existing custom pricing unless explicitly provided
+            const existingTag = merged[idx];
+
+            // Build updated tag carefully - only include fields that are defined
             const updatedTag: Tag = {
-              ...merged[idx],
-              ...t,
+              id: existingTag.id,
               code: key,
-              // CRITICAL: Only override assemblyId if incoming tag has one
-              assemblyId: finalAssemblyId !== undefined ? finalAssemblyId : merged[idx].assemblyId,
-              // Preserve custom pricing if present in incoming tag
-              customMaterialCost: t.customMaterialCost !== undefined ? t.customMaterialCost : merged[idx].customMaterialCost,
-              customLaborHours: t.customLaborHours !== undefined ? t.customLaborHours : merged[idx].customLaborHours
+              name: t.name || existingTag.name,
+              category: t.category || existingTag.category,
+              color: t.color || existingTag.color
             };
+
+            // Only include assemblyId if defined in either tag
+            const finalAssemblyIdToUse = finalAssemblyId !== undefined ? finalAssemblyId : existingTag.assemblyId;
+            if (finalAssemblyIdToUse !== undefined) {
+              updatedTag.assemblyId = finalAssemblyIdToUse;
+            }
+
+            // CRITICAL: Preserve custom pricing - incoming overrides existing, but never set to undefined
+            const finalMaterialCost = t.customMaterialCost !== undefined ? t.customMaterialCost : existingTag.customMaterialCost;
+            if (finalMaterialCost !== undefined) {
+              updatedTag.customMaterialCost = finalMaterialCost;
+            }
+
+            const finalLaborHours = t.customLaborHours !== undefined ? t.customLaborHours : existingTag.customLaborHours;
+            if (finalLaborHours !== undefined) {
+              updatedTag.customLaborHours = finalLaborHours;
+            }
+
             merged[idx] = updatedTag;
           } else {
             merged.push({ ...t, code: key });

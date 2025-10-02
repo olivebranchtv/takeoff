@@ -1151,6 +1151,22 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
                     <span>Labor ({div.laborHours.toFixed(1)}hrs):</span>
                     <span>{formatCurrency(div.laborCost)}</span>
                   </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '12px', marginTop: '2px', paddingLeft: '10px' }}>
+                    <span>Subtotal:</span>
+                    <span>{formatCurrency(div.materialCost + div.laborCost)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '12px', paddingLeft: '10px' }}>
+                    <span>+ Overhead (10%):</span>
+                    <span>{formatCurrency((div.materialCost + div.laborCost) * 0.10)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '12px', paddingLeft: '10px' }}>
+                    <span>+ Profit (10%):</span>
+                    <span>{formatCurrency((div.materialCost + div.laborCost) * 0.10)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '12px', paddingLeft: '10px' }}>
+                    <span>+ Sales Tax (9.5%):</span>
+                    <span>{formatCurrency(div.sellPrice - (div.materialCost + div.laborCost) * 1.20)}</span>
+                  </div>
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
