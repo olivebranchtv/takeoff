@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useStore } from '@/state/store';
 import { loadTagsFromSupabase } from '@/utils/supabasePricing';
-import { syncStandardAssembliesToDatabase, loadAssembliesFromSupabase } from '@/utils/supabaseAssemblies';
+import { syncStandardAssembliesToDatabase, loadAssembliesFromSupabase, compareAssemblies } from '@/utils/supabaseAssemblies';
 import { STANDARD_ASSEMBLIES } from '@/constants/assemblies';
 
 export function useInitialize() {
@@ -44,9 +44,19 @@ export function useInitialize() {
         console.log('ℹ️ Falling back to localStorage tags');
       }
 
-      // Sync standard assemblies to Supabase (only if database is empty)
-      console.log('🔄 Syncing standard assemblies to Supabase...');
+      // Compare and sync standard assemblies to Supabase
+      console.log('🔄 Checking assemblies sync status...');
       try {
+        const comparison = await compareAssemblies(STANDARD_ASSEMBLIES);
+        console.log(`📊 Assembly comparison: ${comparison.matched} matched, ${comparison.missing.length} missing in DB, ${comparison.extra.length} extra in DB`);
+
+        if (comparison.missing.length > 0) {
+          console.log(`⚠️ Missing assemblies:`, comparison.missing.join(', '));
+        }
+        if (comparison.extra.length > 0) {
+          console.log(`ℹ️ Extra assemblies in DB (custom):`, comparison.extra.join(', '));
+        }
+
         await syncStandardAssembliesToDatabase(STANDARD_ASSEMBLIES);
       } catch (error) {
         console.error('❌ Failed to sync standard assemblies:', error);

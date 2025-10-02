@@ -249,6 +249,35 @@ export async function saveAssembliesBatch(assemblies: Assembly[], isCustom: bool
 }
 
 /**
+ * Compare local and database assemblies and report differences
+ */
+export async function compareAssemblies(standardAssemblies: Assembly[]): Promise<{ missing: string[], extra: string[], matched: number }> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return { missing: [], extra: [], matched: 0 };
+  }
+
+  try {
+    const { data: existing } = await client
+      .from('assemblies')
+      .select('code')
+      .eq('is_active', true);
+
+    const dbCodes = new Set(existing?.map(a => a.code) || []);
+    const localCodes = new Set(standardAssemblies.map(a => a.code));
+
+    const missing = Array.from(localCodes).filter(code => !dbCodes.has(code));
+    const extra = Array.from(dbCodes).filter(code => !localCodes.has(code));
+    const matched = Array.from(localCodes).filter(code => dbCodes.has(code)).length;
+
+    return { missing, extra, matched };
+  } catch (err) {
+    console.error('Error comparing assemblies:', err);
+    return { missing: [], extra: [], matched: 0 };
+  }
+}
+
+/**
  * Sync standard assemblies to database (only if they don't exist)
  * This ensures all team members have access to the same standard assemblies
  */
@@ -260,26 +289,43 @@ export async function syncStandardAssembliesToDatabase(standardAssemblies: Assem
   }
 
   try {
-    // Check how many assemblies exist in the database
-    const { count, error: countError } = await client
+    // Get existing assembly codes from database
+    const { data: existing, error: fetchError } = await client
       .from('assemblies')
-      .select('*', { count: 'exact', head: true });
+      .select('code, is_custom')
+      .eq('is_active', true);
 
-    if (countError) {
-      console.error('Error checking assembly count:', countError);
+    if (fetchError) {
+      console.error('Error fetching existing assemblies:', fetchError);
       return false;
     }
 
-    // If database is empty or has very few assemblies, sync all standard assemblies
-    if (count === null || count < standardAssemblies.length / 2) {
-      console.log(`🔄 Syncing ${standardAssemblies.length} standard assemblies to database...`);
-      const success = await saveAssembliesBatch(standardAssemblies, false); // false = not custom
+    const existingCodes = new Set(existing?.map(a => a.code) || []);
+    const existingCount = existingCodes.size;
+
+    console.log(`📊 Database has ${existingCount} assemblies, local has ${standardAssemblies.length}`);
+
+    // Find missing assemblies
+    const missingAssemblies = standardAssemblies.filter(a => !existingCodes.has(a.code));
+
+    if (missingAssemblies.length > 0) {
+      console.log(`🔄 Syncing ${missingAssemblies.length} missing assemblies to database...`);
+      const success = await saveAssembliesBatch(missingAssemblies, false); // false = not custom
       if (success) {
-        console.log('✅ Standard assemblies synced to database');
+        console.log(`✅ Added ${missingAssemblies.length} missing assemblies to database`);
+      }
+      return success;
+    } else if (existingCount < standardAssemblies.length) {
+      // Database has fewer assemblies but none are "missing" - might be inactive
+      console.log(`⚠️ Database has ${existingCount} active assemblies, expected ${standardAssemblies.length}`);
+      console.log('🔄 Performing full sync to ensure all assemblies are present...');
+      const success = await saveAssembliesBatch(standardAssemblies, false);
+      if (success) {
+        console.log('✅ Full sync completed');
       }
       return success;
     } else {
-      console.log('ℹ️ Standard assemblies already in database');
+      console.log('✅ All standard assemblies already in database');
       return true;
     }
   } catch (err) {
