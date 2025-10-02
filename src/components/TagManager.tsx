@@ -142,6 +142,37 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     return final.map(cat => ({ category: cat, items: byCat.get(cat) || [] }));
   }, [tags, query, sortedCategories]);
 
+  // Calculate default/current cost and labor for the draft tag
+  const currentDefaults = useMemo(() => {
+    const selectedAssembly = draft.assemblyId
+      ? assemblies?.find((a: any) => a.id === draft.assemblyId || a.code === draft.assemblyId)
+      : null;
+
+    if (selectedAssembly) {
+      // Calculate total cost and labor from assembly items
+      let totalCost = 0;
+      let totalLabor = 0;
+
+      selectedAssembly.items?.forEach((item: any) => {
+        const qty = item.quantityPer || item.quantity || 1;
+        const itemCost = (item.materialCost || 0) * qty;
+        const itemLabor = (item.laborHours || 0) * qty;
+        totalCost += itemCost;
+        totalLabor += itemLabor;
+      });
+
+      return { cost: totalCost, labor: totalLabor, source: 'assembly' };
+    } else {
+      // Use category-based defaults
+      const isLight = draft.category?.toLowerCase().includes('light');
+      return {
+        cost: 0,
+        labor: isLight ? 1.0 : 0.5,
+        source: isLight ? 'default (lights)' : 'default'
+      };
+    }
+  }, [draft.assemblyId, draft.category, assemblies]);
+
   useEffect(() => { groupRefs.current = new Map(); }, [filteredGroups]);
 
   if (!open) return null;
@@ -613,11 +644,14 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     step="0.01"
                     value={draft.customMaterialCost ?? ''}
                     onChange={e => setDraft(d => ({ ...d, customMaterialCost: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                    placeholder="Optional override"
+                    placeholder={currentDefaults.cost > 0 ? `Current: $${currentDefaults.cost.toFixed(2)}` : 'Optional override'}
                     style={S.input}
                   />
-                  <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                    Overrides assembly/default material cost
+                  <div style={{ fontSize: '12px', color: draft.customMaterialCost !== undefined ? '#059669' : '#666', marginTop: '4px', fontWeight: draft.customMaterialCost !== undefined ? 600 : 400 }}>
+                    {draft.customMaterialCost !== undefined
+                      ? `✓ Custom override: $${draft.customMaterialCost.toFixed(2)}/unit`
+                      : `Current from ${currentDefaults.source}: $${currentDefaults.cost.toFixed(2)}/unit`
+                    }
                   </div>
                 </div>
                 <div>
@@ -628,11 +662,14 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     step="0.1"
                     value={draft.customLaborHours ?? ''}
                     onChange={e => setDraft(d => ({ ...d, customLaborHours: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                    placeholder="Optional override"
+                    placeholder={`Current: ${currentDefaults.labor.toFixed(2)} hrs`}
                     style={S.input}
                   />
-                  <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                    Overrides assembly/default labor hours
+                  <div style={{ fontSize: '12px', color: draft.customLaborHours !== undefined ? '#059669' : '#666', marginTop: '4px', fontWeight: draft.customLaborHours !== undefined ? 600 : 400 }}>
+                    {draft.customLaborHours !== undefined
+                      ? `✓ Custom override: ${draft.customLaborHours.toFixed(2)} hrs/unit`
+                      : `Current from ${currentDefaults.source}: ${currentDefaults.labor.toFixed(2)} hrs/unit`
+                    }
                   </div>
                 </div>
               </div>
