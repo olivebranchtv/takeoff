@@ -155,6 +155,9 @@ type State = {
   /** Manual color overrides by tag CODE (case-insensitive). */
   colorOverrides: Record<string, string>;
 
+  /** Track permanently deleted tag codes (to prevent re-import from masterTags) */
+  deletedTagCodes: string[];
+
   /** Last-used measure dialog options (persisted) */
   lastMeasureOptions: MeasureOptions;
 
@@ -276,6 +279,7 @@ export const useStore = create<State>()(
 
       // key: overrides persist manual color choices for any code
       colorOverrides: {},
+      deletedTagCodes: [],
 
       // initialize last used measure options
       lastMeasureOptions: DEFAULT_MEASURE_OPTIONS,
@@ -564,10 +568,13 @@ export const useStore = create<State>()(
         const overrides = { ...s.colorOverrides };
         if (tag) delete overrides[norm(tag.code)];
 
-        // Save to Supabase asynchronously
-        saveTagsToSupabase(tags, overrides).catch(err => console.error('Failed to save tags to Supabase:', err));
+        // Track deleted tag code to prevent re-import
+        const deletedTagCodes = tag ? [...s.deletedTagCodes, norm(tag.code)] : s.deletedTagCodes;
 
-        return { tags, projectTagIds: s.projectTagIds.filter(pid => pid !== id), colorOverrides: overrides };
+        // Save to Supabase asynchronously (include deletedTagCodes)
+        saveTagsToSupabase(tags, overrides, deletedTagCodes).catch(err => console.error('Failed to save tags to Supabase:', err));
+
+        return { tags, projectTagIds: s.projectTagIds.filter(pid => pid !== id), colorOverrides: overrides, deletedTagCodes };
       }),
 
       importTags: (list) => set((s) => {
@@ -576,6 +583,12 @@ export const useStore = create<State>()(
         const overrides = { ...s.colorOverrides };
 
         for (const raw of incoming) {
+          // SKIP if this tag code was permanently deleted
+          const incomingCode = norm((raw as any).code || '');
+          if (s.deletedTagCodes.includes(incomingCode)) {
+            console.log(`⏭️ Skipping deleted tag: ${incomingCode}`);
+            continue;
+          }
           // Preserve incoming assemblyId, or auto-assign for non-light categories
           const incomingCat = (raw as any).category || '';
           const isLightCategory = incomingCat?.toLowerCase().includes('light');

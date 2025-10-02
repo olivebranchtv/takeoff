@@ -431,7 +431,7 @@ export async function loadProjectByIdFromSupabase(projectId: string): Promise<an
   }
 }
 
-export async function saveTagsToSupabase(tags: any[], colorOverrides: any): Promise<boolean> {
+export async function saveTagsToSupabase(tags: any[], colorOverrides: any, deletedTagCodes?: string[]): Promise<boolean> {
   if (!supabase) return false;
 
   try {
@@ -457,15 +457,21 @@ export async function saveTagsToSupabase(tags: any[], colorOverrides: any): Prom
       .eq('user_id', defaultUserId)
       .maybeSingle();
 
+    const updateData: any = {
+      tags: sanitizedTags,
+      color_overrides: colorOverrides,
+      updated_at: new Date().toISOString()
+    };
+
+    if (deletedTagCodes) {
+      updateData.deleted_tag_codes = deletedTagCodes;
+    }
+
     if (existing) {
       // Update existing
       const { error } = await supabase
         .from('tag_library')
-        .update({
-          tags: sanitizedTags,
-          color_overrides: colorOverrides,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', existing.id);
 
       if (error) {
@@ -478,8 +484,7 @@ export async function saveTagsToSupabase(tags: any[], colorOverrides: any): Prom
         .from('tag_library')
         .insert({
           user_id: defaultUserId,
-          tags: sanitizedTags,
-          color_overrides: colorOverrides
+          ...updateData
         });
 
       if (error) {
@@ -495,7 +500,7 @@ export async function saveTagsToSupabase(tags: any[], colorOverrides: any): Prom
   }
 }
 
-export async function loadTagsFromSupabase(): Promise<{ tags: any[]; colorOverrides: any } | null> {
+export async function loadTagsFromSupabase(): Promise<{ tags: any[]; colorOverrides: any; deletedTagCodes?: string[] } | null> {
   if (!supabase) return null;
 
   try {
@@ -503,7 +508,7 @@ export async function loadTagsFromSupabase(): Promise<{ tags: any[]; colorOverri
 
     const { data, error } = await supabase
       .from('tag_library')
-      .select('tags, color_overrides')
+      .select('tags, color_overrides, deleted_tag_codes')
       .eq('user_id', defaultUserId)
       .maybeSingle();
 
@@ -531,7 +536,8 @@ export async function loadTagsFromSupabase(): Promise<{ tags: any[]; colorOverri
 
     return {
       tags: sanitizedTags,
-      colorOverrides: data.color_overrides || {}
+      colorOverrides: data.color_overrides || {},
+      deletedTagCodes: data.deleted_tag_codes || []
     };
   } catch (error) {
     console.error('Error loading tags:', error);

@@ -38,6 +38,13 @@ export function useInitialize() {
           }
 
           console.log('📥 About to importTags() - this will merge with store and save to localStorage');
+
+          // Apply deletedTagCodes BEFORE importing tags
+          if (result.deletedTagCodes && result.deletedTagCodes.length > 0) {
+            console.log(`🗑️ Loading ${result.deletedTagCodes.length} deleted tag codes:`, result.deletedTagCodes);
+            useStore.setState({ deletedTagCodes: result.deletedTagCodes });
+          }
+
           // Import tags into store (this will trigger localStorage persist AND Supabase save)
           importTags(result.tags);
 
