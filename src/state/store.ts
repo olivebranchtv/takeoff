@@ -16,6 +16,7 @@ import { autoAssignAssembly } from '@/utils/tagAssemblyMapping';
 import { saveTagsToSupabase } from '@/utils/supabasePricing';
 import type { ProjectAnalysis } from '@/utils/openaiAnalysis';
 import { loadAssembliesFromSupabase, saveAssemblyToSupabase } from '@/utils/supabaseAssemblies';
+import { DEFAULT_MASTER_TAGS } from '@/constants/masterTags';
 
 type HistoryEntry = { pageIndex: number; objects: AnyTakeoffObject[] };
 
@@ -684,8 +685,23 @@ export const useStore = create<State>()(
         const d: any = data || {};
         const rawTags = asArray<Tag>(d.tags).length ? asArray<Tag>(d.tags) : get().tags;
 
+        // Merge in any missing master tags
+        const existingCodes = new Set(rawTags.map(t => (t.code || '').toUpperCase()));
+        const missingMasterTags = DEFAULT_MASTER_TAGS
+          .filter(mt => !existingCodes.has((mt.code || '').toUpperCase()))
+          .map(mt => ({
+            id: crypto.randomUUID(),
+            code: mt.code,
+            name: mt.name,
+            color: mt.color,
+            category: mt.category,
+            assemblyId: undefined
+          }));
+
+        const allTags = [...rawTags, ...missingMasterTags];
+
         // Auto-assign assemblies to all tags when loading project
-        const tags = rawTags.map(tag => {
+        const tags = allTags.map(tag => {
           const tagWithAssembly = autoAssignAssembly({
             code: tag.code,
             category: tag.category,
