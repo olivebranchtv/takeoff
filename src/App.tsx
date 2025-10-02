@@ -399,8 +399,11 @@ export default function App() {
       // Restore PDF if it was saved
       if (projectData.pdf?.bytesBase64) {
         try {
+          console.log('[Database Load] PDF data found, length:', projectData.pdf.bytesBase64.length);
           const bytes = Uint8Array.from(atob(projectData.pdf.bytesBase64), c => c.charCodeAt(0));
+          console.log('[Database Load] Decoded bytes, length:', bytes.length);
           const pdfDoc = await loadPdfFromBytes(bytes);
+          console.log('[Database Load] PDF loaded, pages:', pdfDoc.numPages);
           setPdf(pdfDoc);
           setPdfBytesBase64(projectData.pdf.bytesBase64);
           setPdfName(projectData.pdf.name || storeState.fileName);
@@ -411,13 +414,15 @@ export default function App() {
           setPageLabels(await resolvePageLabels(pdfDoc));
           setActivePage(0);
           useStore.getState().setSelectedIds([]);
+          console.log('[Database Load] ✅ PDF viewport state updated');
         } catch (error) {
-          console.error('Error loading PDF from database:', error);
+          console.error('[Database Load] ❌ Error loading PDF:', error);
           setPdf(null);
           setPdfBytesBase64(null);
           setPdfName('');
         }
       } else {
+        console.log('[Database Load] ⚠️ No PDF data in project');
         // No PDF data saved (old project format)
         setPdf(null);
         setPdfBytesBase64(null);
