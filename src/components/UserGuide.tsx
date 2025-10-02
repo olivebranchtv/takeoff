@@ -250,6 +250,55 @@ export function UserGuide({ onClose }: UserGuideProps) {
                 <li>Perfect for quick reviews and email summaries</li>
               </ul>
             </SubSection>
+
+            <SubSection title="I. Manual Input Items (NEW!)">
+              <div style={{background: '#e3f2fd', padding: '15px', borderRadius: '6px', marginBottom: '15px'}}>
+                <strong>✨ Add Custom Items Directly to BOM:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  Need to add items that aren't part of your takeoff? Use Manual Input to add custom materials,
+                  equipment, or specialty items directly to your BOM with full pricing and labor control.
+                </p>
+              </div>
+              <ol>
+                <li>Open the <strong>BOM Panel</strong> (middle button in toolbar)</li>
+                <li>Scroll to the <strong>"Manual Input Items"</strong> section at the bottom</li>
+                <li>Click <strong>"+ Add Manual Item"</strong> button</li>
+                <li>Fill in the item details:</li>
+                <ul>
+                  <li><strong>Description:</strong> Item name (e.g., "Temporary Power Panel", "Site Mobilization")</li>
+                  <li><strong>Category:</strong> Select from dropdown (Panels, Equipment, Labor, Misc, etc.)</li>
+                  <li><strong>Quantity:</strong> Number of units</li>
+                  <li><strong>Unit:</strong> EA, LF, LS (Lump Sum), HR, etc.</li>
+                  <li><strong>Unit Cost:</strong> Material cost per unit</li>
+                  <li><strong>Labor Hours:</strong> Hours per unit</li>
+                </ul>
+                <li>Click <strong>"Add Item"</strong> to save</li>
+                <li>Item appears in the manual items list with calculated totals</li>
+                <li>Edit or delete items using the action buttons</li>
+              </ol>
+              <div style={{background: '#fff3cd', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>💡 Common Use Cases:</strong>
+                <ul style={{marginBottom: 0, marginTop: '8px'}}>
+                  <li><strong>Temporary Power:</strong> Temp panels, cords, drops not in drawings</li>
+                  <li><strong>Site Costs:</strong> Mobilization, permits, inspections, bonds</li>
+                  <li><strong>Equipment:</strong> Rental lifts, scaffolding, specialty tools</li>
+                  <li><strong>Specialty Items:</strong> Emergency generator hookup, testing, commissioning</li>
+                  <li><strong>Labor Only:</strong> Add "As-Built Drawings" as LS with 40 labor hours</li>
+                  <li><strong>Allowances:</strong> "Owner Changes Allowance" $5,000 lump sum</li>
+                </ul>
+              </div>
+              <div style={{background: '#d4edda', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>✅ Benefits:</strong>
+                <ul style={{marginBottom: 0, marginTop: '8px'}}>
+                  <li>Manual items integrate fully with BOM pricing calculations</li>
+                  <li>Included in Excel BOM export</li>
+                  <li>Labor hours add to total project labor</li>
+                  <li>Material costs add to material subtotal</li>
+                  <li>Subject to same overhead, profit, and tax calculations</li>
+                  <li>Saved with project file (.skdproj)</li>
+                </ul>
+              </div>
+            </SubSection>
           </Section>
 
           <Section title="🤖 AI Document Analysis (NEW!)">
@@ -531,7 +580,62 @@ EMT-0.75       | EMT 3/4"              | Raceways | FT   | 0.42          | 0.12`
               </div>
             </SubSection>
 
-            <SubSection title="M. Generate Professional Bid">
+            <SubSection title="M. Competitive Bid Pricing (NEW!)">
+              <div style={{background: '#e3f2fd', padding: '15px', borderRadius: '6px', marginBottom: '15px'}}>
+                <strong>🎯 Work Backwards from Target Price:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  Know your competitor's price or have a target budget? Use Competitive Bid Pricing to automatically
+                  calculate what markup percentages you need to hit that exact number while maintaining your desired profit.
+                </p>
+              </div>
+              <ol>
+                <li>In the Pricing Panel, locate the <strong>"Competitive Bid Pricing"</strong> section</li>
+                <li>Enter your <strong>Target Total Price</strong> (the bid amount you want to match or beat)</li>
+                <li>Enter your <strong>Desired Profit %</strong> (e.g., 8%, 10%, 12%)</li>
+                <li>Click <strong>"Calculate Required Overhead"</strong></li>
+                <li>System calculates backwards from your target:</li>
+                <ul>
+                  <li>Takes your base costs (material + labor + equipment + tax)</li>
+                  <li>Applies your desired profit percentage</li>
+                  <li>Determines what overhead % will hit your target total exactly</li>
+                </ul>
+                <li>Review the <strong>suggested overhead %</strong> that appears</li>
+                <li>Click <strong>"Apply These Settings"</strong> to update your bid</li>
+                <li>Your pricing panel now shows the exact target price</li>
+              </ol>
+              <div style={{background: '#fff3cd', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>📊 Example Scenario:</strong>
+                <ul style={{marginBottom: 0, marginTop: '8px'}}>
+                  <li><strong>Your Costs:</strong> Material $15,000 + Labor $8,500 + Tax $1,200 = $24,700</li>
+                  <li><strong>Competitor Bid:</strong> $32,000</li>
+                  <li><strong>Your Desired Profit:</strong> 10%</li>
+                  <li><strong>Enter Target:</strong> $31,900 (slightly under competitor)</li>
+                  <li><strong>System Calculates:</strong> "Use 16.2% overhead to hit $31,900 with 10% profit"</li>
+                  <li><strong>Apply Settings:</strong> Bid now shows exactly $31,900</li>
+                  <li><strong>Result:</strong> Competitive bid that beats competitor while maintaining profit!</li>
+                </ul>
+              </div>
+              <div style={{background: '#d4edda', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>✅ Benefits:</strong>
+                <ul style={{marginBottom: 0, marginTop: '8px'}}>
+                  <li>Never guess at markup percentages again</li>
+                  <li>Stay competitive while protecting profit margins</li>
+                  <li>Work backwards from budget constraints</li>
+                  <li>See exactly what overhead % is needed</li>
+                  <li>Quickly evaluate if a job is feasible at target price</li>
+                  <li>Perfect for design-build or budget-driven projects</li>
+                </ul>
+              </div>
+              <div style={{background: '#ffe0e0', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>⚠️ Warning:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  If the calculated overhead % is negative or unrealistically low (under 5%), the job may not be
+                  profitable at your target price. Consider negotiating a higher budget or finding cost savings.
+                </p>
+              </div>
+            </SubSection>
+
+            <SubSection title="N. Generate Professional Bid">
               <ol>
                 <li>Review all costs in pricing panel</li>
                 <li>Make final adjustments to overhead/profit</li>
