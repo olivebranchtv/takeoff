@@ -190,22 +190,30 @@ export function UserGuide({ onClose }: UserGuideProps) {
                 <li>Assembly Manager modal opens</li>
                 <li>Find your tag in the list (e.g., R1)</li>
                 <li>Click <strong>"Choose Assembly"</strong></li>
-                <li>Browse 75+ pre-built assemblies</li>
+                <li>Browse 150+ pre-built assemblies from cloud database</li>
                 <li>Select appropriate assembly (e.g., "RECEP-20A")</li>
                 <li>Assembly details show materials and quantities</li>
                 <li>Click to assign</li>
                 <li>Repeat for all tags</li>
               </ol>
               <div style={{background: '#d4edda', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
-                <strong>✅ Available Assemblies:</strong>
+                <strong>✅ Available Assemblies (150+):</strong>
                 <ul style={{marginBottom: 0, marginTop: '8px'}}>
                   <li>Receptacles (15A, 20A, GFCI, IG, Floor, USB, 208V, 240V)</li>
                   <li>Switches (1P, 3W, 4W, Dimmer, Occupancy, Timer)</li>
                   <li>Lighting (2x4/2x2 Troffers, High-Bays, Downlights)</li>
                   <li>Panels (42-ckt, 24-ckt, Disconnects)</li>
                   <li>Data/Comm (CAT6, CAT6A, Fiber)</li>
-                  <li>And 60+ more!</li>
+                  <li>Fire Alarm, Security, Emergency Power</li>
+                  <li>And 130+ more specialized assemblies!</li>
                 </ul>
+              </div>
+              <div style={{background: '#e3f2fd', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>☁️ Cloud Database:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  All assemblies are stored in Supabase cloud database and automatically synced when you open the app.
+                  The app verifies sync status and reports any differences in the console on startup.
+                </p>
               </div>
             </SubSection>
           </Section>
@@ -352,23 +360,129 @@ export function UserGuide({ onClose }: UserGuideProps) {
             </SubSection>
           </Section>
 
+          <Section title="☁️ Cloud Database Integration">
+            <SubSection title="Supabase Backend">
+              <div style={{background: '#e3f2fd', padding: '15px', borderRadius: '6px', marginBottom: '15px'}}>
+                <strong>🚀 Enterprise-Grade Cloud Database:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  The application uses Supabase (PostgreSQL) cloud database for persistent storage of assemblies,
+                  pricing data, and project tags. All data is automatically synced and available across sessions.
+                </p>
+              </div>
+            </SubSection>
+
+            <SubSection title="What's Stored in the Cloud">
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '15px'}}>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>⚙️ Assemblies (150+)</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Complete material breakdowns</li>
+                    <li>Labor hours per item</li>
+                    <li>Waste factors</li>
+                    <li>Assembly metadata</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>💰 Pricing Data (389+ items)</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Material costs by item code</li>
+                    <li>Labor hours per unit</li>
+                    <li>Category organization</li>
+                    <li>Updated from Excel uploads</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>🏷️ Master Tags</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Standardized tag codes</li>
+                    <li>Tag descriptions</li>
+                    <li>Category assignments</li>
+                    <li>Quick-select database</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>⚙️ Settings & Defaults</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Default markup percentages</li>
+                    <li>Tax rates</li>
+                    <li>Labor rates</li>
+                    <li>Waste factor defaults</li>
+                  </ul>
+                </div>
+              </div>
+            </SubSection>
+
+            <SubSection title="Automatic Sync on Startup">
+              <div style={{background: '#d4edda', padding: '15px', borderRadius: '6px', marginBottom: '15px'}}>
+                <strong>✅ What Happens When You Open the App:</strong>
+                <ol style={{marginTop: '8px', marginBottom: 0}}>
+                  <li>Loads 389 tags from Supabase</li>
+                  <li>Checks assemblies sync status</li>
+                  <li>Compares local (151) vs database assemblies</li>
+                  <li>Reports: "143 matched, 0 missing in DB, 0 extra in DB"</li>
+                  <li>Performs full sync if needed</li>
+                  <li>Loads all 154 assemblies from Supabase</li>
+                  <li>Console shows detailed sync status</li>
+                </ol>
+              </div>
+            </SubSection>
+
+            <SubSection title="Benefits of Cloud Storage">
+              <ul>
+                <li><strong>No Data Loss:</strong> All pricing and assemblies saved permanently</li>
+                <li><strong>Instant Access:</strong> Load data in seconds on any computer</li>
+                <li><strong>Always Updated:</strong> Latest prices available immediately after upload</li>
+                <li><strong>Sync Verification:</strong> Console shows sync status on every startup</li>
+                <li><strong>Multi-Device:</strong> Use on different computers with same data</li>
+                <li><strong>Automatic Backups:</strong> Supabase handles database backups</li>
+                <li><strong>Scalable:</strong> Add unlimited assemblies and pricing items</li>
+              </ul>
+            </SubSection>
+
+            <SubSection title="Console Sync Messages">
+              <div style={{background: '#f8f9fa', padding: '15px', borderRadius: '6px'}}>
+                <strong>On Startup, Check Browser Console (F12) to See:</strong>
+                <pre style={{background: '#fff', padding: '10px', borderRadius: '4px', overflow: 'auto', fontSize: '12px', marginTop: '8px'}}>
+{`✅ Loaded 389 tags from Supabase
+✅ Tags loaded successfully from Supabase
+ℹ️ Checking assemblies sync status...
+📊 Assembly comparison: 143 matched, 0 missing in DB, 0 extra in DB
+📊 Database has 143 active assemblies, expected 151
+✅ Saved 151 assemblies to database
+✅ Full sync completed
+📍 Loading all assemblies from Supabase...
+✅ Loaded 154 assemblies from Supabase`}
+                </pre>
+              </div>
+            </SubSection>
+          </Section>
+
           <Section title="💰 Pricing and Bidding">
             <SubSection title="I. Prepare Your Pricing Database">
+              <div style={{background: '#e3f2fd', padding: '15px', borderRadius: '6px', marginBottom: '15px'}}>
+                <strong>☁️ Cloud-Based Pricing:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  Material prices are stored in Supabase cloud database. Upload your Excel pricing file once,
+                  and prices are saved automatically for all future projects. The app loads 389+ tags with pricing
+                  on startup.
+                </p>
+              </div>
               <div style={{background: '#f8f9fa', padding: '15px', borderRadius: '6px', marginBottom: '15px'}}>
                 <strong>Excel Format Required:</strong>
                 <pre style={{background: '#fff', padding: '10px', borderRadius: '4px', overflow: 'auto', fontSize: '13px', marginTop: '8px'}}>
-{`Category | Description           | Unit | Cost
----------|------------------------|------|------
-Boxes    | 4" Square Box         | EA   | 2.45
-Devices  | Receptacle 20A        | EA   | 3.75
-Wire     | #12 THHN CU           | FT   | 0.35
-Conduit  | EMT 1/2"              | FT   | 0.42`}
+{`Item Code      | Description           | Category | Unit | Material Cost | Labor Hours
+---------------|------------------------|----------|------|---------------|-------------
+BOX-4SQ-1.5    | 4" Square Box         | Boxes    | EA   | 2.45          | 0.25
+RECEP-20A-125V | Receptacle 20A        | Devices  | EA   | 3.75          | 0.33
+WIRE-12-THHN   | #12 THHN CU           | Wire     | FT   | 0.35          | 0.015
+EMT-0.75       | EMT 3/4"              | Raceways | FT   | 0.42          | 0.12`}
                 </pre>
               </div>
               <ul>
                 <li>Get vendor quotes (Graybar, Rexel, CED)</li>
-                <li>Format in Excel with columns: Category, Description, Unit, Cost</li>
-                <li>Save as .xlsx file</li>
+                <li>Format in Excel with columns: Item Code, Description, Category, Unit, Material Cost, Labor Hours</li>
+                <li>Save as .xlsx file (Master_Pricing_Database_[date].xlsx)</li>
+                <li>Upload once - prices stored in cloud for all projects</li>
               </ul>
             </SubSection>
 
@@ -378,9 +492,17 @@ Conduit  | EMT 1/2"              | FT   | 0.42`}
                 <li>Pricing panel opens on right side</li>
                 <li>Click <strong>"📁 Upload Pricing Excel"</strong></li>
                 <li>Select your pricing file</li>
-                <li>System loads all material costs automatically</li>
-                <li>Status shows "✓ [Number] Material Prices Loaded"</li>
+                <li>System uploads to Supabase and loads all material costs automatically</li>
+                <li>Status shows "✓ [Number] Material Prices Loaded from Supabase"</li>
+                <li>Prices are now available for all current and future projects</li>
               </ol>
+              <div style={{background: '#fff3cd', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>💡 Tip:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  You only need to upload your pricing once! The cloud database saves all prices and makes them
+                  instantly available whenever you use the app. Update prices anytime by uploading a new file.
+                </p>
+              </div>
             </SubSection>
 
             <SubSection title="K. Configure Markup Settings">
