@@ -2166,5 +2166,56 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     items: [
       { id: 'pwr-pole', itemCode: 'POLE-001', description: 'Power Pole', unit: 'EA', quantityPer: 1, category: 'Electrical', wasteFactor: 1.0 }
     ]
+  },
+
+  // ============================================================================
+  // CUSTOM ASSEMBLIES (synced from database)
+  // ============================================================================
+  {
+    id: 'gfi-std',
+    code: 'GFI-STD',
+    name: 'Standard GFI Assembly',
+    description: 'Standard Ground Fault Interrupter assembly',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-gfci-20a', itemCode: 'RECEP-GFCI-20A', description: '20A GFCI Receptacle', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ny-1g', itemCode: 'PLATE-NY-1G', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 }
+    ]
+  },
+  {
+    id: 'recep-gfci-20a-homerun',
+    code: 'RECEP-GFCI-20A-HOMERUN',
+    name: 'GFCI Receptacle with Homerun',
+    description: '20A GFCI receptacle assembly with complete homerun wiring to panel',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'mudring-1g', itemCode: 'MUDRING-1G', description: 'Raised Device Cover / Mud Ring, single-gang', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'recep-gfci-20a', itemCode: 'RECEP-GFCI-20A', description: '20A GFCI Receptacle', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'plate-ny-1g', itemCode: 'PLATE-NY-1G', description: 'Device Cover Plate, single-gang, nylon', unit: 'EA', quantityPer: 1, category: 'Devices', wasteFactor: 1.02 },
+      { id: 'emt-0.75', itemCode: 'EMT-0.75', description: '3/4" EMT', unit: 'FT', quantityPer: 100, category: 'Raceways', wasteFactor: 1.05, notes: 'Average homerun distance' },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'wire-12-thhn', itemCode: 'WIRE-12-THHN', description: '12 THHN', unit: 'FT', quantityPer: 300, category: 'Wire', wasteFactor: 1.10, notes: '3 conductors x 100ft' }
+    ]
+  },
+  {
+    id: 'light-std-install',
+    code: 'LIGHT-STD-INSTALL',
+    name: 'Standard Light Installation',
+    description: 'Standard interior light fixture installation with box and wiring',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'cover-4sq-blank', itemCode: 'COVER-4SQ-BLANK', description: '4" x 4" Blank Cover', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
+      { id: 'wire-nuts', itemCode: 'WIRE-NUTS', description: 'Wire Nuts', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.02 },
+      { id: 'ground-wire-to-box', itemCode: 'GROUND-WIRE-TO-BOX', description: 'Ground Wires To Box', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }
+    ]
   }
 ];

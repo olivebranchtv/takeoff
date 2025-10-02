@@ -249,6 +249,41 @@ export async function saveAssembliesBatch(assemblies: Assembly[], isCustom: bool
 }
 
 /**
+ * Get assemblies from database by codes
+ */
+export async function getAssembliesByCodes(codes: string[]): Promise<Assembly[]> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return [];
+  }
+
+  try {
+    const { data, error } = await client
+      .from('assemblies')
+      .select('*')
+      .in('code', codes);
+
+    if (error || !data) {
+      console.error('Error fetching assemblies:', error);
+      return [];
+    }
+
+    return data.map((row: DbAssembly) => ({
+      id: row.id,
+      code: row.code,
+      name: row.name,
+      description: row.description || '',
+      type: row.type as Assembly['type'],
+      isActive: row.is_active,
+      items: Array.isArray(row.items) ? row.items : []
+    }));
+  } catch (err) {
+    console.error('Error fetching assemblies by codes:', err);
+    return [];
+  }
+}
+
+/**
  * Compare local and database assemblies and report differences
  */
 export async function compareAssemblies(standardAssemblies: Assembly[]): Promise<{ missing: string[], extra: string[], matched: number }> {

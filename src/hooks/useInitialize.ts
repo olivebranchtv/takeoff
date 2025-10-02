@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useStore } from '@/state/store';
 import { loadTagsFromSupabase } from '@/utils/supabasePricing';
-import { syncStandardAssembliesToDatabase, loadAssembliesFromSupabase, compareAssemblies } from '@/utils/supabaseAssemblies';
+import { syncStandardAssembliesToDatabase, loadAssembliesFromSupabase, compareAssemblies, getAssembliesByCodes } from '@/utils/supabaseAssemblies';
 import { STANDARD_ASSEMBLIES } from '@/constants/assemblies';
 
 export function useInitialize() {
@@ -55,6 +55,16 @@ export function useInitialize() {
         }
         if (comparison.extra.length > 0) {
           console.log(`ℹ️ Extra assemblies in DB (custom):`, comparison.extra.join(', '));
+
+          // Fetch details of extra assemblies
+          const extraAssemblies = await getAssembliesByCodes(comparison.extra);
+          if (extraAssemblies.length > 0) {
+            console.log('📋 Extra assembly details:');
+            extraAssemblies.forEach(asm => {
+              console.log(`  - ${asm.code}: ${asm.name}`);
+              console.log(`    Type: ${asm.type}, Items: ${asm.items.length}`);
+            });
+          }
         }
 
         await syncStandardAssembliesToDatabase(STANDARD_ASSEMBLIES);
