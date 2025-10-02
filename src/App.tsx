@@ -438,6 +438,10 @@ export default function App() {
         setPdf(null);
         updatePdfBytesBase64(null);
         updatePdfName('');
+
+        // Prompt user to load PDF
+        alert(`✅ Loaded: ${storeState.projectName || storeState.fileName}\n\n⚠️ This project has no PDF attached.\n\nClick "Open PDF" to attach the PDF file.`);
+        return;
       }
 
       // Show simple success message
@@ -451,6 +455,30 @@ export default function App() {
      OPEN PDF (embed bytes into project state)
      ========================================================================================= */
   const openPdf = useCallback(async (file: File) => {
+    // Check if there's existing project data
+    const existingPages = useStore.getState().pages;
+    const hasExistingData = existingPages.length > 0;
+
+    if (hasExistingData) {
+      // Ask user what they want to do
+      const choice = confirm(
+        '⚠️ You have an existing project loaded.\n\n' +
+        'Click OK to ATTACH this PDF (keep all tags/measurements)\n' +
+        'Click CANCEL to start a NEW project (lose all data)'
+      );
+
+      if (!choice) {
+        // User wants to start fresh - clear everything
+        if (!confirm('⚠️ Are you sure? This will delete all your tags and measurements!')) {
+          return; // User canceled
+        }
+        // Clear all project data
+        setPages([]);
+        useStore.getState().importTags([]);
+      }
+      // If choice === true, we keep existing data and just attach the PDF
+    }
+
     const buf = await file.arrayBuffer();
 
     // Store as base64 in the project bundle
@@ -469,22 +497,32 @@ export default function App() {
     const doc = await loadPdfFromBytes(new Uint8Array(buf));
     setPdf(doc);
     setFileName(file.name);
-    // For standalone PDF open, start fresh pages
-    setPages([]);
-    setPageCount(doc.numPages);
-    setPageLabels(await resolvePageLabels(doc));
-    setActivePage(0);
-    useStore.getState().setSelectedIds([]);
 
-    // Prompt for project name when loading PDF
-    const suggestedName = file.name.replace(/\.pdf$/i, '').trim();
-    const projectName = prompt('Enter project name:', suggestedName);
-    if (projectName && projectName.trim()) {
-      setProjectName(projectName.trim());
+    // Only clear pages if we don't have existing data OR user chose to start fresh
+    if (!hasExistingData) {
+      setPages([]);
+      setPageCount(doc.numPages);
+      setPageLabels(await resolvePageLabels(doc));
+      setActivePage(0);
+      useStore.getState().setSelectedIds([]);
+
+      // Prompt for project name when loading PDF
+      const suggestedName = file.name.replace(/\.pdf$/i, '').trim();
+      const projectName = prompt('Enter project name:', suggestedName);
+      if (projectName && projectName.trim()) {
+        setProjectName(projectName.trim());
+      } else {
+        setProjectName('Untitled Project');
+      }
     } else {
-      setProjectName('Untitled Project');
+      // Just update the page count and labels for the new PDF
+      setPageCount(doc.numPages);
+      setPageLabels(await resolvePageLabels(doc));
+      setActivePage(0);
+      useStore.getState().setSelectedIds([]);
+      alert('✅ PDF attached to existing project!');
     }
-  }, [setFileName, setPages, setPageCount, setPageLabels, setActivePage, setSelectedIds]);
+  }, [setFileName, setPages, setPageCount, setPageLabels, setActivePage, setProjectName]);
 
   /* Add individual PDF sheet to current project */
   const addSheet = useCallback(async (file: File) => {
