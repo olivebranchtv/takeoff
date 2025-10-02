@@ -241,8 +241,8 @@ export class PricingDatabase {
       { code: 'LIGHT-EMER', name: 'Emergency Light', hours: 1.0 },
       { code: 'LIGHT-EXIT', name: 'Exit Sign', hours: 1.0 },
 
-      // Homeruns - 1.0 hour per 100ft homerun (pulling wire + terminating)
-      { code: 'HOMERUN-100FT', name: '100ft Homerun Assembly', hours: 1.0 },
+      // Homeruns - 5.175 hours per homerun (pulling wire, terminating at panel, testing)
+      { code: 'HOMERUN-100FT', name: 'Lighting Homerun (10ft avg)', hours: 5.175 },
       { code: 'GFI-STD', name: 'Standard GFI Installation', hours: 0.5 },
 
       // Junction Boxes

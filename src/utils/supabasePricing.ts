@@ -36,6 +36,17 @@ export interface CompanySettings {
   material_tax_rate: number;
 }
 
+export interface LaborRate {
+  id?: string;
+  assembly_code: string;
+  assembly_name?: string;
+  installation_hours: number;
+  skill_level?: string;
+  notes?: string;
+  user_id?: string;
+  created_at?: string;
+}
+
 export async function loadMaterialPricingFromSupabase(): Promise<MaterialPricing[]> {
   if (!supabase) return [];
 
@@ -54,6 +65,27 @@ export async function loadMaterialPricingFromSupabase(): Promise<MaterialPricing
     return data || [];
   } catch (error) {
     console.error('Error loading material pricing:', error);
+    return [];
+  }
+}
+
+export async function loadLaborRatesFromSupabase(): Promise<LaborRate[]> {
+  if (!supabase) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('labor_rates')
+      .select('*')
+      .order('assembly_code', { ascending: true });
+
+    if (error) {
+      console.error('Error loading labor rates:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error loading labor rates:', error);
     return [];
   }
 }
