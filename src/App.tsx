@@ -318,6 +318,56 @@ export default function App() {
   function doPrint() { window.print(); }
   function doCloseProject() { doNewProject(); }
 
+  async function doSaveToDatabase() {
+    const { saveProjectToSupabase } = await import('@/utils/supabasePricing');
+    const state = useStore.getState();
+    const projectData = {
+      fileName: fileName || 'Untitled',
+      projectName: state.projectName || 'Untitled Project',
+      name: state.projectName || 'Untitled Project',
+      pages: state.pages,
+      tags: state.tags
+    };
+    const success = await saveProjectToSupabase(projectData);
+    if (success) {
+      state.setLastSaveTime(new Date());
+      alert('✅ Project saved to database successfully!');
+    } else {
+      alert('❌ Failed to save project to database');
+    }
+  }
+
+  async function doOpenFromDatabase() {
+    const { loadAllProjectsFromSupabase, loadProjectByIdFromSupabase } = await import('@/utils/supabasePricing');
+    const projects = await loadAllProjectsFromSupabase();
+
+    if (projects.length === 0) {
+      alert('No saved projects found in database');
+      return;
+    }
+
+    const projectList = projects
+      .map((p, i) => `${i + 1}. ${p.project_name} (${new Date(p.updated_at).toLocaleDateString()})`)
+      .join('\n');
+
+    const selection = prompt(`Select a project to open:\n\n${projectList}\n\nEnter number (1-${projects.length}):`);
+    if (!selection) return;
+
+    const index = parseInt(selection, 10) - 1;
+    if (index < 0 || index >= projects.length) {
+      alert('Invalid selection');
+      return;
+    }
+
+    const projectData = await loadProjectByIdFromSupabase(projects[index].id);
+    if (projectData) {
+      useStore.getState().fromProject(projectData);
+      alert(`✅ Loaded: ${projectData.projectName || projectData.name}`);
+    } else {
+      alert('❌ Failed to load project from database');
+    }
+  }
+
   /* =========================================================================================
      OPEN PDF (embed bytes into project state)
      ========================================================================================= */
@@ -1020,8 +1070,11 @@ export default function App() {
             >
               <MenuItem label="New" onClick={()=>{setFileMenuOpen(false); doNewProject();}} />
               <MenuItem label="Open…" onClick={()=>{ setFileMenuOpen(false); projFileRef.current?.click(); }} />
+              <MenuItem label="🗄️ Open from Database" onClick={async ()=>{ setFileMenuOpen(false); await doOpenFromDatabase(); }} />
               <MenuItem label="Add Sheet…" onClick={()=>{ setFileMenuOpen(false); addSheetRef.current?.click(); }} />
+              <div style={{borderTop:'1px solid #eee'}} />
               <MenuItem label="Save" onClick={()=>{setFileMenuOpen(false); doSave();}} />
+              <MenuItem label="💾 Save to Database" onClick={async ()=>{ setFileMenuOpen(false); await doSaveToDatabase(); }} />
               <MenuItem label="Save As…" onClick={()=>{setFileMenuOpen(false); doSaveAs();}} />
               <MenuItem label="Print" onClick={()=>{setFileMenuOpen(false); doPrint();}} />
               <div style={{borderTop:'1px solid #eee'}} />
@@ -1108,6 +1161,39 @@ export default function App() {
         <span style={{marginLeft:8, maxWidth:320, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}} title={pdfName || fileName}>
           {pdfName || fileName}
         </span>
+        {/* Autosave Status Indicator */}
+        {pageCount > 0 && (() => {
+          const lastSaveTime = useStore.getState().lastSaveTime;
+          const saveDate = lastSaveTime ? (lastSaveTime instanceof Date ? lastSaveTime : new Date(lastSaveTime)) : null;
+          const seconds = saveDate ? Math.floor((Date.now() - saveDate.getTime()) / 1000) : -1;
+          let timeSinceText = 'Not saved';
+          if (seconds >= 0) {
+            if (seconds < 10) timeSinceText = 'Just now';
+            else if (seconds < 60) timeSinceText = `${seconds}s ago`;
+            else if (seconds < 3600) timeSinceText = `${Math.floor(seconds / 60)}m ago`;
+            else timeSinceText = `${Math.floor(seconds / 3600)}h ago`;
+          }
+          return (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 12px',
+                background: lastSaveTime ? '#f0fdf4' : '#f9fafb',
+                border: `1px solid ${lastSaveTime ? '#86efac' : '#e5e7eb'}`,
+                borderRadius: 8,
+                fontSize: '13px',
+                color: lastSaveTime ? '#15803d' : '#6b7280',
+                marginLeft: 12
+              }}
+              title={lastSaveTime ? `Last saved: ${saveDate!.toLocaleString()}` : 'Not saved to database yet'}
+            >
+              <span>{lastSaveTime ? '☁️' : '⊗'}</span>
+              <span style={{fontWeight: 500}}>{timeSinceText}</span>
+            </div>
+          );
+        })()}
         <button className="btn" onClick={()=>setSettingsOpen(true)} style={{marginLeft:'auto'}}>⚙️ Settings</button>
       </div>}
 
