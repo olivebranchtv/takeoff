@@ -514,8 +514,23 @@ export async function loadTagsFromSupabase(): Promise<{ tags: any[]; colorOverri
 
     if (!data) return null;
 
+    // Sanitize loaded tags to ensure custom pricing fields are numbers, not strings
+    const sanitizedTags = (data.tags || []).map((tag: any) => {
+      const sanitized = { ...tag };
+      // Force convert custom pricing to numbers if present
+      if (sanitized.customMaterialCost != null) {
+        sanitized.customMaterialCost = Number(sanitized.customMaterialCost);
+      }
+      if (sanitized.customLaborHours != null) {
+        sanitized.customLaborHours = Number(sanitized.customLaborHours);
+      }
+      return sanitized;
+    });
+
+    console.log('✅ Loaded tags from database with sanitized custom pricing');
+
     return {
-      tags: data.tags || [],
+      tags: sanitizedTags,
       colorOverrides: data.color_overrides || {}
     };
   } catch (error) {
