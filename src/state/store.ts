@@ -726,8 +726,22 @@ export const useStore = create<State>()(
           })
           .sort((a,b)=>a.pageIndex-b.pageIndex);
 
-        // Populate projectTagIds with all tags that were in the saved project
-        const projectTagIds = rawTags.map(t => t.id);
+        // Find all tags that are actually used in the project (have objects with their code)
+        const usedTagCodes = new Set<string>();
+        pages.forEach(page => {
+          page.objects.forEach(obj => {
+            if ('code' in obj && obj.code) {
+              usedTagCodes.add(obj.code.toUpperCase());
+            }
+          });
+        });
+
+        // Only populate projectTagIds with tags that are actually used
+        const projectTagIds = tags
+          .filter(t => usedTagCodes.has(t.code.toUpperCase()))
+          .map(t => t.id);
+
+        console.log(`[fromProject] Found ${usedTagCodes.size} unique tag codes used in project`);
         console.log(`[fromProject] Setting ${projectTagIds.length} project tags`);
 
         set({
