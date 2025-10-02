@@ -891,11 +891,13 @@ export const useStore = create<State>()(
     {
       name: 'skd.mastertags.v1',
       storage: createJSONStorage(() => localStorage),
-      version: 4,
-      // persist palette, overrides, lastMeasureOptions, aiAnalysisResult, manualItems (NOT tags or assemblies - they come from Supabase)
+      version: 5,
+      // persist palette, overrides, tags, lastMeasureOptions, aiAnalysisResult, manualItems
+      // Tags are saved to BOTH Supabase and localStorage for redundancy
       partialize: (s) => ({
         palette: s.palette,
         colorOverrides: s.colorOverrides,
+        tags: s.tags,
         lastMeasureOptions: s.lastMeasureOptions,
         aiAnalysisResult: s.aiAnalysisResult,
         manualItems: s.manualItems,
@@ -926,6 +928,11 @@ export const useStore = create<State>()(
         if (version === 3 && persistedState.tags) {
           console.log('🔄 Migration v3→v4: Removing tags from localStorage (now loaded from Supabase)');
           delete persistedState.tags;
+        }
+        // Migration from version 4 to 5: Tags now saved to BOTH Supabase AND localStorage
+        // Tags will be loaded from Supabase on next initialization and saved to both locations
+        if (version === 4) {
+          console.log('🔄 Migration v4→v5: Tags now saved to both Supabase and localStorage');
         }
         return persistedState;
       },
