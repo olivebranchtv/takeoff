@@ -333,6 +333,13 @@ export class PricingDatabase {
   }
 
   /**
+   * Get material price object by key
+   */
+  getMaterialPriceByKey(key: string): MaterialPrice | undefined {
+    return this.materialPrices.get(key);
+  }
+
+  /**
    * Get material price by item code, category, or description
    * Priority: item_code > exact match > case-insensitive > fuzzy
    */

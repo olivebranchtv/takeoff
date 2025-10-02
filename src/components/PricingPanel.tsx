@@ -30,6 +30,9 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   const [costs, setCosts] = useState<ProjectCosts | null>(null);
+  const [competitiveBidEnabled, setCompetitiveBidEnabled] = useState(false);
+  const [adjustedLaborRate, setAdjustedLaborRate] = useState(30.0);
+  const [adjustedCosts, setAdjustedCosts] = useState<ProjectCosts | null>(null);
 
   useEffect(() => {
     loadInitialData();
@@ -247,10 +250,43 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
         }
       );
       setCosts(calculated);
+
+      // Calculate adjusted costs if competitive bidding is enabled
+      if (competitiveBidEnabled && adjustedLaborRate !== 30.0) {
+        // Create a new pricing database with adjusted labor rate
+        const tempDb = new PricingDatabase(adjustedLaborRate);
+
+        // Copy all material prices from original database
+        const allKeys = pricingDb.getAllKeys();
+        for (const key of allKeys) {
+          const price = pricingDb.getMaterialPriceByKey(key);
+          if (price) {
+            tempDb.setMaterialPrice(key, price);
+          }
+        }
+
+        const calculatedAdjusted = calculateProjectCosts(
+          pages,
+          tags,
+          assemblies,
+          tempDb,
+          {
+            overheadPercentage: overheadPct,
+            profitPercentage: profitPct,
+            materialTaxRate: taxRate / 100,
+            materialShipping: shipping,
+            equipmentCost: equipment,
+            lightingPackageCost: lightingPackage
+          }
+        );
+        setAdjustedCosts(calculatedAdjusted);
+      } else {
+        setAdjustedCosts(null);
+      }
     } catch (error) {
       console.error('Error calculating costs:', error);
     }
-  }, [pages, tags, assemblies, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment, lightingPackage, pricesLoaded, priceCount]);
+  }, [pages, tags, assemblies, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment, lightingPackage, pricesLoaded, priceCount, competitiveBidEnabled, adjustedLaborRate]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -402,6 +438,57 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
         <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px', color: '#0d3b66' }}>
           Markup Settings
         </h3>
+
+        {/* Competitive Bidding Toggle */}
+        <div style={{
+          marginBottom: '20px',
+          padding: '12px',
+          background: competitiveBidEnabled ? '#e3f2fd' : '#f8f9fa',
+          border: competitiveBidEnabled ? '2px solid #1976d2' : '1px solid #ddd',
+          borderRadius: '6px'
+        }}>
+          <label style={{
+            display: 'flex',
+            alignItems: 'center',
+            fontSize: '14px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            marginBottom: competitiveBidEnabled ? '12px' : '0'
+          }}>
+            <input
+              type="checkbox"
+              checked={competitiveBidEnabled}
+              onChange={(e) => setCompetitiveBidEnabled(e.target.checked)}
+              style={{ marginRight: '8px', cursor: 'pointer', width: '16px', height: '16px' }}
+            />
+            <span>🎯 Competitive Bidding Mode</span>
+          </label>
+
+          {competitiveBidEnabled && (
+            <div style={{ marginTop: '12px' }}>
+              <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', color: '#666' }}>
+                Adjusted Labor Rate ($/hr)
+              </label>
+              <input
+                type="number"
+                value={adjustedLaborRate}
+                onChange={(e) => setAdjustedLaborRate(parseFloat(e.target.value) || 30.0)}
+                step="0.50"
+                min="0"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #1976d2',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+              />
+              <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                Standard rate: $30/hr • Current: ${adjustedLaborRate}/hr
+              </div>
+            </div>
+          )}
+        </div>
 
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: '500' }}>
@@ -600,18 +687,85 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
             </div>
           </div>
 
-          <div style={{
-            background: '#1b5e20',
-            color: '#fff',
-            padding: '20px',
-            borderRadius: '6px',
-            marginBottom: '20px'
-          }}>
-            <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '5px' }}>TOTAL BID PRICE</div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
-              {formatCurrency(costs.totalBidPrice)}
+          {/* Show comparison if competitive bidding is enabled */}
+          {competitiveBidEnabled && adjustedCosts ? (
+            <>
+              <div style={{
+                background: '#f8f9fa',
+                padding: '16px',
+                borderRadius: '6px',
+                marginBottom: '12px',
+                border: '1px solid #ddd'
+              }}>
+                <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px', fontWeight: '500' }}>Standard Bid @ $30/hr</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '14px' }}>
+                  <span>Labor:</span>
+                  <span>{formatCurrency(costs.laborCostTotal)} ({costs.laborHoursTotal.toFixed(1)} hrs)</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '14px' }}>
+                  <span>Materials:</span>
+                  <span>{formatCurrency(costs.materialSubtotal)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid #ddd', fontWeight: 'bold', fontSize: '15px' }}>
+                  <span>Total:</span>
+                  <span>{formatCurrency(costs.totalBidPrice)}</span>
+                </div>
+              </div>
+
+              <div style={{
+                background: '#1b5e20',
+                color: '#fff',
+                padding: '16px',
+                borderRadius: '6px',
+                marginBottom: '12px'
+              }}>
+                <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '8px', fontWeight: '500' }}>Competitive Bid @ ${adjustedLaborRate}/hr</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '14px', opacity: 0.95 }}>
+                  <span>Labor:</span>
+                  <span>{formatCurrency(adjustedCosts.laborCostTotal)} ({adjustedCosts.laborHoursTotal.toFixed(1)} hrs)</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '14px', opacity: 0.95 }}>
+                  <span>Materials:</span>
+                  <span>{formatCurrency(adjustedCosts.materialSubtotal)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '20px' }}>
+                  <span>Total:</span>
+                  <span>{formatCurrency(adjustedCosts.totalBidPrice)}</span>
+                </div>
+              </div>
+
+              <div style={{
+                background: costs.totalBidPrice > adjustedCosts.totalBidPrice ? '#d4edda' : '#fff3cd',
+                padding: '16px',
+                borderRadius: '6px',
+                marginBottom: '20px',
+                border: costs.totalBidPrice > adjustedCosts.totalBidPrice ? '2px solid #28a745' : '2px solid #ffc107'
+              }}>
+                <div style={{ fontSize: '13px', fontWeight: '500', marginBottom: '8px', color: costs.totalBidPrice > adjustedCosts.totalBidPrice ? '#155724' : '#856404' }}>
+                  {costs.totalBidPrice > adjustedCosts.totalBidPrice ? '✓ Savings to Win Job' : '⚠ Cost Increase'}
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '4px', color: costs.totalBidPrice > adjustedCosts.totalBidPrice ? '#155724' : '#856404' }}>
+                  {formatCurrency(Math.abs(costs.totalBidPrice - adjustedCosts.totalBidPrice))}
+                </div>
+                <div style={{ fontSize: '13px', color: '#666' }}>
+                  {((Math.abs(costs.totalBidPrice - adjustedCosts.totalBidPrice) / costs.totalBidPrice) * 100).toFixed(1)}% {costs.totalBidPrice > adjustedCosts.totalBidPrice ? 'reduction' : 'increase'} from standard bid
+                </div>
+              </div>
+            </>
+          ) : (
+            <div style={{
+              background: '#1b5e20',
+              color: '#fff',
+              padding: '20px',
+              borderRadius: '6px',
+              marginBottom: '20px'
+            }}>
+              <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '5px' }}>TOTAL BID PRICE</div>
+              <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
+                {formatCurrency(costs.totalBidPrice)}
+              </div>
             </div>
-          </div>
+          )}
 
           <button
             onClick={exportBidSummary}
