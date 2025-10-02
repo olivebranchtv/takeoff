@@ -652,7 +652,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                   onChange={e => setDraft(d => ({ ...d, assemblyId: e.target.value || undefined }))}
                   style={{ ...S.input, width: '100%', maxWidth: '500px' }}
                 >
-                  <option value="">— No Assembly —</option>
+                  <option value="">NO ASSEMBLY APPLIED</option>
                   {assemblies && assemblies.filter((a: any) => a.isActive).map((assembly: any) => (
                     <option key={assembly.id} value={assembly.code}>
                       {assembly.code} - {assembly.name} ({assembly.items.length} items)
