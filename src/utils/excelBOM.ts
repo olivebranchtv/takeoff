@@ -70,6 +70,10 @@ export function calculateAssemblyMaterials(
       if (existing) {
         existing.quantity += count;
         existing.totalQty += count;
+        // Update total labor hours when adding more units
+        if (existing.laborOverride !== undefined) {
+          existing.laborOverride += laborHours * count;
+        }
       } else {
         materialAcc.set(matKey, {
           category: tag.category || 'Lights',
@@ -84,7 +88,7 @@ export function calculateAssemblyMaterials(
             ? `Custom pricing: $${materialCost}/unit, ${laborHours} hrs/unit`
             : `Labor: ${laborHours} hrs per unit`,
           itemCode: `TAG-${row.tagCode}`, // Special item code for tag-based pricing
-          laborOverride: laborHours, // Override per unit
+          laborOverride: laborHours * count, // Total labor hours for all units
           customMaterialCost: materialCost // Custom material cost per unit
         });
       }
@@ -118,6 +122,10 @@ export function calculateAssemblyMaterials(
       if (existing) {
         existing.quantity += count;
         existing.totalQty += count;
+        // Update total labor hours when adding more units
+        if (existing.laborOverride !== undefined) {
+          existing.laborOverride += laborHours * count;
+        }
       } else {
         materialAcc.set(matKey, {
           category: tag.category || assembly.name,
@@ -130,7 +138,7 @@ export function calculateAssemblyMaterials(
           assemblyName: tag.name,
           notes: `Custom pricing: $${materialCost.toFixed(2)}/unit, ${laborHours} hrs/unit`,
           itemCode: `TAG-${row.tagCode}`, // Special item code for tag-based pricing
-          laborOverride: laborHours,
+          laborOverride: laborHours * count, // Total labor hours for all units
           customMaterialCost: materialCost
         });
       }
