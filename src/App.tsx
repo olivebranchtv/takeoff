@@ -404,6 +404,13 @@ export default function App() {
           setPdf(pdfDoc);
           setPdfBytesBase64(projectData.pdf.bytesBase64);
           setPdfName(projectData.pdf.name || storeState.fileName);
+          setFileName(projectData.pdf.name || storeState.fileName);
+
+          // Update page count and labels for PDF viewport
+          setPageCount(pdfDoc.numPages);
+          setPageLabels(await resolvePageLabels(pdfDoc));
+          setActivePage(0);
+          useStore.getState().setSelectedIds([]);
         } catch (error) {
           console.error('Error loading PDF from database:', error);
           setPdf(null);
