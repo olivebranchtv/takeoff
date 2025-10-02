@@ -12,7 +12,6 @@ export function useAutoSave() {
   const pdfName = useStore(s => s.pdfName);
   const setLastSaveTime = useStore(s => s.setLastSaveTime);
 
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const periodicSaveRef = useRef<NodeJS.Timeout>();
 
   const saveProject = async () => {
@@ -41,21 +40,6 @@ export function useAutoSave() {
       await saveTagsToSupabase(tags, colorOverrides);
     }
   };
-
-  // Debounced save (2 seconds after changes)
-  useEffect(() => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(saveProject, 2000);
-
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, [pages, tags, colorOverrides, projectName, fileName, pdfBytesBase64, pdfName]);
 
   // Periodic save every 5 minutes
   useEffect(() => {
