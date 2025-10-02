@@ -71,9 +71,14 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   // Category anchors for jump
   const groupRefs = useRef(new Map<string, HTMLTableRowElement>());
+  const tableWrapRef = useRef<HTMLDivElement>(null);
   const scrollToCategory = (cat: string | undefined) => {
     const row = groupRefs.current.get(cat || 'Uncategorized');
-    row?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (row && tableWrapRef.current) {
+      const container = tableWrapRef.current;
+      const rowTop = row.offsetTop;
+      container.scrollTo({ top: rowTop - 50, behavior: 'smooth' });
+    }
   };
 
   // Reset UI & ensure defaults exist (but never overwrite user edits)
@@ -787,7 +792,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
           </div>}
 
           {/* Tall table area */}
-          <div style={S.tableWrap}>
+          <div ref={tableWrapRef} style={S.tableWrap}>
             <table style={S.table}>
               <thead>
                 <tr>
