@@ -158,6 +158,10 @@ type State = {
   /** Track permanently deleted tag codes (to prevent re-import from masterTags) */
   deletedTagCodes: string[];
 
+  /** Flag to indicate if we've loaded from Supabase (prevents premature auto-import) */
+  hasLoadedFromSupabase: boolean;
+  setHasLoadedFromSupabase: (value: boolean) => void;
+
   /** Last-used measure dialog options (persisted) */
   lastMeasureOptions: MeasureOptions;
 
@@ -280,6 +284,8 @@ export const useStore = create<State>()(
       // key: overrides persist manual color choices for any code
       colorOverrides: {},
       deletedTagCodes: [],
+      hasLoadedFromSupabase: false,
+      setHasLoadedFromSupabase: (value) => set({ hasLoadedFromSupabase: value }),
 
       // initialize last used measure options
       lastMeasureOptions: DEFAULT_MEASURE_OPTIONS,

@@ -8,6 +8,7 @@ export function useInitialize() {
   const importTags = useStore(s => s.importTags);
   const setTagColorOverride = useStore(s => s.setTagColorOverride);
   const setAssemblies = useStore(s => s.setAssemblies);
+  const setHasLoadedFromSupabase = useStore(s => s.setHasLoadedFromSupabase);
   const hasInitialized = useRef(false);
 
   useEffect(() => {
@@ -73,9 +74,14 @@ export function useInitialize() {
         } else {
           console.log('ℹ️ No tags found in Supabase, using defaults from localStorage');
         }
+
+        // Mark that we've completed Supabase load
+        setHasLoadedFromSupabase(true);
       } catch (error) {
         console.error('❌ Failed to load tags from Supabase:', error);
         console.log('ℹ️ Falling back to localStorage tags');
+        // Still mark as loaded even if failed, to prevent blocking
+        setHasLoadedFromSupabase(true);
       }
 
       // Compare and sync standard assemblies to Supabase
@@ -125,5 +131,5 @@ export function useInitialize() {
     }
 
     initialize();
-  }, [importTags, setTagColorOverride, setAssemblies]);
+  }, [importTags, setTagColorOverride, setAssemblies, setHasLoadedFromSupabase]);
 }

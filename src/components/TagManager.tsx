@@ -50,7 +50,7 @@ const CUSTOM_CAT_VALUE = '__CUSTOM__';
 
 export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const store = useStore() as any;
-  const { tags, palette, addTag, updateTag, deleteTag, importTags, exportTags, assemblies, deletedTagCodes } = store;
+  const { tags, palette, addTag, updateTag, deleteTag, importTags, exportTags, assemblies, deletedTagCodes, hasLoadedFromSupabase } = store;
 
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -91,6 +91,13 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     }
     // Start with editor collapsed to show more tags
     setEditorCollapsed(true);
+
+    // CRITICAL: Only auto-import if we've loaded deletedTagCodes from Supabase
+    if (!hasLoadedFromSupabase) {
+      console.log('⏸️ Waiting for Supabase data to load before auto-importing tags...');
+      return;
+    }
+
     try {
       const existing = new Set<string>((tags as Tag[]).map(t => (t.code || '').toUpperCase()));
       const deleted = new Set<string>((deletedTagCodes || []).map((c: string) => c.toUpperCase()));
@@ -105,7 +112,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, hasLoadedFromSupabase]);
 
   // Also cleanup listeners if component unmounts
   useEffect(() => () => onDragEnd(), []);
