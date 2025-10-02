@@ -31,6 +31,9 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
   const [equipment, setEquipment] = useState(0);
   const [lightingPackage, setLightingPackage] = useState(0);
   const [gearPackage, setGearPackage] = useState(0);
+  const [miscPackage, setMiscPackage] = useState(0);
+  const [miscOverheadPct, setMiscOverheadPct] = useState(10);
+  const [miscProfitPct, setMiscProfitPct] = useState(10);
   const [pricesLoaded, setPricesLoaded] = useState(false);
   const [priceCount, setPriceCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -258,10 +261,13 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
           equipmentCost: equipment,
           lightingPackageCost: lightingPackage,
           gearPackageCost: gearPackage,
+          miscPackageCost: miscPackage,
           lightingOverheadPercentage: lightingOverheadPct,
           lightingProfitPercentage: lightingProfitPct,
           gearOverheadPercentage: gearOverheadPct,
-          gearProfitPercentage: gearProfitPct
+          gearProfitPercentage: gearProfitPct,
+          miscOverheadPercentage: miscOverheadPct,
+          miscProfitPercentage: miscProfitPct
         }
       );
       setCosts(calculated);
@@ -294,10 +300,13 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
             equipmentCost: equipment,
             lightingPackageCost: lightingPackage,
             gearPackageCost: gearPackage,
+            miscPackageCost: miscPackage,
             lightingOverheadPercentage: lightingOverheadPct,
             lightingProfitPercentage: lightingProfitPct,
             gearOverheadPercentage: gearOverheadPct,
-            gearProfitPercentage: gearProfitPct
+            gearProfitPercentage: gearProfitPct,
+            miscOverheadPercentage: miscOverheadPct,
+            miscProfitPercentage: miscProfitPct
           }
         );
         setAdjustedCosts(calculatedAdjusted);
@@ -307,7 +316,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
     } catch (error) {
       console.error('Error calculating costs:', error);
     }
-  }, [pages, tags, assemblies, manualItems, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment, lightingPackage, gearPackage, lightingOverheadPct, lightingProfitPct, gearOverheadPct, gearProfitPct, pricesLoaded, priceCount, competitiveBidEnabled, adjustedLaborRate]);
+  }, [pages, tags, assemblies, manualItems, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment, lightingPackage, gearPackage, miscPackage, lightingOverheadPct, lightingProfitPct, gearOverheadPct, gearProfitPct, miscOverheadPct, miscProfitPct, pricesLoaded, priceCount, competitiveBidEnabled, adjustedLaborRate]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -602,6 +611,53 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
                   </div>
                 </div>
               </div>
+
+              {/* Misc Package Markup */}
+              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #ddd' }}>
+                <div style={{ fontSize: '13px', fontWeight: '500', marginBottom: '10px', color: '#333' }}>
+                  📦 Misc Package Markup
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: '#666' }}>
+                      Overhead %
+                    </label>
+                    <input
+                      type="number"
+                      value={miscOverheadPct}
+                      onChange={(e) => setMiscOverheadPct(parseFloat(e.target.value) || 0)}
+                      step="0.5"
+                      min="0"
+                      style={{
+                        width: '100%',
+                        padding: '6px',
+                        border: '1px solid #1976d2',
+                        borderRadius: '4px',
+                        fontSize: '13px'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '5px', color: '#666' }}>
+                      Profit %
+                    </label>
+                    <input
+                      type="number"
+                      value={miscProfitPct}
+                      onChange={(e) => setMiscProfitPct(parseFloat(e.target.value) || 0)}
+                      step="0.5"
+                      min="0"
+                      style={{
+                        width: '100%',
+                        padding: '6px',
+                        border: '1px solid #1976d2',
+                        borderRadius: '4px',
+                        fontSize: '13px'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -744,6 +800,28 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
             ⚡ Add vendor quotes for electrical gear packages (panels, switchgear, transformers, etc.)
           </div>
         </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: '500' }}>
+            Misc Package $ <span style={{ fontSize: '12px', color: '#666' }}>(miscellaneous items)</span>
+          </label>
+          <input
+            type="number"
+            value={miscPackage}
+            onChange={(e) => setMiscPackage(parseFloat(e.target.value) || 0)}
+            step="100"
+            style={{
+              width: '100%',
+              padding: '8px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '14px'
+            }}
+          />
+          <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+            📦 Add miscellaneous costs (permits, fees, special equipment, etc.)
+          </div>
+        </div>
       </div>
 
       {costs && (
@@ -837,6 +915,31 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold', color: '#075985', paddingTop: '6px', borderTop: '1px solid #0284c7' }}>
                 <span>Gear Total:</span>
                 <span>{formatCurrency(costs.gearPackageTotal)}</span>
+              </div>
+            </div>
+          )}
+
+          {costs.miscPackageCost > 0 && (
+            <div style={{ background: '#f3e8ff', padding: '15px', borderRadius: '6px', marginBottom: '15px', border: '1px solid #9333ea' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px' }}>
+                <span>📦 Misc Package:</span>
+                <strong>{formatCurrency(costs.miscPackageCost)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#6b21a8', marginBottom: '6px' }}>
+                <span style={{ paddingLeft: '10px' }}>+ Tax ({taxRate}%):</span>
+                <span>{formatCurrency(costs.miscPackageTax)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#6b21a8', marginBottom: '6px' }}>
+                <span style={{ paddingLeft: '10px' }}>+ Overhead ({costs.miscOverheadPercentage}%):</span>
+                <span>{formatCurrency(costs.miscOverheadAmount)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#6b21a8', marginBottom: '6px' }}>
+                <span style={{ paddingLeft: '10px' }}>+ Profit ({costs.miscProfitPercentage}%):</span>
+                <span>{formatCurrency(costs.miscProfitAmount)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold', color: '#6b21a8', paddingTop: '6px', borderTop: '1px solid #9333ea' }}>
+                <span>Misc Total:</span>
+                <span>{formatCurrency(costs.miscPackageTotal)}</span>
               </div>
             </div>
           )}

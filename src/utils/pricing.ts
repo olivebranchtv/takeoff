@@ -193,6 +193,16 @@ export interface ProjectCosts {
   gearProfitAmount: number;
   gearPackageTotal: number;
 
+  // Misc Package
+  miscPackageCost: number;
+  miscPackageTax: number;
+  miscPackageWithTax: number;
+  miscOverheadPercentage: number;
+  miscOverheadAmount: number;
+  miscProfitPercentage: number;
+  miscProfitAmount: number;
+  miscPackageTotal: number;
+
   // Final Bid
   totalBidPrice: number;
 
@@ -620,10 +630,13 @@ export function calculateProjectCosts(
     equipmentCost?: number;
     lightingPackageCost?: number;
     gearPackageCost?: number;
+    miscPackageCost?: number;
     lightingOverheadPercentage?: number;
     lightingProfitPercentage?: number;
     gearOverheadPercentage?: number;
     gearProfitPercentage?: number;
+    miscOverheadPercentage?: number;
+    miscProfitPercentage?: number;
   } = {}
 ): ProjectCosts {
   const {
@@ -634,10 +647,13 @@ export function calculateProjectCosts(
     equipmentCost = 0,
     lightingPackageCost = 0,
     gearPackageCost = 0,
+    miscPackageCost = 0,
     lightingOverheadPercentage = 15.0,
     lightingProfitPercentage = 12.0,
     gearOverheadPercentage = 15.0,
     gearProfitPercentage = 12.0,
+    miscOverheadPercentage = 15.0,
+    miscProfitPercentage = 12.0,
   } = options;
 
   // Get material breakdown
@@ -858,13 +874,15 @@ export function calculateProjectCosts(
   const laborRate = pricingDb.getDefaultLaborRate();
   const laborCostTotal = laborHoursTotal * laborRate;
 
-  // Apply tax to lighting and gear packages
+  // Apply tax to lighting, gear, and misc packages
   const lightingPackageTax = lightingPackageCost * materialTaxRate;
   const lightingPackageWithTax = lightingPackageCost + lightingPackageTax;
   const gearPackageTax = gearPackageCost * materialTaxRate;
   const gearPackageWithTax = gearPackageCost + gearPackageTax;
+  const miscPackageTax = miscPackageCost * materialTaxRate;
+  const miscPackageWithTax = miscPackageCost + miscPackageTax;
 
-  // Calculate subtotal for materials and labor (NOT including lighting/gear packages yet)
+  // Calculate subtotal for materials and labor (NOT including lighting/gear/misc packages yet)
   const subtotalBeforePackages = materialSubtotal + laborCostTotal + equipmentCost;
 
   // Calculate overhead and profit for materials and labor
@@ -884,8 +902,14 @@ export function calculateProjectCosts(
   const gearProfitAmount = gearWithOverhead * (gearProfitPercentage / 100);
   const gearPackageTotal = gearWithOverhead + gearProfitAmount;
 
+  // Calculate separate overhead and profit for misc package
+  const miscOverheadAmount = miscPackageWithTax * (miscOverheadPercentage / 100);
+  const miscWithOverhead = miscPackageWithTax + miscOverheadAmount;
+  const miscProfitAmount = miscWithOverhead * (miscProfitPercentage / 100);
+  const miscPackageTotal = miscWithOverhead + miscProfitAmount;
+
   // Total bid price includes everything
-  const totalBidPrice = subtotalWithOverhead + profitAmount + lightingPackageTotal + gearPackageTotal;
+  const totalBidPrice = subtotalWithOverhead + profitAmount + lightingPackageTotal + gearPackageTotal + miscPackageTotal;
 
   // Calculate division breakdown with markup
   const divisionBreakdown: DivisionCost[] = [];
@@ -941,6 +965,14 @@ export function calculateProjectCosts(
     gearProfitPercentage,
     gearProfitAmount,
     gearPackageTotal,
+    miscPackageCost,
+    miscPackageTax,
+    miscPackageWithTax,
+    miscOverheadPercentage,
+    miscOverheadAmount,
+    miscProfitPercentage,
+    miscProfitAmount,
+    miscPackageTotal,
     totalBidPrice,
     divisionBreakdown
   };
