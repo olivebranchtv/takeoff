@@ -662,7 +662,18 @@ export function calculateProjectCosts(
   // Calculate material costs from tagged/measured items
   let materialCostTotal = 0;
   for (const mat of materials) {
-    const price = pricingDb.getMaterialPrice(mat.category, mat.description, mat.itemCode);
+    // Check if this is a tag with custom pricing (itemCode starts with TAG-)
+    let price: number;
+
+    if (mat.itemCode?.startsWith('TAG-')) {
+      // This is a tag-based item with custom pricing already embedded
+      price = mat.customMaterialCost ?? 0;
+      console.log(`🏷️ Tag-based material cost for ${mat.description}: $${price}/unit × ${mat.totalQty} = $${price * mat.totalQty}`);
+    } else {
+      // Regular database lookup
+      price = pricingDb.getMaterialPrice(mat.category, mat.description, mat.itemCode) || 0;
+    }
+
     if (price) {
       materialCostTotal += mat.totalQty * price;
     } else {
