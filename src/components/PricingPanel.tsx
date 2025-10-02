@@ -238,9 +238,6 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
     try {
       // Use assemblies from store, but fallback to STANDARD_ASSEMBLIES if empty
       const assembliesToUse = assemblies.length > 0 ? assemblies : STANDARD_ASSEMBLIES;
-      console.log(`📊 Calculating costs with ${assembliesToUse.length} assemblies (${assemblies.length > 0 ? 'from store' : 'using fallback'})`);
-      const xfmrAssembly = assembliesToUse.find(a => a.code === 'XFMR-500KVA');
-      console.log(`🔍 XFMR-500KVA assembly: ${xfmrAssembly ? 'YES - ' + xfmrAssembly.name : 'NO'}`);
 
       const calculated = calculateProjectCosts(
         pages,

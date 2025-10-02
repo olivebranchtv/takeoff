@@ -90,7 +90,7 @@ function getFallbackPrice(category: string, description: string): { price: numbe
   }
 
   // Use default
-  console.log(`💡 Using default fallback price for "${description}": $${FALLBACK_PRICES.default.price}, ${FALLBACK_PRICES.default.laborHours}hrs`);
+  // Using default fallback price (expected for custom items)
   return FALLBACK_PRICES.default;
 }
 
@@ -363,7 +363,7 @@ export class PricingDatabase {
           }
         }
       }
-      console.warn(`⚠️ ITEM CODE NOT FOUND [${itemCode}] "${description}" - falling back to description match`);
+      // Item code not found - silently fall back to description match
     }
 
     // 2. Try exact match (case-sensitive)
@@ -482,12 +482,7 @@ export class PricingDatabase {
       }
     }
 
-    // Debug: log when no match found
-    if (candidateCount === 0) {
-      console.warn(`❌ No category match for: "${description}" (category: "${category}")`);
-    } else {
-      console.warn(`❌ No description match for: "${description}" (category: "${category}", ${candidateCount} candidates checked, keyTerms: ${JSON.stringify(keyTerms)})`);
-    }
+    // No match found - will use fallback pricing (no need to log)
 
     return undefined;
   }
@@ -700,7 +695,6 @@ export function calculateProjectCosts(
 
   // Process manual items (items added by user that aren't on drawings)
   for (const item of manualItems) {
-    console.log(`🔧 Processing manual item: ${item.description} (${item.quantity} ${item.unit}, code: ${item.itemCode || 'none'})`);
 
     // Look up pricing by item code first, then by description
     let price = 0;
@@ -709,16 +703,13 @@ export function calculateProjectCosts(
     if (item.itemCode) {
       // Try to find assembly by code
       const assembly = assemblies.find(a => a.code === item.itemCode);
-      console.log(`  🔍 Looking for assembly with code "${item.itemCode}" - found: ${assembly ? assembly.name : 'NO'}`);
       if (assembly) {
         // For assemblies, calculate total material cost and labor hours from all items
         let assemblyMaterialCost = 0;
         let assemblyLaborHours = 0;
-        console.log(`  📦 Assembly has ${assembly.items.length} items to price:`);
         for (const assemblyItem of assembly.items) {
           const matPrice = pricingDb.getMaterialPrice(assemblyItem.category, assemblyItem.description, assemblyItem.itemCode);
           const matLabor = pricingDb.getMaterialLaborHours(assemblyItem.category, assemblyItem.description, assemblyItem.itemCode);
-          console.log(`    - [${assemblyItem.itemCode}] ${assemblyItem.description}: $${matPrice || 0} x ${assemblyItem.quantityPer}, ${matLabor}hrs x ${assemblyItem.quantityPer}`);
           if (matPrice) {
             assemblyMaterialCost += matPrice * assemblyItem.quantityPer;
           }
@@ -726,7 +717,7 @@ export function calculateProjectCosts(
         }
         price = assemblyMaterialCost;
         laborPerUnit = assemblyLaborHours;
-        console.log(`  📦 Assembly total: ${assembly.name} - $${price}/unit, ${laborPerUnit}hrs/unit`);
+        console.log(`  📦 Assembly: ${assembly.name} → $${price} material + ${laborPerUnit}hrs labor`);
       } else {
         // Try looking up by category::description in pricing DB
         const dbPrice = pricingDb.getMaterialPrice(item.category || '', item.description, item.itemCode);
@@ -734,7 +725,6 @@ export function calculateProjectCosts(
         if (dbPrice) {
           price = dbPrice;
           laborPerUnit = dbLabor;
-          console.log(`  💰 Found in pricing DB: $${price}/unit, ${laborPerUnit}hrs/unit`);
         }
       }
     }
@@ -744,7 +734,7 @@ export function calculateProjectCosts(
       const fallback = getFallbackPrice(item.category || 'General', item.description);
       price = fallback.price;
       laborPerUnit = fallback.laborHours;
-      console.log(`  ⚠️ Using fallback pricing: $${price}/unit, ${laborPerUnit}hrs/unit`);
+      // Using fallback pricing (expected for custom items)
     }
 
     const itemMaterialCost = price * item.quantity;
@@ -759,8 +749,6 @@ export function calculateProjectCosts(
     // Add to division breakdown
     const division = item.category || 'Manual Items';
     const existing = divisionMap.get(division);
-
-    console.log(`  ✅ Manual item totals: $${itemMaterialCost}, ${itemLaborHours}hrs → division "${division}"`);
 
     if (existing) {
       existing.materialCost += itemMaterialCost;
