@@ -59,15 +59,13 @@ export async function loadAssembliesFromSupabase(): Promise<Assembly[]> {
       return [];
     }
 
-    // Get all material IDs from all assemblies (check both material_id and id fields)
+    // Get all material IDs from all assemblies
     const materialIds = new Set<string>();
     data.forEach((row: DbAssembly) => {
       if (Array.isArray(row.items)) {
         row.items.forEach((item: any) => {
-          // Try both material_id (new format) and id (legacy format)
-          const materialId = item.material_id || item.id;
-          if (materialId) {
-            materialIds.add(materialId);
+          if (item.material_id) {
+            materialIds.add(item.material_id);
           }
         });
       }
@@ -99,44 +97,19 @@ export async function loadAssembliesFromSupabase(): Promise<Assembly[]> {
       type: row.type as Assembly['type'],
       isActive: row.is_active,
       items: Array.isArray(row.items) ? row.items.map((item: any) => {
-        // Try both material_id (new format) and id (legacy format)
-        const materialId = item.material_id || item.id;
-        const material = materialMap.get(materialId);
-
-        // If material found in database, use that data
-        if (material) {
-          return {
-            id: materialId,
-            description: material.description,
-            unit: material.unit,
-            quantityPer: item.quantityPer || item.quantity || 1,
-            category: material.category,
-            wasteFactor: item.wasteFactor || 1.02,
-            itemCode: material.item_code,
-            laborOverride: item.laborOverride || undefined,
-            notes: item.notes || undefined
-          };
-        }
-
-        // If no material found but item has description, use item data directly
-        if (item.description) {
-          return {
-            id: materialId || crypto.randomUUID(),
-            description: item.description,
-            unit: item.unit || 'EA',
-            quantityPer: item.quantityPer || item.quantity || 1,
-            category: item.category || '',
-            wasteFactor: item.wasteFactor || 1.02,
-            itemCode: item.itemCode || undefined,
-            laborOverride: item.laborOverride || undefined,
-            notes: item.notes || undefined
-          };
-        }
-
-        // Missing both material reference and description - skip this item
-        console.warn(`⚠️ Assembly ${row.code} has item with no material_id/id and no description:`, item);
-        return null;
-      }).filter((item): item is NonNullable<typeof item> => item !== null) : []
+        const material = materialMap.get(item.material_id);
+        return {
+          id: item.material_id || item.id || crypto.randomUUID(),
+          description: material?.description || item.description || '',
+          unit: material?.unit || item.unit || 'EA',
+          quantityPer: item.quantityPer || item.quantity || 1,
+          category: material?.category || item.category || '',
+          wasteFactor: item.wasteFactor || 1.02,
+          itemCode: material?.item_code || item.itemCode || undefined,
+          laborOverride: item.laborOverride || undefined,
+          notes: item.notes || undefined
+        };
+      }) : []
     }));
   } catch (err) {
     console.error('Exception loading assemblies:', err);
