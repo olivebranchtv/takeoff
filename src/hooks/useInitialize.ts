@@ -25,6 +25,17 @@ export function useInitialize() {
         if (result && result.tags && result.tags.length > 0) {
           console.log(`✅ Loaded ${result.tags.length} tags from Supabase`);
 
+          // Check if TCLK has custom pricing
+          const tclk = result.tags.find(t => t.code === 'TCLK');
+          if (tclk) {
+            console.log('🔍 TCLK tag loaded from DB:', {
+              code: tclk.code,
+              name: tclk.name,
+              customMaterialCost: tclk.customMaterialCost,
+              customLaborHours: tclk.customLaborHours
+            });
+          }
+
           // Import tags into store (this will trigger a save back, but that's OK)
           importTags(result.tags);
 
