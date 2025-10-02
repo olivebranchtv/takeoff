@@ -366,6 +366,21 @@ export const DEFAULT_MASTER_TAGS: MasterTag[] = [
   { code: 'CONT-30A', name: 'Contactor 30A', color: '#22C55E', category: 'BAS/Controls' },
   { code: 'CONT-60A', name: 'Contactor 60A', color: '#22C55E', category: 'BAS/Controls' },
 
+  // --------------------------- LIGHTING CONTROL PANELS ---------------------------
+  { code: 'LCP', name: 'Lighting Control Panel', color: '#8B5CF6', category: 'Lighting Control' },
+  { code: 'LCP-1', name: 'Lighting Control Panel LCP-1', color: '#8B5CF6', category: 'Lighting Control' },
+  { code: 'LCP-2', name: 'Lighting Control Panel LCP-2', color: '#8B5CF6', category: 'Lighting Control' },
+  { code: 'LCP-3', name: 'Lighting Control Panel LCP-3', color: '#8B5CF6', category: 'Lighting Control' },
+  { code: 'WS', name: 'Wall Control Station', color: '#A78BFA', category: 'Lighting Control' },
+  { code: 'WS-4', name: 'Wall Control Station (4-Scene)', color: '#A78BFA', category: 'Lighting Control' },
+  { code: 'WS-8', name: 'Wall Control Station (8-Scene)', color: '#A78BFA', category: 'Lighting Control' },
+  { code: 'OS', name: 'Occupancy Sensor', color: '#A78BFA', category: 'Lighting Control' },
+  { code: 'OS-CEILING', name: 'Ceiling Occupancy Sensor', color: '#A78BFA', category: 'Lighting Control' },
+  { code: 'OS-WALL', name: 'Wall Occupancy Sensor', color: '#A78BFA', category: 'Lighting Control' },
+  { code: 'DS', name: 'Daylight Sensor', color: '#A78BFA', category: 'Lighting Control' },
+  { code: 'GW', name: 'Network Bridge/Gateway', color: '#A78BFA', category: 'Lighting Control' },
+  { code: 'GW-BACNET', name: 'BACnet Gateway', color: '#A78BFA', category: 'Lighting Control' },
+
   // --------------------------- SITE POWER / SITE LIGHTING ---------------------------
   { code: 'POLE-25', name: 'Site Pole 25\' (less head)', color: '#A16207', category: 'Site Power' },
   { code: 'POLE-30', name: 'Site Pole 30\' (less head)', color: '#A16207', category: 'Site Power' },

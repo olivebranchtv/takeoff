@@ -186,6 +186,26 @@ export function getAssemblyIdForTag(tagCode: string, tagCategory?: string): stri
   if (code === 'VAV-CTRL') return 'bas-vav-controller';
   if (code === 'BAS-PS') return 'bas-power-supply';
 
+  // ===== LIGHTING CONTROL PANELS =====
+  if (category.includes('lighting control')) {
+    // LCP Panels (custom gear - no assembly)
+    if (code.includes('LCP')) return undefined;
+
+    // Wall Control Stations
+    if (code === 'WS' || code === 'WS-4') return 'lcp-wall-station-4scene';
+    if (code === 'WS-8') return 'lcp-wall-station-8scene';
+
+    // Occupancy Sensors
+    if (code === 'OS' || code === 'OS-CEILING') return 'lcp-occ-sensor-ceiling';
+    if (code === 'OS-WALL') return 'lcp-occ-sensor-wall';
+
+    // Daylight Sensors
+    if (code === 'DS') return 'lcp-daylight-sensor';
+
+    // Network Gateways
+    if (code === 'GW' || code === 'GW-BACNET') return 'lcp-gateway-bacnet';
+  }
+
   // ===== SITE POWER =====
   if (code.includes('POLE') && !code.includes('HEAD')) return 'pole-light-photocell';
   if (code === 'SITE-LP-HEAD') return 'site-pole-head';
