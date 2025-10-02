@@ -96,6 +96,41 @@ export function calculateAssemblyMaterials(
     if (!assembly) assembly = assemblyCodeMap.get(tag.assemblyId);
     if (!assembly || !assembly.isActive) continue;
 
+    // Check if tag has custom pricing that overrides the assembly
+    if (tag.customMaterialCost !== undefined || tag.customLaborHours !== undefined) {
+      console.log(`🎯 Tag "${row.tagCode}" has custom pricing - overriding assembly "${assembly.code}"`);
+
+      // Use custom values if set, otherwise fall back to assembly totals
+      const materialCost = tag.customMaterialCost ?? 0;
+      const isLight = tag.category?.toLowerCase().includes('light');
+      const defaultLaborHours = isLight ? 1.0 : 0.5;
+      const laborHours = tag.customLaborHours ?? defaultLaborHours;
+
+      const matKey = `${tag.category || assembly.name}::${tag.name || assembly.name}::EA`;
+      const existing = materialAcc.get(matKey);
+
+      if (existing) {
+        existing.quantity += count;
+        existing.totalQty += count;
+      } else {
+        materialAcc.set(matKey, {
+          category: tag.category || assembly.name,
+          description: tag.name || assembly.name,
+          unit: 'EA',
+          quantity: count,
+          wasteFactor: 1.0,
+          totalQty: count,
+          assemblyCode: row.tagCode,
+          assemblyName: tag.name,
+          notes: `Custom pricing: $${materialCost.toFixed(2)}/unit, ${laborHours} hrs/unit`,
+          itemCode: `TAG-${row.tagCode}`, // Special item code for tag-based pricing
+          laborOverride: laborHours,
+          customMaterialCost: materialCost
+        });
+      }
+      continue; // Skip assembly material calculation
+    }
+
     // Track assembly usage
     const usage: AssemblyUsage = {
       code: assembly.code,
