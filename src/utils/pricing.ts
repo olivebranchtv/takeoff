@@ -688,8 +688,8 @@ export function calculateProjectCosts(
     if (mat.itemCode?.startsWith('TAG-')) {
       // This is a tag-based item with custom pricing already embedded
       price = mat.customMaterialCost ?? 0;
-      laborPerUnit = mat.laborOverride ?? 0;
-      console.log(`🏷️ Tag-based pricing for ${mat.description}: $${price}/unit, ${laborPerUnit}hrs/unit`);
+      laborPerUnit = mat.customLaborHoursPerUnit ?? 0;
+      console.log(`🏷️ Tag-based pricing for ${mat.description}: $${price}/unit, ${laborPerUnit}hrs/unit (total qty: ${mat.totalQty})`);
     } else {
       // Try database lookup first
       const dbLaborPerUnit = pricingDb.getMaterialLaborHours(mat.category, mat.description, mat.itemCode);
