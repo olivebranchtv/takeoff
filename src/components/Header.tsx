@@ -19,7 +19,8 @@ export const Header: React.FC = () => {
         setTimeSinceLastSave('Not saved');
         return;
       }
-      const seconds = Math.floor((Date.now() - new Date(lastSaveTime).getTime()) / 1000);
+      const saveDate = lastSaveTime instanceof Date ? lastSaveTime : new Date(lastSaveTime);
+      const seconds = Math.floor((Date.now() - saveDate.getTime()) / 1000);
       if (seconds < 10) setTimeSinceLastSave('Just now');
       else if (seconds < 60) setTimeSinceLastSave(`${seconds}s ago`);
       else if (seconds < 3600) setTimeSinceLastSave(`${Math.floor(seconds / 60)}m ago`);
@@ -115,7 +116,7 @@ export const Header: React.FC = () => {
               fontSize: '13px',
               color: lastSaveTime ? '#10b981' : '#94a3b8'
             }}
-            title={lastSaveTime ? `Last saved: ${new Date(lastSaveTime).toLocaleString()}` : 'Not saved to database yet'}
+            title={lastSaveTime ? `Last saved: ${(lastSaveTime instanceof Date ? lastSaveTime : new Date(lastSaveTime)).toLocaleString()}` : 'Not saved to database yet'}
           >
             {lastSaveTime ? <Cloud size={14} /> : <CloudOff size={14} />}
             <span>{timeSinceLastSave}</span>
