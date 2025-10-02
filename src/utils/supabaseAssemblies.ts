@@ -106,6 +106,7 @@ export async function loadAssembliesFromSupabase(): Promise<Assembly[]> {
           category: material?.category || item.category || '',
           wasteFactor: item.wasteFactor || 1.02,
           itemCode: material?.item_code || item.itemCode || undefined,
+          laborOverride: item.laborOverride || undefined,
           notes: item.notes || undefined
         };
       }) : []

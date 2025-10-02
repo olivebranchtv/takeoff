@@ -615,7 +615,11 @@ export function calculateProjectCosts(
     }
 
     const matCost = mat.totalQty * price;
-    const materialLaborHours = laborPerUnit * mat.totalQty;
+
+    // Check for labor override (used for wire pulls where labor is per run, not per foot)
+    const materialLaborHours = mat.laborOverride !== undefined
+      ? mat.laborOverride
+      : laborPerUnit * mat.totalQty;
 
     // Debug: log result
     if (mat.category.toLowerCase() === 'wire' || mat.itemCode?.startsWith('ITEM-089') || mat.itemCode?.startsWith('ITEM-090')) {

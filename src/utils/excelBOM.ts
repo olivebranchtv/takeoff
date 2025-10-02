@@ -18,6 +18,7 @@ export interface MaterialLine {
   assemblyCode?: string;
   assemblyName?: string;
   notes?: string;
+  laborOverride?: number;  // Custom labor hours for this material (overrides unit labor calculation)
 }
 
 export interface AssemblyUsage {
@@ -197,6 +198,7 @@ export function calculateAssemblyMaterials(
             wasteFactor: item.wasteFactor,
             totalQty,
             itemCode: item.itemCode,
+            laborOverride: item.laborOverride,
             assemblyCode: homerunAssembly.code,
             assemblyName: homerunAssembly.name,
             notes: `Auto-added: ${lightHomeruns} homerun(s) for lighting fixtures`
@@ -212,6 +214,7 @@ export function calculateAssemblyMaterials(
           wasteFactor: item.wasteFactor,
           totalQty,
           itemCode: item.itemCode,
+          laborOverride: item.laborOverride,
           notes: `Auto-added: ${lightHomeruns} homerun(s) for lighting fixtures`
         });
       }
