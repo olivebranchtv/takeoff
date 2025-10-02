@@ -604,12 +604,14 @@ export const useStore = create<State>()(
           if (finalAssemblyId !== undefined) {
             t.assemblyId = finalAssemblyId;
           }
-          // Preserve custom pricing fields
-          if ('customMaterialCost' in raw) {
-            t.customMaterialCost = (raw as any).customMaterialCost;
+          // Preserve custom pricing fields (convert to numbers if needed)
+          if ('customMaterialCost' in raw && (raw as any).customMaterialCost != null) {
+            const val = (raw as any).customMaterialCost;
+            t.customMaterialCost = typeof val === 'number' ? val : parseFloat(val);
           }
-          if ('customLaborHours' in raw) {
-            t.customLaborHours = (raw as any).customLaborHours;
+          if ('customLaborHours' in raw && (raw as any).customLaborHours != null) {
+            const val = (raw as any).customLaborHours;
+            t.customLaborHours = typeof val === 'number' ? val : parseFloat(val);
           }
 
           const key = norm(t.code);
