@@ -361,13 +361,19 @@ export const DEFAULT_MASTER_TAGS: MasterTag[] = [
   // --------------------------- SITE POWER / SITE LIGHTING ---------------------------
   { code: 'POLE-25', name: 'Site Pole 25\' (less head)', color: '#A16207', category: 'Site Power' },
   { code: 'POLE-30', name: 'Site Pole 30\' (less head)', color: '#A16207', category: 'Site Power' },
+  { code: 'POLE-LIGHT', name: 'Pole Light Complete', color: '#A16207', category: 'Site Power' },
   { code: 'BOLLARD', name: 'Bollard Light', color: '#A16207', category: 'Site Power' },
   { code: 'SITE-LP-HEAD', name: 'Site Pole Head', color: '#A16207', category: 'Site Power' },
   { code: 'SITE-RECP', name: 'Site Receptacle Pedestal', color: '#A16207', category: 'Site Power' },
   { code: 'EVSE-40A', name: 'EV Charger 40A', color: '#A16207', category: 'Site Power' },
   { code: 'EVSE-80A', name: 'EV Charger 80A', color: '#A16207', category: 'Site Power' },
+  { code: 'EV-SINGLE', name: 'Single Unit EV Charger', color: '#A16207', category: 'Site Power' },
+  { code: 'EV-DUAL', name: 'Dual Unit EV Charger', color: '#A16207', category: 'Site Power' },
   { code: 'SITE-HH', name: 'Handhole (Power/Data)', color: '#A16207', category: 'Site Power' },
   { code: 'POLE-BASE', name: 'Pole Base', color: '#A16207', category: 'Site Power' },
+  { code: 'POWER-POLE', name: 'Power Pole Installation', color: '#A16207', category: 'Site Power' },
+  { code: 'TRENCH', name: 'Trenching 6"x36"', color: '#92400E', category: 'Site Power' },
+  { code: 'BACKHOE', name: 'Backhoe Work', color: '#92400E', category: 'Site Power' },
 
   // --------------------------- DEMOLITION / TEMPORARY ---------------------------
   { code: 'DEM-LT', name: 'Demo Light Fixture', color: '#9CA3AF', category: 'Demolition / Temporary' },
@@ -376,6 +382,36 @@ export const DEFAULT_MASTER_TAGS: MasterTag[] = [
   { code: 'DEM-PNL', name: 'Demo Panel/Gear', color: '#9CA3AF', category: 'Demolition / Temporary' },
   { code: 'TEMP-PP', name: 'Temp Power Pole', color: '#9CA3AF', category: 'Demolition / Temporary' },
   { code: 'TEMP-LTS-100', name: 'Temp Light String (per 100\')', color: '#9CA3AF', category: 'Demolition / Temporary' },
+
+  // --------------------------- TRANSFORMERS ---------------------------
+  { code: 'XFMR-25KVA', name: 'Transformer 25 kVA', color: '#1E40AF', category: 'Transformers' },
+  { code: 'XFMR-30KVA', name: 'Transformer 30 kVA', color: '#1E40AF', category: 'Transformers' },
+  { code: 'XFMR-45KVA', name: 'Transformer 45 kVA', color: '#1E40AF', category: 'Transformers' },
+  { code: 'XFMR-75KVA', name: 'Transformer 75 kVA', color: '#1E40AF', category: 'Transformers' },
+  { code: 'XFMR-150KVA', name: 'Transformer 150 kVA', color: '#1E40AF', category: 'Transformers' },
+  { code: 'XFMR-225KVA', name: 'Transformer 225 kVA', color: '#1E40AF', category: 'Transformers' },
+  { code: 'XFMR-500KVA', name: 'Transformer 500 kVA', color: '#1E40AF', category: 'Transformers' },
+  { code: 'XFMR-208-480', name: 'Transformer 208/480V', color: '#1E40AF', category: 'Transformers' },
+
+  // --------------------------- GENERATORS & BACKUP POWER ---------------------------
+  { code: 'GEN-INSTALL', name: 'Generator Installation', color: '#2563EB', category: 'Generators' },
+  { code: 'GENERATOR', name: 'Generator Unit', color: '#2563EB', category: 'Generators' },
+
+  // --------------------------- BACKBOARDS ---------------------------
+  { code: 'BACKBOARD', name: 'Backboard 4x8x3/4"', color: '#78350F', category: 'Backboards' },
+  { code: 'BB-4X8', name: 'Plywood Backboard 4x8', color: '#78350F', category: 'Backboards' },
+
+  // --------------------------- TELEPHONE ---------------------------
+  { code: 'TEL-OUTLET', name: 'Telephone Outlet', color: '#38BDF8', category: 'Telephone' },
+  { code: 'TEL-GND', name: 'Telephone Backboard Ground', color: '#38BDF8', category: 'Telephone' },
+
+  // --------------------------- ENGINEERING & STUDIES ---------------------------
+  { code: 'STUDY', name: 'Coordination Study', color: '#6B7280', category: 'Engineering' },
+  { code: 'COORD-STUDY', name: 'Electrical Coordination Study', color: '#6B7280', category: 'Engineering' },
+
+  // --------------------------- CONDUIT SUPPORT ---------------------------
+  { code: 'ROOF-SUPPORT', name: 'Conduit Roof Support', color: '#059669', category: 'Conduit Support' },
+  { code: 'UNISTRUT-ROOF', name: 'Roof Top Unistrut Support', color: '#059669', category: 'Conduit Support' },
 
   // --------------------------- MISCELLANEOUS ---------------------------
   { code: 'JBOX-4SQ', name: 'J-Box 4" Square', color: '#111827', category: 'Miscellaneous' },

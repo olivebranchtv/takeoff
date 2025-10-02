@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useStore } from '@/state/store';
 import { pathLength } from '@/utils/geometry';
-import type { AnyTakeoffObject } from '@/types';
+import type { AnyTakeoffObject, ManualItem } from '@/types';
+import { Plus, Trash2 } from 'lucide-react';
 
 type Props = { open: boolean; onToggle: () => void; };
 
@@ -19,7 +20,16 @@ type Summary = {
 };
 
 export default function BomPanel({ open, onToggle }: Props) {
-  const { pages } = useStore();
+  const { pages, manualItems, addManualItem, updateManualItem, deleteManualItem } = useStore();
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [newItem, setNewItem] = useState<Omit<ManualItem, 'id'>>({
+    description: '',
+    quantity: 0,
+    unit: 'EA',
+    category: '',
+    itemCode: '',
+    notes: ''
+  });
 
   const data = useMemo<Summary>(() => {
     let totalTags = 0;
@@ -194,6 +204,132 @@ export default function BomPanel({ open, onToggle }: Props) {
                 )}
               </div>
             </div>
+          </div>
+
+          <div className="card">
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+              <div className="label">Manual Items (not on drawing)</div>
+              <button
+                className="btn"
+                onClick={() => {
+                  setShowManualEntry(!showManualEntry);
+                  if (!showManualEntry) {
+                    setNewItem({description:'',quantity:0,unit:'EA',category:'',itemCode:'',notes:''});
+                  }
+                }}
+                style={{display:'flex', alignItems:'center', gap:4}}
+              >
+                <Plus size={16} /> Add Item
+              </button>
+            </div>
+
+            {showManualEntry && (
+              <div style={{padding:10, background:'#f9fafb', borderRadius:6, marginBottom:10}}>
+                <div style={{display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:8, marginBottom:8}}>
+                  <input
+                    type="text"
+                    placeholder="Description (e.g., 200 LF Trenching)"
+                    value={newItem.description}
+                    onChange={(e) => setNewItem({...newItem, description: e.target.value})}
+                    style={{padding:'6px 8px', border:'1px solid #ccc', borderRadius:4, fontSize:13}}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Quantity"
+                    value={newItem.quantity || ''}
+                    onChange={(e) => setNewItem({...newItem, quantity: parseFloat(e.target.value) || 0})}
+                    style={{padding:'6px 8px', border:'1px solid #ccc', borderRadius:4, fontSize:13}}
+                  />
+                  <select
+                    value={newItem.unit}
+                    onChange={(e) => setNewItem({...newItem, unit: e.target.value})}
+                    style={{padding:'6px 8px', border:'1px solid #ccc', borderRadius:4, fontSize:13}}
+                  >
+                    <option value="EA">EA</option>
+                    <option value="LF">LF</option>
+                    <option value="HR">HR</option>
+                    <option value="LS">LS</option>
+                    <option value="SF">SF</option>
+                  </select>
+                </div>
+                <div style={{display:'flex', gap:8}}>
+                  <input
+                    type="text"
+                    placeholder="Category (optional)"
+                    value={newItem.category}
+                    onChange={(e) => setNewItem({...newItem, category: e.target.value})}
+                    style={{flex:1, padding:'6px 8px', border:'1px solid #ccc', borderRadius:4, fontSize:13}}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Item Code (optional)"
+                    value={newItem.itemCode}
+                    onChange={(e) => setNewItem({...newItem, itemCode: e.target.value})}
+                    style={{flex:1, padding:'6px 8px', border:'1px solid #ccc', borderRadius:4, fontSize:13}}
+                  />
+                </div>
+                <div style={{marginTop:8, display:'flex', gap:8}}>
+                  <button
+                    className="btn"
+                    onClick={() => {
+                      if (newItem.description && newItem.quantity > 0) {
+                        addManualItem(newItem);
+                        setNewItem({description:'',quantity:0,unit:'EA',category:'',itemCode:'',notes:''});
+                        setShowManualEntry(false);
+                      } else {
+                        alert('Please enter description and quantity');
+                      }
+                    }}
+                    style={{background:'#10b981', color:'white'}}
+                  >
+                    Save Item
+                  </button>
+                  <button
+                    className="btn"
+                    onClick={() => {
+                      setShowManualEntry(false);
+                      setNewItem({description:'',quantity:0,unit:'EA',category:'',itemCode:'',notes:''});
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {manualItems.length > 0 && (
+              <div style={{maxHeight:200, overflow:'auto', marginBottom:12}}>
+                <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
+                  <thead>
+                    <tr style={{textAlign:'left', borderBottom:'1px solid #eee', background:'#f9fafb'}}>
+                      <th style={{padding:'6px 4px'}}>Description</th>
+                      <th style={{padding:'6px 4px', width:80}}>Qty</th>
+                      <th style={{padding:'6px 4px', width:60}}>Unit</th>
+                      <th style={{padding:'6px 4px', width:40}}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {manualItems.map(item => (
+                      <tr key={item.id} style={{borderBottom:'1px solid #f4f4f4'}}>
+                        <td style={{padding:'6px 4px'}}>{item.description}</td>
+                        <td style={{padding:'6px 4px'}}>{item.quantity}</td>
+                        <td style={{padding:'6px 4px'}}>{item.unit}</td>
+                        <td style={{padding:'6px 4px'}}>
+                          <button
+                            className="btn"
+                            onClick={() => deleteManualItem(item.id)}
+                            style={{padding:'2px 6px', fontSize:12}}
+                            title="Delete item"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           <div className="card">

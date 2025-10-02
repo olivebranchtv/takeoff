@@ -41,6 +41,18 @@ export type Assembly = {
   isActive: boolean;      // Whether this assembly is available for use
 };
 
+/* ===== Manual Items (for items not on drawing) ===== */
+
+export type ManualItem = {
+  id: string;
+  description: string;
+  quantity: number;
+  unit: string;           // e.g., "EA", "LF", "HR"
+  category?: string;
+  itemCode?: string;      // Optional link to material_pricing.item_code
+  notes?: string;
+};
+
 /* ===== Raceway & Conductor vocab ===== */
 
 /** EMT nominal sizes we support ('' = unset). Match database format exactly. */

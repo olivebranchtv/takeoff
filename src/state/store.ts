@@ -9,6 +9,7 @@ import type {
   Tag,
   MeasureOptions,
   Assembly,
+  ManualItem,
 } from '@/types';
 import { STANDARD_ASSEMBLIES } from '@/constants/assemblies';
 import { autoAssignAssembly } from '@/utils/tagAssemblyMapping';
@@ -160,6 +161,12 @@ type State = {
   setAssemblies: (assemblies: Assembly[]) => void;
   saveAssemblyToDatabase: (assembly: Assembly) => Promise<boolean>;
 
+  // MANUAL ITEMS (for items not on drawing like trenching, generators, etc.)
+  manualItems: ManualItem[];
+  addManualItem: (item: Omit<ManualItem, 'id'>) => void;
+  updateManualItem: (id: string, patch: Partial<ManualItem>) => void;
+  deleteManualItem: (id: string) => void;
+
   // AI ANALYSIS RESULTS (persisted)
   aiAnalysisResult: ProjectAnalysis | null;
 
@@ -258,6 +265,9 @@ export const useStore = create<State>()(
 
       // initialize assemblies with standard kits
       assemblies: STANDARD_ASSEMBLIES,
+
+      // initialize manual items as empty array
+      manualItems: [],
 
       // initialize AI analysis result as null
       aiAnalysisResult: null,
@@ -750,17 +760,33 @@ export const useStore = create<State>()(
           return false;
         }
       },
+
+      // Manual Items Methods
+      addManualItem: (item) => set((s) => ({
+        manualItems: [...s.manualItems, { ...item, id: nextId() }]
+      })),
+
+      updateManualItem: (id, patch) => set((s) => ({
+        manualItems: s.manualItems.map(item =>
+          item.id === id ? { ...item, ...patch } : item
+        )
+      })),
+
+      deleteManualItem: (id) => set((s) => ({
+        manualItems: s.manualItems.filter(item => item.id !== id)
+      })),
     }),
     {
       name: 'skd.mastertags.v1',
       storage: createJSONStorage(() => localStorage),
       version: 4,
-      // persist palette, overrides, lastMeasureOptions, aiAnalysisResult (NOT tags or assemblies - they come from Supabase)
+      // persist palette, overrides, lastMeasureOptions, aiAnalysisResult, manualItems (NOT tags or assemblies - they come from Supabase)
       partialize: (s) => ({
         palette: s.palette,
         colorOverrides: s.colorOverrides,
         lastMeasureOptions: s.lastMeasureOptions,
         aiAnalysisResult: s.aiAnalysisResult,
+        manualItems: s.manualItems,
       }),
       migrate: (persistedState: any, version: number) => {
         // Migration from version 1 to 2: Add itemCode to assembly items
