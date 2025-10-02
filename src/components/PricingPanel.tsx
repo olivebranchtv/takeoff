@@ -8,6 +8,7 @@ import { useStore } from '@/state/store';
 import { PricingDatabase, calculateProjectCosts, type ProjectCosts } from '@/utils/pricing';
 import { loadMaterialPricingFromSupabase, saveMaterialPricingToSupabase, loadCompanySettings, saveCompanySettings, saveProjectEstimate, type MaterialPricing } from '@/utils/supabasePricing';
 import { loadDemoPricing } from '@/utils/demoPricing';
+import { STANDARD_ASSEMBLIES } from '@/constants/assemblies';
 import type { PageState } from '@/types';
 
 interface PricingPanelProps {
@@ -235,10 +236,16 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
     }
 
     try {
+      // Use assemblies from store, but fallback to STANDARD_ASSEMBLIES if empty
+      const assembliesToUse = assemblies.length > 0 ? assemblies : STANDARD_ASSEMBLIES;
+      console.log(`📊 Calculating costs with ${assembliesToUse.length} assemblies (${assemblies.length > 0 ? 'from store' : 'using fallback'})`);
+      const xfmrAssembly = assembliesToUse.find(a => a.code === 'XFMR-500KVA');
+      console.log(`🔍 XFMR-500KVA assembly: ${xfmrAssembly ? 'YES - ' + xfmrAssembly.name : 'NO'}`);
+
       const calculated = calculateProjectCosts(
         pages,
         tags,
-        assemblies,
+        assembliesToUse,
         pricingDb,
         manualItems,
         {
@@ -269,7 +276,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
         const calculatedAdjusted = calculateProjectCosts(
           pages,
           tags,
-          assemblies,
+          assembliesToUse,
           tempDb,
           manualItems,
           {
