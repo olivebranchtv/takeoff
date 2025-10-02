@@ -481,8 +481,8 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         <div style={S.content}>
           {!editorCollapsed && <div style={S.card} ref={editorCardRef}>
             <div style={S.formRow}>
-              <div style={{ minWidth: 232 }}>
-                <div style={S.label}>Color</div>
+              <div style={{ minWidth: 260 }}>
+                <div style={S.label}>Color *</div>
                 <div style={S.colorGrid}>
                   {palette.map((c: string) => {
                     const selected = draft.color === c;
@@ -504,21 +504,21 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                 </div>
               </div>
 
-              <div style={{ display:'grid', gridTemplateColumns:'minmax(120px, 160px) minmax(220px, 320px) 1fr', gap: 10, alignItems:'center', flex:1 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1.2fr 1.5fr', gap: 16, alignItems:'start', flex:1 }}>
                 <div>
-                  <div style={S.label}>Code</div>
+                  <div style={S.label}>Code *</div>
                   <input
                     ref={codeInputRef}
                     value={draft.code}
                     onChange={e => setDraft(d => ({ ...d, code: e.target.value.toUpperCase() }))}
-                    placeholder="A1"
-                    style={S.input}
+                    placeholder="e.g., A1"
+                    style={{...S.input, fontWeight: 600, fontSize: 16}}
                     onKeyDown={(e)=>{ if (e.key==='Enter') (editId ? saveEdit() : add()); }}
                   />
                 </div>
 
                 <div>
-                  <div style={S.label}>Category</div>
+                  <div style={S.label}>Category *</div>
                   <div style={{ display:'flex', gap:8, minWidth:0 }}>
                     <select
                       value={catSelect || (draft.category && sortedCategories.includes(draft.category) ? draft.category : (draft.category ? CUSTOM_CAT_VALUE : ''))}
@@ -551,11 +551,11 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                 </div>
 
                 <div>
-                  <div style={S.label}>Name</div>
+                  <div style={S.label}>Name *</div>
                   <input
                     value={draft.name}
                     onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
-                    placeholder="Fixture A1 - 2x4 LED"
+                    placeholder="e.g., Fixture A1 - 2x4 LED"
                     style={S.input}
                     onKeyDown={(e)=>{ if (e.key==='Enter') (editId ? saveEdit() : add()); }}
                   />
@@ -614,20 +614,76 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                 </div>
               </div>
 
-              <div style={{ display:'flex', alignItems:'flex-end', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ marginTop: 24, paddingTop: 20, borderTop: '2px solid #d1d5db', display:'flex', alignItems:'center', gap: 12, flexWrap: 'wrap' }}>
                 {editId ? (
                   <>
-                    <button className="btn" onClick={saveEdit}>Save</button>
-                    <button className="btn" onClick={cancelEdit}>Cancel</button>
+                    <button
+                      className="btn"
+                      onClick={saveEdit}
+                      style={{
+                        background: '#10b981',
+                        color: 'white',
+                        fontWeight: 600,
+                        padding: '14px 28px',
+                        fontSize: '16px',
+                        border: 'none',
+                        borderRadius: '8px',
+                        boxShadow: '0 2px 6px rgba(16, 185, 129, 0.4)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ✓ Save Changes
+                    </button>
+                    <button
+                      className="btn"
+                      onClick={cancelEdit}
+                      style={{
+                        padding: '14px 28px',
+                        fontSize: '16px',
+                        background: '#f3f4f6',
+                        border: '2px solid #d1d5db',
+                        borderRadius: '8px',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Cancel
+                    </button>
                   </>
                 ) : (
                   <>
-                    <button className="btn" onClick={add}>Add to Database</button>
+                    <button
+                      className="btn"
+                      onClick={add}
+                      style={{
+                        background: '#3b82f6',
+                        color: 'white',
+                        fontWeight: 600,
+                        padding: '14px 28px',
+                        fontSize: '16px',
+                        border: 'none',
+                        borderRadius: '8px',
+                        boxShadow: '0 2px 6px rgba(59, 130, 246, 0.4)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Add to Database
+                    </button>
                     {onAddToProject && (
                       <button
                         className="btn"
                         onClick={addAndAddToProject}
-                        style={{ background: '#2563eb', color: 'white', fontWeight: 600 }}
+                        style={{
+                          background: '#8b5cf6',
+                          color: 'white',
+                          fontWeight: 600,
+                          padding: '14px 28px',
+                          fontSize: '16px',
+                          border: 'none',
+                          borderRadius: '8px',
+                          boxShadow: '0 2px 6px rgba(139, 92, 246, 0.4)',
+                          cursor: 'pointer'
+                        }}
                         title="Add to database and immediately add to current project"
                       >
                         Add to Database + Project
@@ -741,10 +797,10 @@ const S: Record<string, React.CSSProperties> = {
 
   content: { flex:1, display:'flex', flexDirection:'column', overflow:'hidden' },
 
-  card:   { padding:'8px 14px 10px', borderBottom:'1px solid #f2f2f2', background:'#fff' },
-  formRow: { display:'grid', gridTemplateColumns:'232px 1fr auto', gap:14, alignItems:'start' },
-  label:  { fontSize:12, fontWeight:600, color:'#444', marginBottom:4 },
-  input:  { width:'100%', padding:'10px 12px', border:'1px solid #ccc', borderRadius:8, fontSize:14, lineHeight:'20px', boxSizing:'border-box', minWidth:0 },
+  card:   { padding:'20px 24px 24px', borderBottom:'2px solid #e5e7eb', background:'#f9fafb' },
+  formRow: { display:'grid', gridTemplateColumns:'260px 1fr', gap:20, alignItems:'start' },
+  label:  { fontSize:14, fontWeight:700, color:'#111827', marginBottom:8, letterSpacing:'0.3px' },
+  input:  { width:'100%', padding:'12px 14px', border:'2px solid #d1d5db', borderRadius:8, fontSize:15, lineHeight:'22px', boxSizing:'border-box', minWidth:0, background:'#ffffff' },
   colorGrid: { display:'grid', gridTemplateColumns:'repeat(auto-fill, 28px)', gap:6, maxHeight: 110, overflowY:'auto', paddingRight: 4 },
   swatch: { width:24, height:24, borderRadius:4, cursor:'pointer' },
   error:  { marginTop:8, color:'#b00020', fontSize:13, fontWeight:600 },
