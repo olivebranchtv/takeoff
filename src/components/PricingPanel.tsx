@@ -16,7 +16,7 @@ interface PricingPanelProps {
 }
 
 export function PricingPanel({ pages, onClose }: PricingPanelProps) {
-  const { tags, assemblies } = useStore();
+  const { tags, assemblies, manualItems } = useStore();
 
   const [pricingDb] = useState(() => new PricingDatabase(30.0));
   const [overheadPct, setOverheadPct] = useState(10);
@@ -198,7 +198,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
         profitAmount: costs.profitAmount,
         totalBidPrice: costs.totalBidPrice
       },
-      { pages, tags, assemblies }
+      { pages, tags, assemblies, manualItems }
     );
 
     if (estimateId) {
@@ -240,6 +240,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
         tags,
         assemblies,
         pricingDb,
+        manualItems,
         {
           overheadPercentage: overheadPct,
           profitPercentage: profitPct,
@@ -270,6 +271,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
           tags,
           assemblies,
           tempDb,
+          manualItems,
           {
             overheadPercentage: overheadPct,
             profitPercentage: profitPct,

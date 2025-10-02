@@ -564,6 +564,7 @@ export function calculateProjectCosts(
   tags: Tag[],
   assemblies: Assembly[],
   pricingDb: PricingDatabase,
+  manualItems: Array<{ id: string; description: string; quantity: number; unit: string; category?: string; itemCode?: string; notes?: string }> = [],
   options: {
     overheadPercentage?: number;
     profitPercentage?: number;
@@ -693,6 +694,79 @@ export function calculateProjectCosts(
         division,
         materialCost: 0,
         laborHours: totalHours,
+        laborCost: 0,
+        totalCost: 0,
+        sellPrice: 0
+      });
+    }
+  }
+
+  // Process manual items (items added by user that aren't on drawings)
+  for (const item of manualItems) {
+    console.log(`🔧 Processing manual item: ${item.description} (${item.quantity} ${item.unit}, code: ${item.itemCode || 'none'})`);
+
+    // Look up pricing by item code first, then by description
+    let price = 0;
+    let laborPerUnit = 0;
+
+    if (item.itemCode) {
+      // Try to find assembly by code
+      const assembly = assemblies.find(a => a.code === item.itemCode);
+      if (assembly) {
+        // For assemblies, calculate total material cost from all items
+        let assemblyMaterialCost = 0;
+        for (const assemblyItem of assembly.items) {
+          const matPrice = pricingDb.getMaterialPrice(assemblyItem.category, assemblyItem.description, assemblyItem.itemCode);
+          if (matPrice) {
+            assemblyMaterialCost += matPrice * assemblyItem.quantityPer;
+          }
+        }
+        price = assemblyMaterialCost;
+        laborPerUnit = pricingDb.getLaborHours(item.itemCode) || 0;
+        console.log(`  📦 Found assembly: ${assembly.name} - $${price}/unit, ${laborPerUnit}hrs/unit`);
+      } else {
+        // Try looking up by category::description in pricing DB
+        const dbPrice = pricingDb.getMaterialPrice(item.category || '', item.description, item.itemCode);
+        const dbLabor = pricingDb.getMaterialLaborHours(item.category || '', item.description, item.itemCode);
+        if (dbPrice) {
+          price = dbPrice;
+          laborPerUnit = dbLabor;
+          console.log(`  💰 Found in pricing DB: $${price}/unit, ${laborPerUnit}hrs/unit`);
+        }
+      }
+    }
+
+    // If no price found, use fallback
+    if (price === 0) {
+      const fallback = getFallbackPrice(item.category || 'General', item.description);
+      price = fallback.price;
+      laborPerUnit = fallback.laborHours;
+      console.log(`  ⚠️ Using fallback pricing: $${price}/unit, ${laborPerUnit}hrs/unit`);
+    }
+
+    const itemMaterialCost = price * item.quantity;
+    const itemLaborHours = laborPerUnit * item.quantity;
+
+    // Add to material cost total
+    materialCostTotal += itemMaterialCost;
+
+    // Add to labor hours total
+    laborHoursTotal += itemLaborHours;
+
+    // Add to division breakdown
+    const division = item.category || 'Manual Items';
+    const existing = divisionMap.get(division);
+
+    console.log(`  ✅ Manual item totals: $${itemMaterialCost}, ${itemLaborHours}hrs → division "${division}"`);
+
+    if (existing) {
+      existing.materialCost += itemMaterialCost;
+      existing.laborHours += itemLaborHours;
+    } else {
+      divisionMap.set(division, {
+        division,
+        materialCost: itemMaterialCost,
+        laborHours: itemLaborHours,
         laborCost: 0,
         totalCost: 0,
         sellPrice: 0
