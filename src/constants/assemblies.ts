@@ -2008,7 +2008,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'xfmr-30', itemCode: 'XFMR-30KVA-2', description: '30 KVA', unit: 'EA', quantityPer: 1, category: 'Transformers', wasteFactor: 1.0 }
+      { id: 'xfmr-30', itemCode: 'XFMR-30KVA', description: '30 KVA Transformer', unit: 'EA', quantityPer: 1, category: 'Transformers', wasteFactor: 1.0 }
     ]
   },
   {
@@ -2019,7 +2019,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'xfmr-45', itemCode: 'XFMR-45KVA-2', description: '45 KVA', unit: 'EA', quantityPer: 1, category: 'Transformers', wasteFactor: 1.0 }
+      { id: 'xfmr-45', itemCode: 'XFMR-45KVA', description: '45 KVA Transformer', unit: 'EA', quantityPer: 1, category: 'Transformers', wasteFactor: 1.0 }
     ]
   },
   {
@@ -2030,7 +2030,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'xfmr-75', itemCode: 'XFMR-75KVA-2', description: '75 KVA', unit: 'EA', quantityPer: 1, category: 'Transformers', wasteFactor: 1.0 }
+      { id: 'xfmr-75', itemCode: 'XFMR-75KVA', description: '75 KVA Transformer', unit: 'EA', quantityPer: 1, category: 'Transformers', wasteFactor: 1.0 }
     ]
   },
   {
@@ -2041,7 +2041,7 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     type: 'device',
     isActive: true,
     items: [
-      { id: 'xfmr-150', itemCode: 'XFMR-150KVA-2', description: '150 KVA', unit: 'EA', quantityPer: 1, category: 'Transformers', wasteFactor: 1.0 }
+      { id: 'xfmr-150', itemCode: 'XFMR-150KVA', description: '150 KVA Transformer', unit: 'EA', quantityPer: 1, category: 'Transformers', wasteFactor: 1.0 }
     ]
   },
   {
