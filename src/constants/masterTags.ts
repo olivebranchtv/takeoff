@@ -4,6 +4,8 @@ export type MasterTag = {
   name: string;
   color: string;
   category: string;
+  customMaterialCost?: number;
+  customLaborHours?: number;
 };
 
 export const DEFAULT_MASTER_TAGS: MasterTag[] = [
@@ -357,7 +359,7 @@ export const DEFAULT_MASTER_TAGS: MasterTag[] = [
   { code: 'DDC', name: 'DDC Panel', color: '#22C55E', category: 'BAS/Controls' },
   { code: 'VAV-CTRL', name: 'VAV Controller', color: '#22C55E', category: 'BAS/Controls' },
   { code: 'BAS-PS', name: 'BAS Power Supply', color: '#22C55E', category: 'BAS/Controls' },
-  { code: 'TCLK', name: 'Time Clock', color: '#22C55E', category: 'BAS/Controls' },
+  { code: 'TCLK', name: 'Time Clock', color: '#22C55E', category: 'BAS/Controls', customMaterialCost: 1500, customLaborHours: 8.75 },
   { code: 'TC-ASTRO', name: 'Astronomical Time Clock', color: '#22C55E', category: 'BAS/Controls' },
   { code: 'TC-DIGITAL', name: 'Digital Time Clock (7-day)', color: '#22C55E', category: 'BAS/Controls' },
   { code: 'PHOTO', name: 'Photocell', color: '#22C55E', category: 'BAS/Controls' },
