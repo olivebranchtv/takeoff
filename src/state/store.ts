@@ -424,7 +424,7 @@ export const useStore = create<State>()(
 
         const tags = [...s.tags];
         if (idx >= 0) {
-          // Update existing tag - only include assemblyId if defined
+          // Update existing tag - only include optional fields if defined
           const updatedTag: Tag = {
             ...tags[idx],
             code: codeKey,
@@ -435,9 +435,15 @@ export const useStore = create<State>()(
           if (finalAssemblyId !== undefined) {
             updatedTag.assemblyId = finalAssemblyId;
           }
+          if ('customMaterialCost' in t) {
+            updatedTag.customMaterialCost = t.customMaterialCost;
+          }
+          if ('customLaborHours' in t) {
+            updatedTag.customLaborHours = t.customLaborHours;
+          }
           tags[idx] = updatedTag;
         } else {
-          // Add new tag - only include assemblyId if defined
+          // Add new tag - only include optional fields if defined
           const newTag: Tag = {
             id: nextId(),
             code: codeKey,
@@ -447,6 +453,12 @@ export const useStore = create<State>()(
           };
           if (finalAssemblyId !== undefined) {
             newTag.assemblyId = finalAssemblyId;
+          }
+          if ('customMaterialCost' in t) {
+            newTag.customMaterialCost = t.customMaterialCost;
+          }
+          if ('customLaborHours' in t) {
+            newTag.customLaborHours = t.customLaborHours;
           }
           tags.push(newTag);
         }
@@ -479,13 +491,17 @@ export const useStore = create<State>()(
         const nextColor= patch.color ?? tags[currentIdx].color;
         // CRITICAL: Check if assemblyId property EXISTS in patch, not just if it's undefined
         let nextAssemblyId = 'assemblyId' in patch ? patch.assemblyId : tags[currentIdx].assemblyId;
+        let nextCustomMaterialCost = 'customMaterialCost' in patch ? patch.customMaterialCost : tags[currentIdx].customMaterialCost;
+        let nextCustomLaborHours = 'customLaborHours' in patch ? patch.customLaborHours : tags[currentIdx].customLaborHours;
 
         console.log('[Store] updateTag - nextAssemblyId:', nextAssemblyId);
+        console.log('[Store] updateTag - nextCustomMaterialCost:', nextCustomMaterialCost);
+        console.log('[Store] updateTag - nextCustomLaborHours:', nextCustomLaborHours);
 
         // Merge into canonical if code collides with another
         const canonicalIdx = tags.findIndex(t => norm(t.code) === nextCode);
         if (canonicalIdx >= 0 && canonicalIdx !== currentIdx) {
-          // Create new tag object - only include assemblyId if it's defined
+          // Create new tag object - only include optional fields if defined
           const updatedTag: Tag = {
             id: tags[canonicalIdx].id,
             code: nextCode,
@@ -496,11 +512,17 @@ export const useStore = create<State>()(
           if (nextAssemblyId !== undefined) {
             updatedTag.assemblyId = nextAssemblyId;
           }
+          if (nextCustomMaterialCost !== undefined) {
+            updatedTag.customMaterialCost = nextCustomMaterialCost;
+          }
+          if (nextCustomLaborHours !== undefined) {
+            updatedTag.customLaborHours = nextCustomLaborHours;
+          }
           console.log('[Store] updateTag - final updatedTag (canonical):', updatedTag);
           tags[canonicalIdx] = updatedTag;
           tags.splice(currentIdx, 1);
         } else {
-          // Create new tag object - only include assemblyId if it's defined
+          // Create new tag object - only include optional fields if defined
           const updatedTag: Tag = {
             id: tags[currentIdx].id,
             code: nextCode,
@@ -510,6 +532,12 @@ export const useStore = create<State>()(
           };
           if (nextAssemblyId !== undefined) {
             updatedTag.assemblyId = nextAssemblyId;
+          }
+          if (nextCustomMaterialCost !== undefined) {
+            updatedTag.customMaterialCost = nextCustomMaterialCost;
+          }
+          if (nextCustomLaborHours !== undefined) {
+            updatedTag.customLaborHours = nextCustomLaborHours;
           }
           console.log('[Store] updateTag - final updatedTag:', updatedTag);
           tags[currentIdx] = updatedTag;
