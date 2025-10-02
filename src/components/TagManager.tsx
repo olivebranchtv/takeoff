@@ -238,6 +238,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     setCatSelect('');
     setCustomCategory('');
     setError('');
+    setEditorCollapsed(true);
   }
 
   // Minimal validation (no duplicate blocking—overwrites are allowed)
