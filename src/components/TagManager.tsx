@@ -169,6 +169,13 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       if ('assemblyId' in next) {
         patch.assemblyId = next.assemblyId;
       }
+      // Include custom cost and labor hours if set
+      if ('customMaterialCost' in next) {
+        patch.customMaterialCost = next.customMaterialCost;
+      }
+      if ('customLaborHours' in next) {
+        patch.customLaborHours = next.customLaborHours;
+      }
       console.log('[TagManager] upsertByCode - calling updateTag with patch:', patch);
       updateTag(existing.id, patch);
 
@@ -188,6 +195,13 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       // Only include assemblyId if it's explicitly set in next
       if ('assemblyId' in next) {
         newTag.assemblyId = next.assemblyId;
+      }
+      // Include custom cost and labor hours if set
+      if ('customMaterialCost' in next) {
+        newTag.customMaterialCost = next.customMaterialCost;
+      }
+      if ('customLaborHours' in next) {
+        newTag.customLaborHours = next.customLaborHours;
       }
       console.log('[TagManager] upsertByCode - calling addTag with:', newTag);
       addTag(newTag);
@@ -211,7 +225,15 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   function startEdit(t: Tag) {
     setEditId(t.id);
-    setDraft({ code: t.code, name: t.name, category: t.category, color: t.color, assemblyId: t.assemblyId });
+    setDraft({
+      code: t.code,
+      name: t.name,
+      category: t.category,
+      color: t.color,
+      assemblyId: t.assemblyId,
+      customMaterialCost: t.customMaterialCost,
+      customLaborHours: t.customLaborHours
+    });
     setError('');
     setEditorCollapsed(false);
     const cat = t.category || '';
