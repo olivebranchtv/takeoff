@@ -1958,8 +1958,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
   {
     id: 'light-homerun',
     code: 'HOMERUN-100FT',
-    name: 'Lighting Homerun (10ft avg)',
-    description: 'Complete lighting homerun with conduit, wire, and fittings (avg 10ft)',
+    name: 'Lighting Homerun (100ft)',
+    description: 'Complete 100ft lighting homerun with conduit, wire, and fittings',
     type: 'custom',
     isActive: true,
     items: [

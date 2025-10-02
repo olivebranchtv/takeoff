@@ -571,6 +571,39 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                 </div>
               </div>
 
+              <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <div style={S.label}>Custom Material Cost ($ per unit)</div>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={draft.customMaterialCost ?? ''}
+                    onChange={e => setDraft(d => ({ ...d, customMaterialCost: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                    placeholder="Optional override"
+                    style={S.input}
+                  />
+                  <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                    Overrides assembly/default material cost
+                  </div>
+                </div>
+                <div>
+                  <div style={S.label}>Custom Labor Hours (hrs per unit)</div>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={draft.customLaborHours ?? ''}
+                    onChange={e => setDraft(d => ({ ...d, customLaborHours: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                    placeholder="Optional override"
+                    style={S.input}
+                  />
+                  <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                    Overrides assembly/default labor hours
+                  </div>
+                </div>
+              </div>
+
               <div style={{ display:'flex', alignItems:'flex-end', gap: 8, flexWrap: 'wrap' }}>
                 {editId ? (
                   <>

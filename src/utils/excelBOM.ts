@@ -19,6 +19,7 @@ export interface MaterialLine {
   assemblyName?: string;
   notes?: string;
   laborOverride?: number;  // Custom labor hours for this material (overrides unit labor calculation)
+  customMaterialCost?: number;  // Custom material cost per unit (overrides database lookup)
 }
 
 export interface AssemblyUsage {
@@ -57,8 +58,11 @@ export function calculateAssemblyMaterials(
       console.log(`💡 Tag "${row.tagCode}" has no assembly - creating direct labor entry for ${count} units`);
 
       // For generic light fixtures without assemblies, add as a material line with labor hours
+      // Use custom labor hours if set, otherwise default based on category
       const isLight = tag.category?.toLowerCase().includes('light');
-      const laborHours = isLight ? 1.0 : 0.5; // 1.0 hrs for lights, 0.5 hrs for other items
+      const defaultLaborHours = isLight ? 1.0 : 0.5; // 1.0 hrs for lights, 0.5 hrs for other items
+      const laborHours = tag.customLaborHours ?? defaultLaborHours;
+      const materialCost = tag.customMaterialCost ?? 0;
 
       const matKey = `${tag.category || 'Lights'}::Fixture ${row.tagCode}::EA`;
       const existing = materialAcc.get(matKey);
@@ -76,7 +80,12 @@ export function calculateAssemblyMaterials(
           totalQty: count,
           assemblyCode: row.tagCode,
           assemblyName: tag.name,
-          notes: `Labor: ${laborHours} hrs per unit`
+          notes: tag.customMaterialCost !== undefined || tag.customLaborHours !== undefined
+            ? `Custom pricing: $${materialCost}/unit, ${laborHours} hrs/unit`
+            : `Labor: ${laborHours} hrs per unit`,
+          itemCode: `TAG-${row.tagCode}`, // Special item code for tag-based pricing
+          laborOverride: laborHours, // Override per unit
+          customMaterialCost: materialCost // Custom material cost per unit
         });
       }
       continue;

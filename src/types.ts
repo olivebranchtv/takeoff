@@ -15,6 +15,8 @@ export type Tag = {
   category?: string;
   assemblyId?: string; // Optional link to a standard assembly
   order?: number; // Optional sort order for project tags (lighting schedule order)
+  customMaterialCost?: number; // Optional custom material cost override per unit
+  customLaborHours?: number; // Optional custom labor hours override per unit
 };
 
 /* ===== Assembly System (Standard Material Kits) ===== */

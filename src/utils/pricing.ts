@@ -242,7 +242,7 @@ export class PricingDatabase {
       { code: 'LIGHT-EXIT', name: 'Exit Sign', hours: 1.0 },
 
       // Homeruns - 5.175 hours per homerun (pulling wire, terminating at panel, testing)
-      { code: 'HOMERUN-100FT', name: 'Lighting Homerun (10ft avg)', hours: 5.175 },
+      { code: 'HOMERUN-100FT', name: 'Lighting Homerun (100ft)', hours: 5.175 },
       { code: 'GFI-STD', name: 'Standard GFI Installation', hours: 0.5 },
 
       // Junction Boxes
@@ -636,15 +636,29 @@ export function calculateProjectCosts(
       console.log(`🔍 Looking up WIRE: category="${mat.category}", desc="${mat.description}", itemCode="${mat.itemCode}", qty=${mat.totalQty}`);
     }
 
-    // Try database lookup first
-    let laborPerUnit = pricingDb.getMaterialLaborHours(mat.category, mat.description, mat.itemCode);
-    let price = pricingDb.getMaterialPrice(mat.category, mat.description, mat.itemCode);
+    // Check if this is a tag with custom pricing (itemCode starts with TAG-)
+    let laborPerUnit: number;
+    let price: number;
 
-    // If no price found, use fallback
-    if (!price || price === 0) {
-      const fallback = getFallbackPrice(mat.category, mat.description);
-      price = fallback.price;
-      laborPerUnit = fallback.laborHours;
+    if (mat.itemCode?.startsWith('TAG-')) {
+      // This is a tag-based item with custom pricing already embedded
+      price = mat.customMaterialCost ?? 0;
+      laborPerUnit = mat.laborOverride ?? 0;
+      console.log(`🏷️ Tag-based pricing for ${mat.description}: $${price}/unit, ${laborPerUnit}hrs/unit`);
+    } else {
+      // Try database lookup first
+      const dbLaborPerUnit = pricingDb.getMaterialLaborHours(mat.category, mat.description, mat.itemCode);
+      const dbPrice = pricingDb.getMaterialPrice(mat.category, mat.description, mat.itemCode);
+
+      // If no price found, use fallback
+      if (!dbPrice || dbPrice === 0) {
+        const fallback = getFallbackPrice(mat.category, mat.description);
+        price = fallback.price;
+        laborPerUnit = fallback.laborHours;
+      } else {
+        price = dbPrice;
+        laborPerUnit = dbLaborPerUnit;
+      }
     }
 
     const matCost = mat.totalQty * price;
