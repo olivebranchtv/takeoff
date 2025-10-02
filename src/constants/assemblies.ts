@@ -1969,5 +1969,202 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
       { id: 'emt-coupling-3/4-hr', itemCode: 'EMT-COUPLING-3/4', description: '3/4" EMT Coupling', unit: 'EA', quantityPer: 10, category: 'Fittings', wasteFactor: 1.05 },
       { id: 'emt-strap-3/4-hr', itemCode: 'EMT-STRAP-3/4', description: '3/4" EMT Strap', unit: 'EA', quantityPer: 10, category: 'Fittings', wasteFactor: 1.05 }
     ]
+  },
+
+  // ============================================================================
+  // TRENCHING & SITE WORK
+  // ============================================================================
+  {
+    id: 'trenching-6x36',
+    code: 'TRENCH-6X36',
+    name: 'Trenching 6" x 36" Deep',
+    description: 'Trenching and backfill per linear foot - 6" wide x 36" deep',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'trench-work', itemCode: 'TB-001', description: '6" X 36" TRENCHING & BACKFILL', unit: 'LF', quantityPer: 1, category: 'Trenching', wasteFactor: 1.0 }
+    ]
+  },
+  {
+    id: 'backhoe-work',
+    code: 'BACKHOE-HR',
+    name: 'Backhoe Work (Hourly)',
+    description: 'Backhoe rental and operation per hour',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'backhoe-hr', itemCode: 'TB-002', description: 'BACKHOE WORK', unit: 'HR', quantityPer: 1, category: 'Trenching', wasteFactor: 1.0 }
+    ]
+  },
+
+  // ============================================================================
+  // TRANSFORMERS (by kVA size)
+  // ============================================================================
+  {
+    id: 'xfmr-30kva',
+    code: 'XFMR-30KVA',
+    name: '30 KVA Transformer',
+    description: '30 KVA transformer installation',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'xfmr-30', itemCode: 'XFMR-30KVA-2', description: '30 KVA', unit: 'EA', quantityPer: 1, category: 'Transformers', wasteFactor: 1.0 }
+    ]
+  },
+  {
+    id: 'xfmr-45kva',
+    code: 'XFMR-45KVA',
+    name: '45 KVA Transformer',
+    description: '45 KVA transformer installation',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'xfmr-45', itemCode: 'XFMR-45KVA-2', description: '45 KVA', unit: 'EA', quantityPer: 1, category: 'Transformers', wasteFactor: 1.0 }
+    ]
+  },
+  {
+    id: 'xfmr-75kva',
+    code: 'XFMR-75KVA',
+    name: '75 KVA Transformer',
+    description: '75 KVA transformer installation',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'xfmr-75', itemCode: 'XFMR-75KVA-2', description: '75 KVA', unit: 'EA', quantityPer: 1, category: 'Transformers', wasteFactor: 1.0 }
+    ]
+  },
+  {
+    id: 'xfmr-150kva',
+    code: 'XFMR-150KVA',
+    name: '150 KVA Transformer',
+    description: '150 KVA transformer installation',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'xfmr-150', itemCode: 'XFMR-150KVA-2', description: '150 KVA', unit: 'EA', quantityPer: 1, category: 'Transformers', wasteFactor: 1.0 }
+    ]
+  },
+  {
+    id: 'xfmr-225kva',
+    code: 'XFMR-225KVA',
+    name: '225 KVA Transformer',
+    description: '225 KVA transformer installation',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'xfmr-225', itemCode: 'XFMR-225KVA-001', description: '225 KVA Transformer', unit: 'EA', quantityPer: 1, category: 'Transformers', wasteFactor: 1.0 }
+    ]
+  },
+  {
+    id: 'xfmr-500kva',
+    code: 'XFMR-500KVA',
+    name: '500 KVA Transformer',
+    description: '500 KVA transformer installation',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'xfmr-500', itemCode: 'XFMR-500KVA-001', description: '500 KVA Transformer', unit: 'EA', quantityPer: 1, category: 'Transformers', wasteFactor: 1.0 }
+    ]
+  },
+
+  // ============================================================================
+  // DISCONNECTS
+  // ============================================================================
+  {
+    id: 'disc-200a',
+    code: 'DISC-200A',
+    name: '200 Amp Disconnect',
+    description: '200 Amp disconnect switch installation',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'disc-200', itemCode: 'DISC-200A', description: '200 Amp Disconnect', unit: 'EA', quantityPer: 1, category: 'Disconnects', wasteFactor: 1.0 }
+    ]
+  },
+
+  // ============================================================================
+  // EV CHARGING
+  // ============================================================================
+  {
+    id: 'ev-charger-single',
+    code: 'EV-SINGLE',
+    name: 'Single Unit EV Charger',
+    description: 'Electric vehicle charging station - single unit',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'ev-single', itemCode: 'EV-SINGLE', description: 'Single Unit Car Charger', unit: 'EA', quantityPer: 1, category: 'EV Charging', wasteFactor: 1.0 }
+    ]
+  },
+  {
+    id: 'ev-charger-dual',
+    code: 'EV-DUAL',
+    name: 'Dual Unit EV Charger',
+    description: 'Electric vehicle charging station - dual unit',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'ev-dual', itemCode: 'EV-DUAL', description: 'Dual Unit Car Charger', unit: 'EA', quantityPer: 1, category: 'EV Charging', wasteFactor: 1.0 }
+    ]
+  },
+
+  // ============================================================================
+  // GENERATORS
+  // ============================================================================
+  {
+    id: 'generator',
+    code: 'GEN-INSTALL',
+    name: 'Generator Installation',
+    description: 'Complete generator installation with transfer switch',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'gen', itemCode: 'GEN-001', description: 'Generator', unit: 'EA', quantityPer: 1, category: 'Electrical', wasteFactor: 1.0 }
+    ]
+  },
+
+  // ============================================================================
+  // ENGINEERING & STUDIES
+  // ============================================================================
+  {
+    id: 'coordination-study',
+    code: 'STUDY-COORD',
+    name: 'Coordination Study',
+    description: 'Electrical coordination study and analysis',
+    type: 'custom',
+    isActive: true,
+    items: [
+      { id: 'study', itemCode: 'STUDY-001', description: 'Cordination Study', unit: 'EA', quantityPer: 1, category: 'Engineering', wasteFactor: 1.0 }
+    ]
+  },
+
+  // ============================================================================
+  // POLE LIGHTS
+  // ============================================================================
+  {
+    id: 'pole-light',
+    code: 'POLE-LIGHT',
+    name: 'Pole Light Installation',
+    description: 'Exterior pole-mounted light fixture installation',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'pole-light', itemCode: 'LIGHT-001', description: 'Pole Lights', unit: 'EA', quantityPer: 1, category: 'Lighting', wasteFactor: 1.0 }
+    ]
+  },
+
+  // ============================================================================
+  // POWER POLE
+  // ============================================================================
+  {
+    id: 'power-pole',
+    code: 'PWR-POLE',
+    name: 'Power Pole',
+    description: 'Power distribution pole installation',
+    type: 'device',
+    isActive: true,
+    items: [
+      { id: 'pwr-pole', itemCode: 'POLE-001', description: 'Power Pole', unit: 'EA', quantityPer: 1, category: 'Electrical', wasteFactor: 1.0 }
+    ]
   }
 ];
