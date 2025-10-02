@@ -710,17 +710,20 @@ export function calculateProjectCosts(
       // Try to find assembly by code
       const assembly = assemblies.find(a => a.code === item.itemCode);
       if (assembly) {
-        // For assemblies, calculate total material cost from all items
+        // For assemblies, calculate total material cost and labor hours from all items
         let assemblyMaterialCost = 0;
+        let assemblyLaborHours = 0;
         for (const assemblyItem of assembly.items) {
           const matPrice = pricingDb.getMaterialPrice(assemblyItem.category, assemblyItem.description, assemblyItem.itemCode);
+          const matLabor = pricingDb.getMaterialLaborHours(assemblyItem.category, assemblyItem.description, assemblyItem.itemCode);
           if (matPrice) {
             assemblyMaterialCost += matPrice * assemblyItem.quantityPer;
           }
+          assemblyLaborHours += matLabor * assemblyItem.quantityPer;
         }
         price = assemblyMaterialCost;
-        laborPerUnit = pricingDb.getLaborHours(item.itemCode) || 0;
-        console.log(`  📦 Found assembly: ${assembly.name} - $${price}/unit, ${laborPerUnit}hrs/unit`);
+        laborPerUnit = assemblyLaborHours;
+        console.log(`  📦 Found assembly: ${assembly.name} - $${price}/unit, ${laborPerUnit}hrs/unit (from ${assembly.items.length} items)`);
       } else {
         // Try looking up by category::description in pricing DB
         const dbPrice = pricingDb.getMaterialPrice(item.category || '', item.description, item.itemCode);
