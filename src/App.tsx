@@ -1473,7 +1473,7 @@ function SidebarBOM({ bom, onToggle }:{
   };
   onToggle: () => void;
 }) {
-  const { pages, tags: storeTags, manualItems, addManualItem, deleteManualItem } = useStore();
+  const { pages, tags: storeTags, manualItems, addManualItem, deleteManualItem, assemblies } = useStore();
   const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(new Set(['Lights', 'Receptacles', 'Switches', 'Panels']));
   const [showManualEntry, setShowManualEntry] = React.useState(false);
   const [newItem, setNewItem] = React.useState({
@@ -1484,6 +1484,18 @@ function SidebarBOM({ bom, onToggle }:{
     itemCode: '',
     notes: ''
   });
+
+  // Common manual items with assemblies
+  const commonManualItems = React.useMemo(() => {
+    return assemblies.filter(a =>
+      ['TRENCH-6X36', 'BACKHOE-HR', 'XFMR-30KVA', 'XFMR-75KVA', 'XFMR-150KVA', 'XFMR-225KVA', 'XFMR-500KVA',
+       'DISC-200A', 'DISC-400A', 'EV-SINGLE', 'EV-DUAL', 'GEN-INSTALL', 'POLE-LIGHT', 'PWR-POLE', 'STUDY-COORD'].includes(a.code)
+    ).map(a => ({
+      code: a.code,
+      name: a.name,
+      description: a.description
+    }));
+  }, [assemblies]);
 
   const itemized = React.useMemo(() => {
     const allRows = buildBOMRows(pages, 'itemized');
@@ -1691,33 +1703,105 @@ function SidebarBOM({ bom, onToggle }:{
           {showManualEntry && (
             <div style={{padding:10, background:'#fff', border:'1px solid #dee2e6', borderRadius:6, marginBottom:10}}>
               <div style={{marginBottom:8}}>
+                <label style={{display:'block', fontSize:11, fontWeight:600, color:'#495057', marginBottom:4}}>
+                  Select Item (with pricing)
+                </label>
+                <select
+                  value={newItem.itemCode}
+                  onChange={(e) => {
+                    const code = e.target.value;
+                    if (code) {
+                      const assembly = assemblies.find(a => a.code === code);
+                      if (assembly) {
+                        const unit = code.includes('TRENCH') ? 'LF' : code.includes('BACKHOE') ? 'HR' : 'EA';
+                        setNewItem({
+                          ...newItem,
+                          itemCode: code,
+                          description: assembly.name,
+                          unit: unit,
+                          category: assembly.type
+                        });
+                      }
+                    } else {
+                      setNewItem({...newItem, itemCode: '', description: '', unit: 'EA'});
+                    }
+                  }}
+                  style={{width:'100%', padding:'6px 8px', border:'1px solid #ced4da', borderRadius:4, fontSize:13, marginBottom:8}}
+                >
+                  <option value="">-- Select Common Item --</option>
+                  <optgroup label="Site Work">
+                    {commonManualItems.filter(i => i.code.includes('TRENCH') || i.code.includes('BACKHOE')).map(item => (
+                      <option key={item.code} value={item.code}>{item.name}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Transformers">
+                    {commonManualItems.filter(i => i.code.includes('XFMR')).map(item => (
+                      <option key={item.code} value={item.code}>{item.name}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Disconnects">
+                    {commonManualItems.filter(i => i.code.includes('DISC')).map(item => (
+                      <option key={item.code} value={item.code}>{item.name}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="EV & Generators">
+                    {commonManualItems.filter(i => i.code.includes('EV') || i.code.includes('GEN')).map(item => (
+                      <option key={item.code} value={item.code}>{item.name}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Site Lighting & Poles">
+                    {commonManualItems.filter(i => i.code.includes('POLE') || i.code.includes('PWR')).map(item => (
+                      <option key={item.code} value={item.code}>{item.name}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Engineering">
+                    {commonManualItems.filter(i => i.code.includes('STUDY')).map(item => (
+                      <option key={item.code} value={item.code}>{item.name}</option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+              <div style={{marginBottom:8}}>
+                <label style={{display:'block', fontSize:11, fontWeight:600, color:'#495057', marginBottom:4}}>
+                  Description (or customize)
+                </label>
                 <input
                   type="text"
-                  placeholder="Description (e.g., 200 LF Trenching)"
+                  placeholder="Description"
                   value={newItem.description}
                   onChange={(e) => setNewItem({...newItem, description: e.target.value})}
-                  style={{width:'100%', padding:'6px 8px', border:'1px solid #ced4da', borderRadius:4, fontSize:13, marginBottom:8}}
+                  style={{width:'100%', padding:'6px 8px', border:'1px solid #ced4da', borderRadius:4, fontSize:13}}
                 />
               </div>
               <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8}}>
-                <input
-                  type="number"
-                  placeholder="Quantity"
-                  value={newItem.quantity || ''}
-                  onChange={(e) => setNewItem({...newItem, quantity: parseFloat(e.target.value) || 0})}
-                  style={{padding:'6px 8px', border:'1px solid #ced4da', borderRadius:4, fontSize:13}}
-                />
-                <select
-                  value={newItem.unit}
-                  onChange={(e) => setNewItem({...newItem, unit: e.target.value})}
-                  style={{padding:'6px 8px', border:'1px solid #ced4da', borderRadius:4, fontSize:13}}
-                >
-                  <option value="EA">EA</option>
-                  <option value="LF">LF</option>
-                  <option value="HR">HR</option>
-                  <option value="LS">LS</option>
-                  <option value="SF">SF</option>
-                </select>
+                <div>
+                  <label style={{display:'block', fontSize:11, fontWeight:600, color:'#495057', marginBottom:4}}>
+                    Quantity
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Quantity"
+                    value={newItem.quantity || ''}
+                    onChange={(e) => setNewItem({...newItem, quantity: parseFloat(e.target.value) || 0})}
+                    style={{width:'100%', padding:'6px 8px', border:'1px solid #ced4da', borderRadius:4, fontSize:13}}
+                  />
+                </div>
+                <div>
+                  <label style={{display:'block', fontSize:11, fontWeight:600, color:'#495057', marginBottom:4}}>
+                    Unit
+                  </label>
+                  <select
+                    value={newItem.unit}
+                    onChange={(e) => setNewItem({...newItem, unit: e.target.value})}
+                    style={{width:'100%', padding:'6px 8px', border:'1px solid #ced4da', borderRadius:4, fontSize:13}}
+                  >
+                    <option value="EA">EA</option>
+                    <option value="LF">LF</option>
+                    <option value="HR">HR</option>
+                    <option value="LS">LS</option>
+                    <option value="SF">SF</option>
+                  </select>
+                </div>
               </div>
               <div style={{display:'flex', gap:6}}>
                 <button
@@ -1767,7 +1851,10 @@ function SidebarBOM({ bom, onToggle }:{
                   }}
                 >
                   <div style={{flex:1}}>
-                    <div style={{fontWeight:600, marginBottom:2}}>{item.description}</div>
+                    <div style={{fontWeight:600, marginBottom:2}}>
+                      {item.description}
+                      {item.itemCode && <span style={{marginLeft:6, fontSize:11, color:'#10b981', fontWeight:500}}>({item.itemCode})</span>}
+                    </div>
                     <div style={{fontSize:12, color:'#6c757d'}}>{item.quantity} {item.unit}</div>
                   </div>
                   <button
@@ -1783,7 +1870,7 @@ function SidebarBOM({ bom, onToggle }:{
             </div>
           ) : (
             <div style={{fontSize:12, color:'#6c757d', textAlign:'center', padding:'10px'}}>
-              No manual items. Click + Add for trenching, transformers, generators, etc.
+              No manual items. Select from dropdown for items with pricing (trenching, transformers, etc.)
             </div>
           )}
         </div>
