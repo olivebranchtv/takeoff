@@ -447,7 +447,10 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     DEFAULT_MASTER_TAGS.forEach(mt => {
       const exists = (tags as Tag[]).find(t => (t.code || '').toUpperCase() === mt.code.toUpperCase());
       if (!exists) {
-        addTag({ code: mt.code, name: mt.name, category: mt.category, color: mt.color });
+        const tagToAdd: any = { code: mt.code, name: mt.name, category: mt.category, color: mt.color };
+        if (mt.customMaterialCost !== undefined) tagToAdd.customMaterialCost = mt.customMaterialCost;
+        if (mt.customLaborHours !== undefined) tagToAdd.customLaborHours = mt.customLaborHours;
+        addTag(tagToAdd);
         added++;
       }
     });

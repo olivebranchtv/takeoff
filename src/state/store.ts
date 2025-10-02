@@ -730,14 +730,19 @@ export const useStore = create<State>()(
         const existingCodes = new Set(rawTags.map(t => (t.code || '').toUpperCase()));
         const missingMasterTags = DEFAULT_MASTER_TAGS
           .filter(mt => !existingCodes.has((mt.code || '').toUpperCase()))
-          .map(mt => ({
-            id: crypto.randomUUID(),
-            code: mt.code,
-            name: mt.name,
-            color: mt.color,
-            category: mt.category,
-            assemblyId: undefined
-          }));
+          .map(mt => {
+            const tag: Tag = {
+              id: crypto.randomUUID(),
+              code: mt.code,
+              name: mt.name,
+              color: mt.color,
+              category: mt.category,
+              assemblyId: undefined
+            };
+            if (mt.customMaterialCost !== undefined) tag.customMaterialCost = mt.customMaterialCost;
+            if (mt.customLaborHours !== undefined) tag.customLaborHours = mt.customLaborHours;
+            return tag;
+          });
 
         console.log(`[fromProject] Adding ${missingMasterTags.length} missing master tags`);
         if (missingMasterTags.length > 0) {
