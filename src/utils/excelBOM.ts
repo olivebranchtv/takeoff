@@ -212,13 +212,11 @@ export function calculateAssemblyMaterials(
     }
   }
 
-  // Calculate number of homeruns needed
-  const lightHomeruns = totalLightingFixtures > 0 ? Math.ceil(totalLightingFixtures / 8) : 0;
+  // Calculate number of homeruns needed (GFCI only, lights now included in LIGHT-STD-INSTALL)
   const gfciHomeruns = totalGFCIReceptacles > 0 ? Math.ceil(totalGFCIReceptacles / 6) : 0;
-  const totalHomerunsNeeded = lightHomeruns + gfciHomeruns;
 
-  if (totalHomerunsNeeded > 0) {
-    console.log(`🔌 Adding ${totalHomerunsNeeded} 100ft homerun assemblies: ${lightHomeruns} for lights (${totalLightingFixtures} fixtures), ${gfciHomeruns} for GFCIs (${totalGFCIReceptacles} receptacles)`);
+  if (gfciHomeruns > 0) {
+    console.log(`🔌 Adding ${gfciHomeruns} 100ft homerun assemblies for GFCIs (${totalGFCIReceptacles} receptacles)`);
 
     // Find the 100ft homerun assembly by code
     const homerunAssembly = assemblyCodeMap.get('HOMERUN-100FT');
@@ -229,13 +227,13 @@ export function calculateAssemblyMaterials(
         code: homerunAssembly.code,
         name: homerunAssembly.name,
         description: homerunAssembly.description,
-        count: totalHomerunsNeeded,
+        count: gfciHomeruns,
         materials: []
       };
 
       // Add homerun materials
       for (const item of homerunAssembly.items) {
-        const baseQty = item.quantityPer * totalHomerunsNeeded;
+        const baseQty = item.quantityPer * gfciHomeruns;
         const totalQty = baseQty * item.wasteFactor;
 
         const matKey = `${item.category}::${item.description}::${item.unit}`;
@@ -256,7 +254,7 @@ export function calculateAssemblyMaterials(
             laborOverride: item.laborOverride,
             assemblyCode: homerunAssembly.code,
             assemblyName: homerunAssembly.name,
-            notes: `Auto-added: ${lightHomeruns} homerun(s) for lighting fixtures`
+            notes: `Auto-added: ${gfciHomeruns} homerun(s) for GFCI receptacles`
           });
         }
 
@@ -270,7 +268,7 @@ export function calculateAssemblyMaterials(
           totalQty,
           itemCode: item.itemCode,
           laborOverride: item.laborOverride,
-          notes: `Auto-added: ${lightHomeruns} homerun(s) for lighting fixtures`
+          notes: `Auto-added: ${gfciHomeruns} homerun(s) for GFCI receptacles`
         });
       }
 

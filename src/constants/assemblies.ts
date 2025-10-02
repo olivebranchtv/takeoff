@@ -2213,6 +2213,8 @@ export const STANDARD_ASSEMBLIES: Assembly[] = [
     items: [
       { id: 'box-4sq-1.5', itemCode: 'BOX-4SQ-1.5', description: '4" Square Box, 1-1/2" deep, galvanized steel', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
       { id: 'cover-4sq-blank', itemCode: 'COVER-4SQ-BLANK', description: '4" x 4" Blank Cover', unit: 'EA', quantityPer: 1, category: 'Boxes', wasteFactor: 1.02 },
+      { id: 'emt-3/4-12ft', itemCode: 'EMT-3/4', description: '3/4" EMT Conduit', unit: 'FT', quantityPer: 12, category: 'Raceways', wasteFactor: 1.05 },
+      { id: 'wire-10-thhn-48ft', itemCode: 'WIRE-10-THHN', description: '10 AWG THHN Copper Wire', unit: 'FT', quantityPer: 48, category: 'Wire', wasteFactor: 1.05, notes: '4 conductors × 12ft' },
       { id: 'emt-connector-3/4', itemCode: 'EMT-CONNECTOR-3/4', description: 'EMT Connector, 3/4", steel', unit: 'EA', quantityPer: 2, category: 'Fittings', wasteFactor: 1.05 },
       { id: 'wire-nuts', itemCode: 'WIRE-NUTS', description: 'Wire Nuts', unit: 'EA', quantityPer: 3, category: 'Fittings', wasteFactor: 1.02 },
       { id: 'ground-wire-to-box', itemCode: 'GROUND-WIRE-TO-BOX', description: 'Ground Wires To Box', unit: 'EA', quantityPer: 1, category: 'Grounding', wasteFactor: 1.02 }

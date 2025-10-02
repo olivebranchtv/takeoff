@@ -61,21 +61,16 @@ export function calculateAssemblyMaterials(
     });
   });
 
-  // Add 100ft homeruns based on tag counts
+  // Add 100ft homeruns based on tag counts (GFCI only, lights now included in LIGHT-STD-INSTALL)
   const homerunAssembly = assemblies.find(a => a.code === 'HOMERUN-100FT');
 
   if (homerunAssembly && homerunAssembly.isActive) {
-    // Calculate number of 100ft homeruns needed for lights (1 per 8 lights, minimum 1 if any lights)
-    const lightHomeruns = lightCount > 0 ? Math.ceil(lightCount / 8) : 0;
-
     // Calculate number of 100ft homeruns needed for GFCIs (1 per 6 GFCIs, minimum 1 if any GFCIs)
     const gfiHomeruns = gfiCount > 0 ? Math.ceil(gfiCount / 6) : 0;
 
-    const totalHomeruns = lightHomeruns + gfiHomeruns;
-
-    if (totalHomeruns > 0) {
+    if (gfiHomeruns > 0) {
       homerunAssembly.items.forEach(item => {
-        const adjustedQty = item.quantityPer * item.wasteFactor * totalHomeruns;
+        const adjustedQty = item.quantityPer * item.wasteFactor * gfiHomeruns;
 
         materials.push({
           description: item.description,
@@ -84,7 +79,7 @@ export function calculateAssemblyMaterials(
           category: item.category,
           assemblyCode: homerunAssembly.code,
           assemblyName: homerunAssembly.name,
-          notes: `Auto-added: ${lightHomeruns} for lights (${lightCount} total), ${gfiHomeruns} for GFCIs (${gfiCount} total)`
+          notes: `Auto-added: ${gfiHomeruns} for GFCIs (${gfiCount} total)`
         });
       });
     }
