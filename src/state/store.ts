@@ -685,6 +685,8 @@ export const useStore = create<State>()(
         const d: any = data || {};
         const rawTags = asArray<Tag>(d.tags).length ? asArray<Tag>(d.tags) : get().tags;
 
+        console.log(`[fromProject] Loading project with ${rawTags.length} tags from saved data`);
+
         // Merge in any missing master tags
         const existingCodes = new Set(rawTags.map(t => (t.code || '').toUpperCase()));
         const missingMasterTags = DEFAULT_MASTER_TAGS
@@ -697,6 +699,11 @@ export const useStore = create<State>()(
             category: mt.category,
             assemblyId: undefined
           }));
+
+        console.log(`[fromProject] Adding ${missingMasterTags.length} missing master tags`);
+        if (missingMasterTags.length > 0) {
+          console.log(`[fromProject] Missing tags:`, missingMasterTags.map(t => t.code).join(', '));
+        }
 
         const allTags = [...rawTags, ...missingMasterTags];
 
