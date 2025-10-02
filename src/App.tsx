@@ -221,6 +221,25 @@ export default function App() {
     setLastSaveBase(base);
   }, [makeBundle, lastSaveBase]);
 
+  // Sync projectTags from store whenever projectTagIds changes
+  useEffect(() => {
+    let previousProjectTagIds: string[] = [];
+
+    const unsubscribe = useStore.subscribe((state) => {
+      const currentProjectTagIds = state.projectTagIds;
+
+      // Check if projectTagIds actually changed
+      if (JSON.stringify(currentProjectTagIds) !== JSON.stringify(previousProjectTagIds)) {
+        previousProjectTagIds = currentProjectTagIds;
+        const projectTagsFromStore = state.getProjectTags();
+        setProjectTags(projectTagsFromStore);
+        console.log('[App] projectTagIds changed, synced project tags:', projectTagsFromStore.length);
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
   // Update time since last save display
   useEffect(() => {
     const updateTimeSince = () => {
@@ -406,6 +425,11 @@ export default function App() {
       setActivePage(0);
       setFileName(storeState.fileName);
       setProjectName(storeState.projectName);
+
+      // Sync project tags from store
+      const projectTagsFromStore = storeState.getProjectTags();
+      setProjectTags(projectTagsFromStore);
+      console.log('[Database Load] Synced project tags:', projectTagsFromStore.length);
 
       // Restore PDF if it was saved
       if (projectData.pdf?.bytesBase64) {
