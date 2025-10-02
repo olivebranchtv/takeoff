@@ -16,10 +16,7 @@ export function useInitialize() {
     hasInitialized.current = true;
 
     async function initialize() {
-      console.log('🔄 Initializing application...');
-
-      // CRITICAL: Wait for Zustand persist to fully load from localStorage
-      await new Promise(resolve => setTimeout(resolve, 100));
+      console.log('🔄 Initializing application (Supabase-only mode)...');
 
       // Load tags from Supabase
       console.log('🔄 Loading tags from Supabase...');
@@ -41,7 +38,7 @@ export function useInitialize() {
             console.warn('⚠️ TCLK tag NOT found in Supabase tags!');
           }
 
-          console.log('📥 About to importTags() - this will merge with store and save to localStorage');
+          console.log('📥 About to importTags() - this will merge with store and save to Supabase');
 
           // Apply deletedTagCodes BEFORE importing tags
           if (result.deletedTagCodes && result.deletedTagCodes.length > 0) {
@@ -49,7 +46,7 @@ export function useInitialize() {
             useStore.setState({ deletedTagCodes: result.deletedTagCodes });
           }
 
-          // Import tags into store (this will trigger localStorage persist AND Supabase save)
+          // Import tags into store (this will trigger Supabase save)
           importTags(result.tags);
 
           // Verify TCLK was imported correctly
@@ -75,14 +72,14 @@ export function useInitialize() {
 
           console.log('✅ Tags loaded successfully from Supabase');
         } else {
-          console.log('ℹ️ No tags found in Supabase, using defaults from localStorage');
+          console.log('ℹ️ No tags found in Supabase, using defaults from store');
         }
 
         // Mark that we've completed Supabase load
         setHasLoadedFromSupabase(true);
       } catch (error) {
         console.error('❌ Failed to load tags from Supabase:', error);
-        console.log('ℹ️ Falling back to localStorage tags');
+        console.log('ℹ️ Falling back to default tags in store');
         // Still mark as loaded even if failed, to prevent blocking
         setHasLoadedFromSupabase(true);
       }

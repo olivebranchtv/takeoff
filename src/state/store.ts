@@ -1,6 +1,5 @@
 // src/state/store.ts
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import type {
   Tool,
   ProjectSave,
@@ -257,9 +256,7 @@ type State = {
   getLastSaveTime: () => Date | null;
 };
 
-export const useStore = create<State>()(
-  persist(
-    (set, get) => ({
+export const useStore = create<State>()((set, get) => ({
       fileName: 'untitled.pdf',
       projectName: 'Untitled Project',
       pages: [],
@@ -923,63 +920,4 @@ export const useStore = create<State>()(
       deleteManualItem: (id) => set((s) => ({
         manualItems: s.manualItems.filter(item => item.id !== id)
       })),
-    }),
-    {
-      name: 'skd.mastertags.v1',
-      storage: createJSONStorage(() => localStorage),
-      version: 6,
-      // persist palette, overrides, tags, deletedTagCodes, lastMeasureOptions, aiAnalysisResult, manualItems
-      // Tags are saved to BOTH Supabase and localStorage for redundancy
-      partialize: (s) => ({
-        palette: s.palette,
-        colorOverrides: s.colorOverrides,
-        tags: s.tags,
-        deletedTagCodes: s.deletedTagCodes,
-        lastMeasureOptions: s.lastMeasureOptions,
-        aiAnalysisResult: s.aiAnalysisResult,
-        manualItems: s.manualItems,
-      }),
-      migrate: (persistedState: any, version: number) => {
-        // Migration from version 1 to 2: Add itemCode to assembly items
-        if (version === 1) {
-          if (persistedState.assemblies && Array.isArray(persistedState.assemblies)) {
-            persistedState.assemblies = persistedState.assemblies.map((assembly: any) => {
-              if (assembly.items && Array.isArray(assembly.items)) {
-                assembly.items = assembly.items.map((item: any) => {
-                  // If item doesn't have itemCode, generate it from id
-                  if (!item.itemCode && item.id) {
-                    return { ...item, itemCode: item.id.toUpperCase() };
-                  }
-                  return item;
-                });
-              }
-              return assembly;
-            });
-          }
-        }
-        // Migration from version 2 to 3: Remove assemblies from localStorage (now in Supabase)
-        if (version === 2 && persistedState.assemblies) {
-          delete persistedState.assemblies;
-        }
-        // Migration from version 3 to 4: Remove tags from localStorage (now in Supabase)
-        if (version === 3 && persistedState.tags) {
-          console.log('🔄 Migration v3→v4: Removing tags from localStorage (now loaded from Supabase)');
-          delete persistedState.tags;
-        }
-        // Migration from version 4 to 5: Tags now saved to BOTH Supabase AND localStorage
-        // Tags will be loaded from Supabase on next initialization and saved to both locations
-        if (version === 4) {
-          console.log('🔄 Migration v4→v5: Tags now saved to both Supabase and localStorage');
-        }
-        // Migration from version 5 to 6: Add deletedTagCodes to track permanently deleted tags
-        if (version === 5) {
-          console.log('🔄 Migration v5→v6: Adding deletedTagCodes tracking');
-          if (!persistedState.deletedTagCodes) {
-            persistedState.deletedTagCodes = [];
-          }
-        }
-        return persistedState;
-      },
-    }
-  )
-);
+    }));
