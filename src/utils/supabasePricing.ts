@@ -437,6 +437,19 @@ export async function saveTagsToSupabase(tags: any[], colorOverrides: any): Prom
   try {
     const defaultUserId = '00000000-0000-0000-0000-000000000000';
 
+    // Sanitize tags to ensure custom pricing fields are numbers, not strings
+    const sanitizedTags = tags.map(tag => {
+      const sanitized = { ...tag };
+      // Force convert custom pricing to numbers if present
+      if (sanitized.customMaterialCost != null) {
+        sanitized.customMaterialCost = Number(sanitized.customMaterialCost);
+      }
+      if (sanitized.customLaborHours != null) {
+        sanitized.customLaborHours = Number(sanitized.customLaborHours);
+      }
+      return sanitized;
+    });
+
     // Check if tag library exists
     const { data: existing } = await supabase
       .from('tag_library')
@@ -449,7 +462,7 @@ export async function saveTagsToSupabase(tags: any[], colorOverrides: any): Prom
       const { error } = await supabase
         .from('tag_library')
         .update({
-          tags,
+          tags: sanitizedTags,
           color_overrides: colorOverrides,
           updated_at: new Date().toISOString()
         })
@@ -465,7 +478,7 @@ export async function saveTagsToSupabase(tags: any[], colorOverrides: any): Prom
         .from('tag_library')
         .insert({
           user_id: defaultUserId,
-          tags,
+          tags: sanitizedTags,
           color_overrides: colorOverrides
         });
 

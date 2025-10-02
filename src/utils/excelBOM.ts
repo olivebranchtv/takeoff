@@ -62,8 +62,10 @@ export function calculateAssemblyMaterials(
       // Use custom labor hours if set, otherwise default based on category
       const isLight = tag.category?.toLowerCase().includes('light');
       const defaultLaborHours = isLight ? 1.0 : 0.5; // 1.0 hrs for lights, 0.5 hrs for other items
-      const laborHours = tag.customLaborHours ?? defaultLaborHours;
-      const materialCost = tag.customMaterialCost ?? 0;
+      // Force conversion to numbers (database may return strings)
+      const laborHours = tag.customLaborHours != null ? Number(tag.customLaborHours) : defaultLaborHours;
+      const materialCost = tag.customMaterialCost != null ? Number(tag.customMaterialCost) : 0;
+      console.log(`   ✅ Direct tag pricing: $${materialCost}/unit, ${laborHours} hrs/unit`);
 
       const matKey = `${tag.category || 'Lights'}::Fixture ${row.tagCode}::EA`;
       const existing = materialAcc.get(matKey);
@@ -105,10 +107,12 @@ export function calculateAssemblyMaterials(
       console.log(`   Quantity: ${count} units`);
 
       // Use custom values if set, otherwise fall back to assembly totals
-      const materialCost = tag.customMaterialCost ?? 0;
+      // Force conversion to numbers (database may return strings)
+      const materialCost = tag.customMaterialCost != null ? Number(tag.customMaterialCost) : 0;
       const isLight = tag.category?.toLowerCase().includes('light');
       const defaultLaborHours = isLight ? 1.0 : 0.5;
-      const laborHours = tag.customLaborHours ?? defaultLaborHours;
+      const laborHours = tag.customLaborHours != null ? Number(tag.customLaborHours) : defaultLaborHours;
+      console.log(`   ✅ Converted: $${materialCost}/unit, ${laborHours} hrs/unit`);
 
       console.log(`   Final Material Cost: $${materialCost}/unit × ${count} = $${materialCost * count}`);
       console.log(`   Final Labor Hours: ${laborHours} hrs/unit × ${count} = ${laborHours * count} hrs`);
