@@ -726,6 +726,10 @@ export const useStore = create<State>()(
           })
           .sort((a,b)=>a.pageIndex-b.pageIndex);
 
+        // Populate projectTagIds with all tags that were in the saved project
+        const projectTagIds = rawTags.map(t => t.id);
+        console.log(`[fromProject] Setting ${projectTagIds.length} project tags`);
+
         set({
           fileName: typeof d.fileName === 'string' ? d.fileName : (typeof d.source === 'string' ? d.source : 'untitled.pdf'),
           projectName: typeof d.name === 'string' ? d.name : (typeof d.projectName === 'string' ? d.projectName : baseNameNoExt(d.fileName || 'Untitled')),
@@ -733,7 +737,7 @@ export const useStore = create<State>()(
           tags,
           selectedIds: [],
           history: {},
-          projectTagIds: []
+          projectTagIds
         });
       },
 
