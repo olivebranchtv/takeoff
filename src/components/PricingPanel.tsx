@@ -288,7 +288,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
     } catch (error) {
       console.error('Error calculating costs:', error);
     }
-  }, [pages, tags, assemblies, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment, lightingPackage, pricesLoaded, priceCount, competitiveBidEnabled, adjustedLaborRate]);
+  }, [pages, tags, assemblies, manualItems, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment, lightingPackage, pricesLoaded, priceCount, competitiveBidEnabled, adjustedLaborRate]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
