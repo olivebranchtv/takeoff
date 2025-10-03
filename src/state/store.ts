@@ -577,10 +577,33 @@ export const useStore = create<State>()((set, get) => ({
         // Track deleted tag code to prevent re-import
         const deletedTagCodes = tag ? [...s.deletedTagCodes, norm(tag.code)] : s.deletedTagCodes;
 
+        // Remove all objects with this tag code from all pages
+        const pages = tag ? s.pages.map(page => ({
+          ...page,
+          objects: page.objects.filter(obj => {
+            // Remove count objects with this tag code
+            if (obj.type === 'count') {
+              return norm(obj.code) !== norm(tag.code);
+            }
+            // Keep all other objects but clear their code if it matches
+            if (obj.code && norm(obj.code) === norm(tag.code)) {
+              return true; // Keep the object but we'll clear the code below
+            }
+            return true;
+          }).map(obj => {
+            // Clear code from line-like objects if it matches the deleted tag
+            if (obj.type !== 'count' && obj.code && norm(obj.code) === norm(tag.code)) {
+              const { code, ...rest } = obj;
+              return rest as typeof obj;
+            }
+            return obj;
+          })
+        })) : s.pages;
+
         // Save to Supabase asynchronously (include deletedTagCodes)
         saveTagsToSupabase(tags, overrides, deletedTagCodes).catch(err => console.error('Failed to save tags to Supabase:', err));
 
-        return { tags, projectTagIds: s.projectTagIds.filter(pid => pid !== id), colorOverrides: overrides, deletedTagCodes };
+        return { tags, projectTagIds: s.projectTagIds.filter(pid => pid !== id), colorOverrides: overrides, deletedTagCodes, pages };
       }),
 
       importTags: (list) => set((s) => {
