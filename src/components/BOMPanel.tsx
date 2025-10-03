@@ -34,16 +34,21 @@ export default function BomPanel({ open, onToggle }: Props) {
 
   // Auto-add counts on mount (only once per session)
   React.useEffect(() => {
-    if (!autoAddComplete) {
+    if (!autoAddComplete && pages.length > 0) {
+      console.log('🔄 Auto-add effect triggered');
       setTimeout(() => {
-        const count = addCountsForExistingMeasurements();
-        if (count > 0) {
-          console.log(`Auto-added ${count} fixture counts`);
+        console.log('🔄 Auto-add timeout fired');
+        try {
+          const count = addCountsForExistingMeasurements();
+          console.log(`🔄 Auto-added ${count} fixture counts`);
+          setAutoAddComplete(true);
+        } catch (err) {
+          console.error('❌ Auto-add error:', err);
+          setAutoAddComplete(true);
         }
-        setAutoAddComplete(true);
-      }, 500);
+      }, 1000);
     }
-  }, [autoAddComplete, addCountsForExistingMeasurements]);
+  }, [autoAddComplete, pages.length, addCountsForExistingMeasurements]);
 
   const data = useMemo<Summary>(() => {
     let totalTags = 0;
@@ -120,11 +125,18 @@ export default function BomPanel({ open, onToggle }: Props) {
   }, [pages]);
 
   function handleAddCounts() {
-    const count = addCountsForExistingMeasurements();
-    if (count > 0) {
-      alert(`Added ${count} fixture count(s) from existing measurements!`);
-    } else {
-      alert('No new counts added. All measurements already have counts or no valid measurements found.');
+    console.log('🔘 Add Counts button clicked!');
+    try {
+      const count = addCountsForExistingMeasurements();
+      console.log(`✅ Function returned: ${count}`);
+      if (count > 0) {
+        alert(`Added ${count} fixture count(s) from existing measurements!`);
+      } else {
+        alert('No new counts added. All measurements already have counts or no valid measurements found.');
+      }
+    } catch (err) {
+      console.error('❌ Error in handleAddCounts:', err);
+      alert(`Error: ${err}`);
     }
   }
 
