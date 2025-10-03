@@ -235,6 +235,22 @@ export default function PDFViewport({ pdf }: Props) {
       measure: measureRef.current,
       result,
     } as AnyTakeoffObject);
+
+    // ALSO add a count object at the midpoint if there's a currentTag
+    // This allows measurements to count as fixtures in the BOM
+    if (currentTag && vertsPage.length >= 2) {
+      const midIdx = Math.floor(vertsPage.length / 2);
+      const midPoint = vertsPage[midIdx];
+      addObject(activePage, {
+        id: crypto.randomUUID(),
+        type: 'count',
+        code: currentTag,
+        pageIndex: activePage,
+        x: midPoint.x,
+        y: midPoint.y,
+        rotation: 0
+      } as any);
+    }
   }
 
   const isLeft  = (e: any) => (e?.evt?.button ?? 0) === 0;
