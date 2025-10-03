@@ -365,7 +365,13 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   function saveEdit() {
     if (!editId) return;
     const category = resolvedCategory();
-    const next: Draft = { ...draft, code: draft.code.trim().toUpperCase(), category };
+    // Explicitly include assemblyId in next, even if undefined (to indicate "NO ASSEMBLY")
+    const next: Draft = {
+      ...draft,
+      code: draft.code.trim().toUpperCase(),
+      category,
+      assemblyId: draft.assemblyId // Explicitly include, even if undefined
+    };
     const msg = validate(next);
     if (msg) { setError(msg); return; }
 
@@ -653,11 +659,14 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
               <div style={{ marginTop: 10 }}>
                 <div style={S.label}>Assembly (Optional)</div>
                 <select
-                  value={draft.assemblyId || ''}
-                  onChange={e => setDraft(d => ({ ...d, assemblyId: e.target.value || undefined }))}
+                  value={draft.assemblyId || 'NONE'}
+                  onChange={e => {
+                    const value = e.target.value;
+                    setDraft(d => ({ ...d, assemblyId: value === 'NONE' ? undefined : value }));
+                  }}
                   style={{ ...S.input, width: '100%', maxWidth: '500px' }}
                 >
-                  <option value="">NO ASSEMBLY APPLIED</option>
+                  <option value="NONE">NO ASSEMBLY</option>
                   {assemblies && assemblies.filter((a: any) => a.isActive).map((assembly: any) => (
                     <option key={assembly.id} value={assembly.code}>
                       {assembly.code} - {assembly.name} ({assembly.items.length} items)
