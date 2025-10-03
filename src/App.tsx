@@ -379,8 +379,10 @@ export default function App() {
       name: state.projectName || 'Untitled Project',
       pages: state.pages,
       tags: state.tags,
+      projectTags: projectTags, // CRITICAL: Save project tags (including uncounted)
       pdf: pdfBytesBase64 ? { name: pdfName || fileName || 'document.pdf', bytesBase64: pdfBytesBase64 } : undefined
     };
+    console.log('[Save to DB] Saving project with PDF:', !!projectData.pdf, 'PDF bytes length:', projectData.pdf?.bytesBase64?.length, 'Project tags:', projectTags.length);
     const success = await saveProjectToSupabase(projectData);
     if (success) {
       state.setLastSaveTime(new Date());
@@ -413,6 +415,7 @@ export default function App() {
     }
 
     const projectData = await loadProjectByIdFromSupabase(projects[index].id);
+    console.log('[Load from DB] Project data loaded:', !!projectData, 'Has PDF:', !!projectData?.pdf, 'PDF bytes length:', projectData?.pdf?.bytesBase64?.length);
     if (projectData) {
       // Load project into store
       useStore.getState().fromProject(projectData);
@@ -426,10 +429,16 @@ export default function App() {
       setFileName(storeState.fileName);
       setProjectName(storeState.projectName);
 
-      // Sync project tags from store
-      const projectTagsFromStore = storeState.getProjectTags();
-      setProjectTags(projectTagsFromStore);
-      console.log('[Database Load] Synced project tags:', projectTagsFromStore.length);
+      // CRITICAL: Load project tags directly from saved data (don't filter out uncounted tags)
+      if (Array.isArray(projectData.projectTags) && projectData.projectTags.length > 0) {
+        setProjectTags(projectData.projectTags);
+        console.log('[Database Load] ✅ Loaded project tags from saved data (including uncounted):', projectData.projectTags.length);
+      } else {
+        // Fallback to store method if no direct projectTags
+        const projectTagsFromStore = storeState.getProjectTags();
+        setProjectTags(projectTagsFromStore);
+        console.log('[Database Load] Synced project tags from store:', projectTagsFromStore.length);
+      }
 
       // Restore PDF if it was saved
       if (projectData.pdf?.bytesBase64) {
@@ -1054,6 +1063,7 @@ export default function App() {
 
     const projectName = useStore.getState().getProjectName()?.trim() || 'Project Name';
 
+    // Tab 1: Fixture Counts
     const lightingRows = Array.from(countByCode.entries())
       .filter(([code]) => isLighting(code))
       .map(([code, count]) => ({
@@ -1063,29 +1073,82 @@ export default function App() {
       }))
       .sort((a, b) => a.Code.localeCompare(b.Code));
 
-    // Calculate total count
     const totalCount = lightingRows.reduce((sum, row) => sum + row.Count, 0);
 
-    // Create the data array with header and total row
-    const data: any[][] = [
-      [`Project:  ${projectName}`, '', ''], // Project header row
-      [], // Empty row
-      ['Code', 'Name', 'Count'], // Column headers
+    const countsData: any[][] = [
+      [`Project:  ${projectName}`, '', ''],
+      [],
+      ['Code', 'Name', 'Count'],
       ...lightingRows.map(row => [row.Code, row.Name, row.Count]),
-      ['Total', '', totalCount] // Total row
+      ['Total', '', totalCount]
     ];
 
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(data);
+    const ws1 = XLSX.utils.aoa_to_sheet(countsData);
+    ws1['!cols'] = [
+      { wch: 10 },
+      { wch: 30 },
+      { wch: 10 }
+    ];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Lighting Fixtures');
 
-    // Set column widths
-    ws['!cols'] = [
-      { wch: 10 },  // Code column
-      { wch: 30 },  // Name column
-      { wch: 10 }   // Count column
+    // Tab 2: Measurements (Linear Runs)
+    const measurements: any[] = [];
+    pages.forEach((page, pageIdx) => {
+      page.objects.forEach(obj => {
+        if (obj.type !== 'count' && obj.code) {
+          const lengthFt = obj.lengthFt ?? obj.result?.baseLengthFt ?? 0;
+          const emtSize = obj.result?.raceway?.emtSize || obj.measure?.emtSize || '';
+          const racewayLf = obj.result?.raceway?.lengthFt || 0;
+
+          measurements.push({
+            Code: obj.code,
+            Name: nameForCode(obj.code),
+            Type: obj.type === 'segment' ? 'Segment' : obj.type === 'polyline' ? 'Polyline' : 'Freeform',
+            'Length (LF)': lengthFt,
+            'EMT Size': emtSize,
+            'Raceway LF': racewayLf,
+            Page: pageIdx + 1,
+            Note: obj.note || ''
+          });
+        }
+      });
+    });
+
+    measurements.sort((a, b) => a.Code.localeCompare(b.Code) || a.Page - b.Page);
+
+    const totalLength = measurements.reduce((sum, m) => sum + (m['Length (LF)'] || 0), 0);
+    const totalRaceway = measurements.reduce((sum, m) => sum + (m['Raceway LF'] || 0), 0);
+
+    const measurementsData: any[][] = [
+      [`Project:  ${projectName}`, '', '', '', '', '', '', ''],
+      [],
+      ['Code', 'Name', 'Type', 'Length (LF)', 'EMT Size', 'Raceway LF', 'Page', 'Note'],
+      ...measurements.map(m => [
+        m.Code,
+        m.Name,
+        m.Type,
+        typeof m['Length (LF)'] === 'number' ? +m['Length (LF)'].toFixed(2) : '',
+        m['EMT Size'],
+        typeof m['Raceway LF'] === 'number' ? +m['Raceway LF'].toFixed(2) : '',
+        m.Page,
+        m.Note
+      ]),
+      ['Total', '', '', totalLength.toFixed(2), '', totalRaceway.toFixed(2), '', '']
     ];
 
-    XLSX.utils.book_append_sheet(wb, ws, 'Lighting');
+    const ws2 = XLSX.utils.aoa_to_sheet(measurementsData);
+    ws2['!cols'] = [
+      { wch: 10 },  // Code
+      { wch: 30 },  // Name
+      { wch: 12 },  // Type
+      { wch: 12 },  // Length
+      { wch: 10 },  // EMT Size
+      { wch: 12 },  // Raceway LF
+      { wch: 8 },   // Page
+      { wch: 30 }   // Note
+    ];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Measurements');
 
     const baseName = projectName + ' - Fixtures';
     XLSX.writeFile(wb, `${baseName}.xlsx`);
@@ -1441,7 +1504,26 @@ export default function App() {
                 <span style={{width:16, height:16, borderRadius:3, border:'1px solid #444', background: (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color}} />
                 <span style={{minWidth:24, textAlign:'center', fontWeight: active ? 700 : 600}}>{t.code}</span>
                 <span
-                  onClick={(e)=>{ e.stopPropagation(); setProjectTags(list => list.filter(x => x.id !== t.id)); if (currentTag === t.code) setCurrentTag(''); }}
+                  onClick={(e)=>{
+                    e.stopPropagation();
+                    if (confirm(`⚠️ Remove tag "${t.code}" from project?\n\nThis will:\n• Remove the tag from the project bar\n• Delete all "${t.code}" objects from the PDF\n• Remove all entries from the Live BOM`)) {
+                      // Remove all objects with this tag code from all pages
+                      const state = useStore.getState();
+                      const updatedPages = state.pages.map(page => ({
+                        ...page,
+                        objects: page.objects.filter((obj: any) => obj.tag !== t.code)
+                      }));
+                      state.setPages(updatedPages);
+
+                      // Remove from project tags
+                      setProjectTags(list => list.filter(x => x.id !== t.id));
+
+                      // Clear current tag if it matches
+                      if (currentTag === t.code) setCurrentTag('');
+
+                      console.log(`[Tag Removal] Deleted all "${t.code}" objects from PDF and Live BOM`);
+                    }
+                  }}
                   title="Remove from Project Tags"
                   style={{position:'absolute', top:-4, right:-4, width:16, height:16, lineHeight:'14px', textAlign:'center',
                           border:'1px solid #bbb', borderRadius:'50%', background:'#fff', cursor:'pointer', fontSize:10}}
@@ -1451,7 +1533,57 @@ export default function App() {
           })}
         </div>}
 
-        {!projectTagsCollapsed && <button className="btn" onClick={()=>setPickerOpen(v=>!v)} style={{padding: '4px 10px', fontSize: '12px', whiteSpace: 'nowrap'}}>Add from DB</button>}
+        {!projectTagsCollapsed && (
+          <>
+            <button className="btn" onClick={()=>setPickerOpen(v=>!v)} style={{padding: '4px 10px', fontSize: '12px', whiteSpace: 'nowrap'}}>Add from DB</button>
+            {projectTags.length > 0 && (
+              <>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    const categories = Array.from(new Set(projectTags.map(t => t.category).filter(Boolean))) as string[];
+                    if (categories.length === 0) {
+                      alert('No categories found in project tags.');
+                      return;
+                    }
+                    const category = prompt(`Clear all tags from category:\n\nAvailable categories:\n${categories.join(', ')}\n\nEnter category name:`);
+                    if (!category) return;
+                    const normalizedInput = category.trim().toLowerCase();
+                    const matchingCategory = categories.find(c => c.toLowerCase() === normalizedInput);
+                    if (!matchingCategory) {
+                      alert(`Category "${category}" not found in project tags.`);
+                      return;
+                    }
+                    const countToRemove = projectTags.filter(t => t.category?.toLowerCase() === normalizedInput).length;
+                    if (confirm(`Remove all ${countToRemove} tags from category "${matchingCategory}"?`)) {
+                      setProjectTags(list => list.filter(t => t.category?.toLowerCase() !== normalizedInput));
+                      if (projectTags.some(t => t.code === currentTag && t.category?.toLowerCase() === normalizedInput)) {
+                        setCurrentTag('');
+                      }
+                    }
+                  }}
+                  title="Clear all tags from a specific category"
+                  style={{padding: '4px 10px', fontSize: '12px', whiteSpace: 'nowrap', background: '#f59e0b', color: '#fff'}}
+                >
+                  Clear by Category
+                </button>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    if (confirm(`Remove all ${projectTags.length} tags from project?`)) {
+                      setProjectTags([]);
+                      setCurrentTag('');
+                    }
+                  }}
+                  title="Clear all project tags"
+                  style={{padding: '4px 10px', fontSize: '12px', whiteSpace: 'nowrap', background: '#dc2626', color: '#fff'}}
+                >
+                  Clear All
+                </button>
+              </>
+            )}
+          </>
+        )}
 
         {pickerOpen && (
           <>
