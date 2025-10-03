@@ -13,6 +13,7 @@ import { analyzeDrawingsWithImages, getOpenAIApiKey, setOpenAIApiKey, type Proje
 import { useStore } from '@/state/store';
 import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
 import { pathLength } from '@/utils/geometry';
+import { useAutoSave } from '@/hooks/useAutoSave';
 import { useTagAutoSave } from '@/hooks/useTagAutoSave';
 import { useInitialize } from '@/hooks/useInitialize';
 
@@ -130,6 +131,9 @@ export default function App() {
 
   /* ---------- Auto-save TAGS ONLY to Supabase (Projects are saved manually) ---------- */
   useTagAutoSave();
+
+  /* ---------- Warn before closing if project not saved ---------- */
+  useAutoSave();
 
   /* ---------- store ---------- */
   const {
