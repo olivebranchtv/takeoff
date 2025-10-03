@@ -453,47 +453,26 @@ export async function saveTagsToSupabase(tags: any[], colorOverrides: any, delet
       return sanitized;
     });
 
-    // Check if tag library exists
-    const { data: existing } = await supabase
-      .from('tag_library')
-      .select('id')
-      .eq('user_id', defaultUserId)
-      .maybeSingle();
-
-    const updateData: any = {
+    // Use UPSERT to insert or update in one operation (prevents duplicates)
+    const upsertData: any = {
+      user_id: defaultUserId,
       tags: sanitizedTags,
       color_overrides: colorOverrides,
       updated_at: new Date().toISOString()
     };
 
     if (deletedTagCodes) {
-      updateData.deleted_tag_codes = deletedTagCodes;
+      upsertData.deleted_tag_codes = deletedTagCodes;
     }
 
-    if (existing) {
-      // Update existing
-      const { error } = await supabase
-        .from('tag_library')
-        .update(updateData)
-        .eq('id', existing.id);
+    // onConflict: 'user_id' means if user_id already exists, update that row
+    const { error } = await supabase
+      .from('tag_library')
+      .upsert(upsertData, { onConflict: 'user_id' });
 
-      if (error) {
-        console.error('Error updating tags:', error);
-        return false;
-      }
-    } else {
-      // Insert new
-      const { error } = await supabase
-        .from('tag_library')
-        .insert({
-          user_id: defaultUserId,
-          ...updateData
-        });
-
-      if (error) {
-        console.error('Error inserting tags:', error);
-        return false;
-      }
+    if (error) {
+      console.error('Error upserting tags:', error);
+      return false;
     }
 
     return true;

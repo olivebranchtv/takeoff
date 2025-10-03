@@ -81,7 +81,14 @@ export function useInitialize() {
 
           console.log('✅ Tags loaded successfully from Supabase');
         } else {
-          console.log('ℹ️ No tags found in Supabase, using defaults from store');
+          console.log('ℹ️ No tags found in Supabase, loading master tags...');
+          // Load master tags from constants
+          const { DEFAULT_MASTER_TAGS } = await import('@/constants/masterTags');
+          if (DEFAULT_MASTER_TAGS && DEFAULT_MASTER_TAGS.length > 0) {
+            console.log(`📥 Importing ${DEFAULT_MASTER_TAGS.length} master tags into database...`);
+            importTags(DEFAULT_MASTER_TAGS);
+            console.log('✅ Master tags loaded');
+          }
         }
 
         // Mark that we've completed Supabase load
