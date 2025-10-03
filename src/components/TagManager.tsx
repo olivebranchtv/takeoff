@@ -362,7 +362,26 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     console.log('[TagManager] saveEdit - draft.assemblyId:', draft.assemblyId);
     console.log('[TagManager] saveEdit - next:', next);
 
-    const canonicalId = upsertByCode(next, editId);
+    // When editing, ALWAYS update by ID, not by code lookup
+    const patch: any = {
+      code: next.code,
+      name: next.name || '',
+      category: (next.category || '').trim(),
+      color: next.color || '#FFA500',
+    };
+    if ('assemblyId' in next) {
+      patch.assemblyId = next.assemblyId;
+    }
+    if ('customMaterialCost' in next) {
+      patch.customMaterialCost = next.customMaterialCost;
+    }
+    if ('customLaborHours' in next) {
+      patch.customLaborHours = next.customLaborHours;
+    }
+
+    console.log('[TagManager] saveEdit - calling updateTag with ID:', editId, 'patch:', patch);
+    updateTag(editId, patch);
+
     if (category) scrollToCategory(category);
     // Clear editor after successful save
     cancelEdit();
