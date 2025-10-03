@@ -1451,57 +1451,7 @@ export default function App() {
           })}
         </div>}
 
-        {!projectTagsCollapsed && (
-          <>
-            <button className="btn" onClick={()=>setPickerOpen(v=>!v)} style={{padding: '4px 10px', fontSize: '12px', whiteSpace: 'nowrap'}}>Add from DB</button>
-            {projectTags.length > 0 && (
-              <>
-                <button
-                  className="btn"
-                  onClick={() => {
-                    const categories = Array.from(new Set(projectTags.map(t => t.category).filter(Boolean))) as string[];
-                    if (categories.length === 0) {
-                      alert('No categories found in project tags.');
-                      return;
-                    }
-                    const category = prompt(`Clear all tags from category:\n\nAvailable categories:\n${categories.join(', ')}\n\nEnter category name:`);
-                    if (!category) return;
-                    const normalizedInput = category.trim().toLowerCase();
-                    const matchingCategory = categories.find(c => c.toLowerCase() === normalizedInput);
-                    if (!matchingCategory) {
-                      alert(`Category "${category}" not found in project tags.`);
-                      return;
-                    }
-                    const countToRemove = projectTags.filter(t => t.category?.toLowerCase() === normalizedInput).length;
-                    if (confirm(`Remove all ${countToRemove} tags from category "${matchingCategory}"?`)) {
-                      setProjectTags(list => list.filter(t => t.category?.toLowerCase() !== normalizedInput));
-                      if (projectTags.some(t => t.code === currentTag && t.category?.toLowerCase() === normalizedInput)) {
-                        setCurrentTag('');
-                      }
-                    }
-                  }}
-                  title="Clear all tags from a specific category"
-                  style={{padding: '4px 10px', fontSize: '12px', whiteSpace: 'nowrap', background: '#f59e0b', color: '#fff'}}
-                >
-                  Clear by Category
-                </button>
-                <button
-                  className="btn"
-                  onClick={() => {
-                    if (confirm(`Remove all ${projectTags.length} tags from project?`)) {
-                      setProjectTags([]);
-                      setCurrentTag('');
-                    }
-                  }}
-                  title="Clear all project tags"
-                  style={{padding: '4px 10px', fontSize: '12px', whiteSpace: 'nowrap', background: '#dc2626', color: '#fff'}}
-                >
-                  Clear All
-                </button>
-              </>
-            )}
-          </>
-        )}
+        {!projectTagsCollapsed && <button className="btn" onClick={()=>setPickerOpen(v=>!v)} style={{padding: '4px 10px', fontSize: '12px', whiteSpace: 'nowrap'}}>Add from DB</button>}
 
         {pickerOpen && (
           <>
