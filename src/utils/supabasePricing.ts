@@ -44,11 +44,12 @@ export async function updateCompanySettings(settings: any) {
   }
 }
 
-export async function saveProjectToSupabase(projectData: any, projectName: string) {
+export async function saveProjectToSupabase(projectData: any, projectName?: string) {
+  const name = projectName || projectData.projectName || 'Untitled Project';
   const { data, error } = await supabase
     .from('project_data')
     .upsert({
-      project_name: projectName,
+      project_name: name,
       project_data: projectData,
       updated_at: new Date().toISOString(),
       user_id: '00000000-0000-0000-0000-000000000000'
@@ -58,10 +59,10 @@ export async function saveProjectToSupabase(projectData: any, projectName: strin
 
   if (error) {
     console.error('Error saving project:', error);
-    throw error;
+    return false;
   }
 
-  return data;
+  return true;
 }
 
 export async function loadAllProjectsFromSupabase() {
@@ -92,3 +93,98 @@ export async function loadProjectByIdFromSupabase(id: string) {
 
   return data;
 }
+
+export async function loadMaterialPricingFromSupabase() {
+  return fetchMaterialPricing();
+}
+
+export async function saveMaterialPricingToSupabase(materials: any[]) {
+  const { error } = await supabase
+    .from('material_pricing')
+    .upsert(materials);
+
+  if (error) {
+    console.error('Error saving material pricing:', error);
+    return false;
+  }
+  return true;
+}
+
+export async function loadCompanySettings() {
+  return fetchCompanySettings();
+}
+
+export async function saveCompanySettings(settings: any) {
+  try {
+    await updateCompanySettings(settings);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function saveProjectEstimate(projectName: string, estimate: any, projectData: any) {
+  const { data, error } = await supabase
+    .from('project_estimates')
+    .insert({
+      project_name: projectName,
+      estimate_data: estimate,
+      project_data: projectData,
+      user_id: '00000000-0000-0000-0000-000000000000',
+      created_at: new Date().toISOString()
+    })
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error saving project estimate:', error);
+    return null;
+  }
+
+  return data?.id;
+}
+
+export async function loadTagsFromSupabase() {
+  const { data, error } = await supabase
+    .from('tag_library')
+    .select('*')
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error loading tags:', error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function saveTagsToSupabase(tags: any[], colorOverrides: any = {}, deletedTagCodes: string[] = []) {
+  const { error } = await supabase
+    .from('tag_library')
+    .upsert({
+      user_id: '00000000-0000-0000-0000-000000000000',
+      tags,
+      color_overrides: colorOverrides,
+      deleted_tag_codes: deletedTagCodes,
+      updated_at: new Date().toISOString()
+    });
+
+  if (error) {
+    console.error('Error saving tags:', error);
+    throw error;
+  }
+}
+
+export type MaterialPricing = {
+  id: string;
+  category: string;
+  description: string;
+  unit: string;
+  material_cost: number;
+  labor_hours: number;
+  vendor?: string;
+  vendor_part_number?: string;
+  item_code?: string;
+  user_id?: string;
+  created_at?: string;
+};
