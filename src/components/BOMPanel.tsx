@@ -194,6 +194,20 @@ export default function BomPanel({ open, onToggle }: Props) {
         <div style={{display:'flex', gap:8}}>
           <button
             className="btn"
+            onClick={() => {
+              const allObjects = pages.flatMap(p => p.objects);
+              const withCodes = allObjects.filter(o => (o as any).code);
+              console.log('📊 Total objects:', allObjects.length);
+              console.log('📊 Objects with codes:', withCodes.length);
+              console.log('📊 Sample objects with codes:', withCodes.slice(0, 5));
+              alert(`Total objects: ${allObjects.length}\nObjects with codes: ${withCodes.length}\nSee console for details.`);
+            }}
+            title="Debug: Show objects with codes"
+          >
+            Debug
+          </button>
+          <button
+            className="btn"
             onClick={handleAddCounts}
             title="Add fixture counts for existing measurements (L2-1, F-1, etc.)"
           >
