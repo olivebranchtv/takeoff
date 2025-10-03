@@ -101,27 +101,9 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     // Start with editor collapsed to show more tags
     setEditorCollapsed(true);
 
-    // CRITICAL: Only auto-import if we've loaded deletedTagCodes from Supabase
-    if (!hasLoadedFromSupabase) {
-      console.log('⏸️ Waiting for Supabase data to load before auto-importing tags...');
-      return;
-    }
-
-    try {
-      const existing = new Set<string>((tags as Tag[]).map(t => (t.code || '').toUpperCase()));
-      const deleted = new Set<string>((deletedTagCodes || []).map((c: string) => c.toUpperCase()));
-      // Filter out tags that are already present OR were permanently deleted
-      const missing = DEFAULT_MASTER_TAGS.filter(t => {
-        const code = (t.code || '').toUpperCase();
-        return !existing.has(code) && !deleted.has(code);
-      });
-      if (missing.length) {
-        console.log(`📥 Auto-importing ${missing.length} missing master tags (skipping ${Array.from(deleted).length} deleted tags)`);
-        importTags(missing);
-      }
-    } catch {}
+    // No auto-import - all tags come from Supabase only
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, hasLoadedFromSupabase]);
+  }, [open]);
 
   // Also cleanup listeners if component unmounts
   useEffect(() => () => onDragEnd(), []);

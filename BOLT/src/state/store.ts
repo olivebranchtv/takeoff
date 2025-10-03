@@ -15,7 +15,6 @@ import { autoAssignAssembly } from '@/utils/tagAssemblyMapping';
 import { saveTagsToSupabase } from '@/utils/supabasePricing';
 import type { ProjectAnalysis } from '@/utils/openaiAnalysis';
 import { loadAssembliesFromSupabase, saveAssemblyToSupabase } from '@/utils/supabaseAssemblies';
-import { DEFAULT_MASTER_TAGS } from '@/constants/masterTags';
 
 type HistoryEntry = { pageIndex: number; objects: AnyTakeoffObject[] };
 
@@ -76,16 +75,7 @@ const DEFAULT_MEASURE_OPTIONS: MeasureOptions = {
 };
 /** ================================================================ */
 
-const DEFAULT_TAGS: Tag[] = [
-  { id: crypto.randomUUID(), code: 'A',   name: 'Fixture A',      category: 'Lights',      color: '#FF9900' },
-  { id: crypto.randomUUID(), code: 'B',   name: 'Fixture B',      category: 'Lights',      color: '#FF9900' },
-  { id: crypto.randomUUID(), code: 'C',   name: 'Fixture C',      category: 'Lights',      color: '#FF9900' },
-  { id: crypto.randomUUID(), code: 'D',   name: 'Fixture D',      category: 'Lights',      color: '#FF9900' },
-  { id: crypto.randomUUID(), code: 'A1',  name: 'Fixture A1',     category: 'Lights',      color: '#FF9900' },
-  { id: crypto.randomUUID(), code: 'EM',  name: 'Emergency',      category: 'Emergency',   color: '#CC0000', assemblyId: 'light-emergency-led' },
-  { id: crypto.randomUUID(), code: 'SP',  name: 'Switch',         category: 'Switches',    color: '#0066FF', assemblyId: 'switch-sp-20a' },
-  { id: crypto.randomUUID(), code: 'HW',  name: 'Hard Wire',      category: 'Wiring',      color: '#8B00FF' },
-];
+// Tags are loaded from Supabase only - no local defaults
 
 const PALETTE = [
   '#000000','#666666','#999999','#CCCCCC','#FFFFFF',
@@ -277,7 +267,7 @@ export const useStore = create<State>()((set, get) => ({
       selectedIds: [],
       history: {},
 
-      tags: DEFAULT_TAGS,
+      tags: [], // Start empty - tags are loaded from Supabase only
       palette: PALETTE,
       projectTagIds: [],
 
@@ -787,40 +777,9 @@ export const useStore = create<State>()((set, get) => ({
 
         console.log(`[fromProject] Loading project with ${rawTags.length} tags from saved data`);
 
-        // Merge in any missing master tags (but skip deleted ones)
-        const existingCodes = new Set(rawTags.map(t => (t.code || '').toUpperCase()));
-        const deletedCodes = new Set(get().deletedTagCodes.map(c => c.toUpperCase()));
-        const missingMasterTags = DEFAULT_MASTER_TAGS
-          .filter(mt => {
-            const mtCode = (mt.code || '').toUpperCase();
-            return !existingCodes.has(mtCode) && !deletedCodes.has(mtCode);
-          })
-          .map(mt => {
-            const tag: Tag = {
-              id: crypto.randomUUID(),
-              code: mt.code,
-              name: mt.name,
-              color: mt.color,
-              category: mt.category,
-              assemblyId: undefined
-            };
-            if (mt.customMaterialCost !== undefined) tag.customMaterialCost = mt.customMaterialCost;
-            if (mt.customLaborHours !== undefined) tag.customLaborHours = mt.customLaborHours;
-            return tag;
-          });
-
-        console.log(`[fromProject] Adding ${missingMasterTags.length} missing master tags (skipping ${deletedCodes.size} deleted)`);
-        if (missingMasterTags.length > 0) {
-          console.log(`[fromProject] Missing tags:`, missingMasterTags.map(t => t.code).join(', '));
-        }
-        if (deletedCodes.size > 0) {
-          console.log(`[fromProject] Deleted tags:`, Array.from(deletedCodes).join(', '));
-        }
-
-        const allTags = [...rawTags, ...missingMasterTags];
-
+        // No auto-merging of master tags - use only what's in the project file
         // Auto-assign assemblies to all tags when loading project
-        const tags = allTags.map(tag => {
+        const tags = rawTags.map(tag => {
           const tagWithAssembly = autoAssignAssembly({
             code: tag.code,
             category: tag.category,
