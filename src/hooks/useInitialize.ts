@@ -91,14 +91,13 @@ export function useInitialize() {
         console.log(`📊 Assembly comparison: ${comparison.matched} matched, ${comparison.missing.length} missing in DB, ${comparison.extra.length} extra in DB`);
 
         if (comparison.missing.length > 0) {
-          console.log(`⚠️ Missing assemblies:`, comparison.missing.map(a => a.code).join(', '));
+          console.log(`⚠️ Missing assemblies:`, comparison.missing.join(', '));
         }
         if (comparison.extra.length > 0) {
-          console.log(`ℹ️ Extra assemblies in DB (custom):`, comparison.extra.map(a => a.code).join(', '));
+          console.log(`ℹ️ Extra assemblies in DB (custom):`, comparison.extra.join(', '));
 
           // Fetch details of extra assemblies
-          const extraCodes = comparison.extra.map(a => a.code);
-          const extraAssemblies = await getAssembliesByCodes(extraCodes);
+          const extraAssemblies = await getAssembliesByCodes(comparison.extra);
           if (extraAssemblies.length > 0) {
             console.log('📋 Extra assembly details:');
             extraAssemblies.forEach(asm => {
