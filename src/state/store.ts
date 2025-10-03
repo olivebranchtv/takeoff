@@ -254,6 +254,9 @@ type State = {
   // Save status helpers
   setLastSaveTime: (time: Date | null) => void;
   getLastSaveTime: () => Date | null;
+
+  // Retroactive count helpers
+  addCountsForExistingMeasurements: () => number;
 };
 
 export const useStore = create<State>()((set, get) => ({
@@ -920,4 +923,73 @@ export const useStore = create<State>()((set, get) => ({
       deleteManualItem: (id) => set((s) => ({
         manualItems: s.manualItems.filter(item => item.id !== id)
       })),
+
+      // Retroactively add count objects for existing measurements
+      addCountsForExistingMeasurements: () => {
+        const s = get();
+        let countsAdded = 0;
+
+        // Process all pages
+        const updatedPages = s.pages.map(page => {
+          const newObjects: AnyTakeoffObject[] = [];
+
+          // Find all measurement objects (segment, polyline, freeform) with codes
+          for (const obj of page.objects) {
+            if (obj.type !== 'count' && obj.code) {
+              // Extract base tag from code (part before hyphen)
+              // e.g., "L2-1" -> "L2", "F-3" -> "F", "EM1" -> "EM1"
+              const baseTag = obj.code.split('-')[0].trim().toUpperCase();
+
+              // Check if this base tag exists in tags and if we should add a count
+              const tagExists = s.tags.some(t => t.code.toUpperCase() === baseTag);
+
+              if (tagExists && baseTag) {
+                // Calculate midpoint of the measurement
+                const vertices = (obj as any).vertices || [];
+                if (vertices.length >= 2) {
+                  const midIdx = Math.floor(vertices.length / 2);
+                  const midPoint = vertices[midIdx];
+
+                  // Check if count already exists at this location with this tag
+                  const countExists = page.objects.some(o =>
+                    o.type === 'count' &&
+                    o.code === baseTag &&
+                    Math.abs((o as any).x - midPoint.x) < 5 &&
+                    Math.abs((o as any).y - midPoint.y) < 5
+                  );
+
+                  if (!countExists) {
+                    newObjects.push({
+                      id: nextId(),
+                      type: 'count',
+                      code: baseTag,
+                      pageIndex: page.pageIndex,
+                      x: midPoint.x,
+                      y: midPoint.y,
+                      rotation: 0
+                    } as any);
+                    countsAdded++;
+                  }
+                }
+              }
+            }
+          }
+
+          // If we added any counts, return updated page
+          if (newObjects.length > 0) {
+            return {
+              ...page,
+              objects: [...page.objects, ...newObjects]
+            };
+          }
+          return page;
+        });
+
+        // Update state if we added any counts
+        if (countsAdded > 0) {
+          set({ pages: updatedPages });
+        }
+
+        return countsAdded;
+      },
     }));

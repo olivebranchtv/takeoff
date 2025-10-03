@@ -20,7 +20,7 @@ type Summary = {
 };
 
 export default function BomPanel({ open, onToggle }: Props) {
-  const { pages, manualItems, addManualItem, updateManualItem, deleteManualItem } = useStore();
+  const { pages, manualItems, addManualItem, updateManualItem, deleteManualItem, addCountsForExistingMeasurements } = useStore();
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [newItem, setNewItem] = useState<Omit<ManualItem, 'id'>>({
     description: '',
@@ -105,6 +105,15 @@ export default function BomPanel({ open, onToggle }: Props) {
     };
   }, [pages]);
 
+  function handleAddCounts() {
+    const count = addCountsForExistingMeasurements();
+    if (count > 0) {
+      alert(`Added ${count} fixture count(s) from existing measurements!`);
+    } else {
+      alert('No new counts added. All measurements already have counts or no valid measurements found.');
+    }
+  }
+
   function exportCSV() {
     const rows: string[][] = [];
     rows.push(['Metric', 'Value']);
@@ -156,7 +165,16 @@ export default function BomPanel({ open, onToggle }: Props) {
           </button>
           <div className="label">BOM Summary</div>
         </div>
-        <button className="btn" onClick={exportCSV}>Export CSV</button>
+        <div style={{display:'flex', gap:8}}>
+          <button
+            className="btn"
+            onClick={handleAddCounts}
+            title="Add fixture counts for existing measurements (L2-1, F-1, etc.)"
+          >
+            Add Counts
+          </button>
+          <button className="btn" onClick={exportCSV}>Export CSV</button>
+        </div>
       </div>
 
       {open ? (
