@@ -150,7 +150,8 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
             material_cost: cost,
             labor_hours: laborHours > 0 ? laborHours : undefined,
             vendor: row['supplier'] || row['Supplier'] || row['Vendor'] || row['vendor'],
-            vendor_part_number: row['Part Number'] || row['Part #']
+            vendor_part_number: row['Part Number'] || row['Part #'],
+            last_updated: new Date().toISOString()
           });
 
           loaded++;
