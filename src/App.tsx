@@ -381,6 +381,7 @@ export default function App() {
       tags: state.tags,
       pdf: pdfBytesBase64 ? { name: pdfName || fileName || 'document.pdf', bytesBase64: pdfBytesBase64 } : undefined
     };
+    console.log('[Save to DB] Saving project with PDF:', !!projectData.pdf, 'PDF bytes length:', projectData.pdf?.bytesBase64?.length);
     const success = await saveProjectToSupabase(projectData);
     if (success) {
       state.setLastSaveTime(new Date());
@@ -413,6 +414,7 @@ export default function App() {
     }
 
     const projectData = await loadProjectByIdFromSupabase(projects[index].id);
+    console.log('[Load from DB] Project data loaded:', !!projectData, 'Has PDF:', !!projectData?.pdf, 'PDF bytes length:', projectData?.pdf?.bytesBase64?.length);
     if (projectData) {
       // Load project into store
       useStore.getState().fromProject(projectData);
