@@ -22,6 +22,7 @@ type Summary = {
 export default function BomPanel({ open, onToggle }: Props) {
   const { pages, manualItems, addManualItem, updateManualItem, deleteManualItem, addCountsForExistingMeasurements } = useStore();
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [autoAddComplete, setAutoAddComplete] = useState(false);
   const [newItem, setNewItem] = useState<Omit<ManualItem, 'id'>>({
     description: '',
     quantity: 0,
@@ -30,6 +31,19 @@ export default function BomPanel({ open, onToggle }: Props) {
     itemCode: '',
     notes: ''
   });
+
+  // Auto-add counts on mount (only once per session)
+  React.useEffect(() => {
+    if (!autoAddComplete) {
+      setTimeout(() => {
+        const count = addCountsForExistingMeasurements();
+        if (count > 0) {
+          console.log(`Auto-added ${count} fixture counts`);
+        }
+        setAutoAddComplete(true);
+      }, 500);
+    }
+  }, [autoAddComplete, addCountsForExistingMeasurements]);
 
   const data = useMemo<Summary>(() => {
     let totalTags = 0;

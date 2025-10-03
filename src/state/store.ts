@@ -929,36 +929,55 @@ export const useStore = create<State>()((set, get) => ({
         const s = get();
         let countsAdded = 0;
 
+        console.log('🔍 Starting retroactive count addition...');
+        console.log(`Total pages: ${s.pages.length}`);
+        console.log(`Total tags: ${s.tags.length}`);
+        console.log(`Tags:`, s.tags.map(t => t.code));
+
         // Process all pages
         const updatedPages = s.pages.map(page => {
           const newObjects: AnyTakeoffObject[] = [];
 
+          console.log(`\n📄 Page ${page.pageIndex}: ${page.objects.length} objects`);
+
           // Find all measurement objects (segment, polyline, freeform) with codes
           for (const obj of page.objects) {
-            if (obj.type !== 'count' && obj.code) {
+            console.log(`  Object type: ${obj.type}, code: ${(obj as any).code}`);
+
+            if (obj.type !== 'count' && (obj as any).code) {
+              const code = String((obj as any).code || '').trim();
+              console.log(`    ✓ Measurement found with code: "${code}"`);
+
               // Extract base tag from code (part before hyphen)
               // e.g., "L2-1" -> "L2", "F-3" -> "F", "EM1" -> "EM1"
-              const baseTag = obj.code.split('-')[0].trim().toUpperCase();
+              const baseTag = code.split('-')[0].trim().toUpperCase();
+              console.log(`    Base tag extracted: "${baseTag}"`);
 
               // Check if this base tag exists in tags and if we should add a count
-              const tagExists = s.tags.some(t => t.code.toUpperCase() === baseTag);
+              const tagExists = s.tags.some(t => norm(t.code) === norm(baseTag));
+              console.log(`    Tag exists in database: ${tagExists}`);
 
               if (tagExists && baseTag) {
                 // Calculate midpoint of the measurement
                 const vertices = (obj as any).vertices || [];
+                console.log(`    Vertices count: ${vertices.length}`);
+
                 if (vertices.length >= 2) {
                   const midIdx = Math.floor(vertices.length / 2);
                   const midPoint = vertices[midIdx];
+                  console.log(`    Midpoint: (${midPoint.x}, ${midPoint.y})`);
 
                   // Check if count already exists at this location with this tag
                   const countExists = page.objects.some(o =>
                     o.type === 'count' &&
-                    o.code === baseTag &&
+                    norm((o as any).code) === norm(baseTag) &&
                     Math.abs((o as any).x - midPoint.x) < 5 &&
                     Math.abs((o as any).y - midPoint.y) < 5
                   );
+                  console.log(`    Count already exists: ${countExists}`);
 
                   if (!countExists) {
+                    console.log(`    ✅ Adding count for ${baseTag}`);
                     newObjects.push({
                       id: nextId(),
                       type: 'count',
@@ -977,6 +996,7 @@ export const useStore = create<State>()((set, get) => ({
 
           // If we added any counts, return updated page
           if (newObjects.length > 0) {
+            console.log(`  📌 Adding ${newObjects.length} new count objects to page ${page.pageIndex}`);
             return {
               ...page,
               objects: [...page.objects, ...newObjects]
@@ -987,7 +1007,10 @@ export const useStore = create<State>()((set, get) => ({
 
         // Update state if we added any counts
         if (countsAdded > 0) {
+          console.log(`\n✅ Total counts added: ${countsAdded}`);
           set({ pages: updatedPages });
+        } else {
+          console.log('\n❌ No counts were added');
         }
 
         return countsAdded;
