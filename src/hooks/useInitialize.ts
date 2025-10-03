@@ -26,6 +26,15 @@ export function useInitialize() {
         if (result && result.tags && result.tags.length > 0) {
           console.log(`✅ Loaded ${result.tags.length} tags from Supabase`);
 
+          // Count how many tags have assemblies assigned
+          const tagsWithAssemblies = result.tags.filter((t: any) => t.assemblyId).length;
+          console.log(`   📋 ${tagsWithAssemblies} tags have assemblies assigned`);
+
+          // Check specifically for lights with assemblies
+          const lightTags = result.tags.filter((t: any) => t.category?.toLowerCase().includes('light'));
+          const lightsWithAssemblies = lightTags.filter((t: any) => t.assemblyId).length;
+          console.log(`   💡 ${lightsWithAssemblies} of ${lightTags.length} light tags have assemblies assigned`);
+
           // Check if TCLK has custom pricing
           const tclk = result.tags.find(t => t.code === 'TCLK');
           if (tclk) {
