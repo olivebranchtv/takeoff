@@ -135,6 +135,17 @@ export default function App() {
   /* ---------- Warn before closing if project not saved ---------- */
   useAutoSave();
 
+  // Prevent accidental browser close
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = ''; // Chrome requires returnValue to be set
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
   /* ---------- store ---------- */
   const {
     tool, setTool,
