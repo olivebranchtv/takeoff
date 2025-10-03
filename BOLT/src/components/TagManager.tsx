@@ -468,9 +468,8 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       }
 
       if (!exists) {
+        // Only add code, name, category, color - NEVER pricing (pricing comes from Supabase only)
         const tagToAdd: any = { code: mt.code, name: mt.name, category: mt.category, color: mt.color };
-        if (mt.customMaterialCost !== undefined) tagToAdd.customMaterialCost = mt.customMaterialCost;
-        if (mt.customLaborHours !== undefined) tagToAdd.customLaborHours = mt.customLaborHours;
         addTag(tagToAdd);
         added++;
       }
