@@ -12,7 +12,6 @@ import type {
 } from '@/types';
 import { STANDARD_ASSEMBLIES } from '@/constants/assemblies';
 import { autoAssignAssembly } from '@/utils/tagAssemblyMapping';
-import { saveTagsToSupabase } from '@/utils/supabasePricing';
 import type { ProjectAnalysis } from '@/utils/openaiAnalysis';
 import { loadAssembliesFromSupabase, saveAssemblyToSupabase } from '@/utils/supabaseAssemblies';
 
@@ -173,6 +172,7 @@ type State = {
 
   // SAVE STATUS
   lastSaveTime: Date | null;
+  isSaving: boolean;
 
   // setters & actions
   setFileName: (n: string) => void;
@@ -244,6 +244,7 @@ type State = {
   // Save status helpers
   setLastSaveTime: (time: Date | null) => void;
   getLastSaveTime: () => Date | null;
+  setIsSaving: (saving: boolean) => void;
 
   // Retroactive count helpers
   addCountsForExistingMeasurements: () => number;
@@ -291,6 +292,7 @@ export const useStore = create<State>()((set, get) => ({
 
       // initialize last save time as null
       lastSaveTime: null,
+      isSaving: false,
 
       setFileName: (n) => set({ fileName: n, projectName: get().projectName || baseNameNoExt(n) }),
       setProjectName: (n) => set({ projectName: n || 'Untitled Project' }),
@@ -469,8 +471,7 @@ export const useStore = create<State>()((set, get) => ({
           else delete overrides[codeKey];
         }
 
-        // Save to Supabase asynchronously (include deletedTagCodes)
-        saveTagsToSupabase(tags, overrides, s.deletedTagCodes).catch(err => console.error('Failed to save tags to Supabase:', err));
+        // Tags are auto-saved by useTagAutoSave hook - no manual save needed
 
         return { tags, colorOverrides: overrides };
       }),
@@ -552,8 +553,7 @@ export const useStore = create<State>()((set, get) => ({
           delete overrides[nextCode];
         }
 
-        // Save to Supabase asynchronously (include deletedTagCodes)
-        saveTagsToSupabase(tags, overrides, s.deletedTagCodes).catch(err => console.error('Failed to save tags to Supabase:', err));
+        // Tags are auto-saved by useTagAutoSave hook - no manual save needed
 
         return { tags, colorOverrides: overrides, projectTagIds: s.projectTagIds.filter(pid => pid !== id) };
       }),
@@ -590,8 +590,7 @@ export const useStore = create<State>()((set, get) => ({
           })
         })) : s.pages;
 
-        // Save to Supabase asynchronously (include deletedTagCodes)
-        saveTagsToSupabase(tags, overrides, deletedTagCodes).catch(err => console.error('Failed to save tags to Supabase:', err));
+        // Tags are auto-saved by useTagAutoSave hook - no manual save needed
 
         return { tags, projectTagIds: s.projectTagIds.filter(pid => pid !== id), colorOverrides: overrides, deletedTagCodes, pages };
       }),
@@ -692,8 +691,7 @@ export const useStore = create<State>()((set, get) => ({
         }
         const keep = s.projectTagIds.filter(id => merged.some(t => t.id === id));
 
-        // Save to Supabase asynchronously (include deletedTagCodes)
-        saveTagsToSupabase(merged, overrides, s.deletedTagCodes).catch(err => console.error('Failed to save tags to Supabase:', err));
+        // Tags are auto-saved by useTagAutoSave hook - no manual save needed
 
         return { tags: merged, projectTagIds: keep, colorOverrides: overrides };
       }),
@@ -852,6 +850,7 @@ export const useStore = create<State>()((set, get) => ({
       /** ===== Save status helpers ===== */
       setLastSaveTime: (time) => set({ lastSaveTime: time }),
       getLastSaveTime: () => get().lastSaveTime,
+      setIsSaving: (saving) => set({ isSaving: saving }),
 
       /** ===== Assembly management ===== */
       addAssembly: (assembly) => set((s) => ({
