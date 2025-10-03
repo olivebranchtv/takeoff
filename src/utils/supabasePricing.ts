@@ -34,6 +34,9 @@ export interface CompanySettings {
   default_profit_percentage: number;
   default_labor_rate: number;
   material_tax_rate: number;
+  material_waste_factor?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface LaborRate {

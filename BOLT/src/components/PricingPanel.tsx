@@ -41,6 +41,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
   const [costs, setCosts] = useState<ProjectCosts | null>(null);
   const [competitiveBidEnabled, setCompetitiveBidEnabled] = useState(false);
   const [adjustedLaborRate, setAdjustedLaborRate] = useState(30.0);
+  const [materialWastePct, setMaterialWastePct] = useState(0);
   const [adjustedCosts, setAdjustedCosts] = useState<ProjectCosts | null>(null);
 
   useEffect(() => {
@@ -55,6 +56,9 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
       setOverheadPct(settings.default_overhead_percentage);
       setProfitPct(settings.default_profit_percentage);
       setTaxRate(settings.material_tax_rate * 100);
+      if (settings.material_waste_factor !== undefined) {
+        setMaterialWastePct(settings.material_waste_factor * 100);
+      }
     }
 
     const materials = await loadMaterialPricingFromSupabase();
@@ -178,7 +182,8 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
       default_overhead_percentage: overheadPct,
       default_profit_percentage: profitPct,
       default_labor_rate: 30.0,
-      material_tax_rate: taxRate / 100
+      material_tax_rate: taxRate / 100,
+      material_waste_factor: materialWastePct / 100
     });
 
     if (saved) {
@@ -229,12 +234,13 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
         default_overhead_percentage: overheadPct,
         default_profit_percentage: profitPct,
         default_labor_rate: 30.0,
-        material_tax_rate: taxRate / 100
+        material_tax_rate: taxRate / 100,
+        material_waste_factor: materialWastePct / 100
       });
     }, 1000);
 
     return () => clearTimeout(saveSettingsDebounced);
-  }, [overheadPct, profitPct, taxRate]);
+  }, [overheadPct, profitPct, taxRate, materialWastePct]);
 
   // Calculate costs whenever inputs change (including when prices finish loading)
   useEffect(() => {
@@ -273,16 +279,20 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
       setCosts(calculated);
 
       // Calculate adjusted costs if competitive bidding is enabled
-      if (competitiveBidEnabled && adjustedLaborRate !== 30.0) {
+      if (competitiveBidEnabled && (adjustedLaborRate !== 30.0 || materialWastePct > 0)) {
         // Create a new pricing database with adjusted labor rate
         const tempDb = new PricingDatabase(adjustedLaborRate);
 
-        // Copy all material prices from original database
+        // Copy all material prices from original database and apply waste factor
         const allKeys = pricingDb.getAllKeys();
         for (const key of allKeys) {
           const price = pricingDb.getMaterialPriceByKey(key);
           if (price) {
-            tempDb.setMaterialPrice(key, price);
+            // Apply material waste factor to material costs only
+            const adjustedPrice = materialWastePct > 0
+              ? { ...price, materialCost: price.materialCost * (1 + materialWastePct / 100) }
+              : price;
+            tempDb.setMaterialPrice(key, adjustedPrice);
           }
         }
 
@@ -316,7 +326,7 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
     } catch (error) {
       console.error('Error calculating costs:', error);
     }
-  }, [pages, tags, assemblies, manualItems, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment, lightingPackage, gearPackage, miscPackage, lightingOverheadPct, lightingProfitPct, gearOverheadPct, gearProfitPct, miscOverheadPct, miscProfitPct, pricesLoaded, priceCount, competitiveBidEnabled, adjustedLaborRate]);
+  }, [pages, tags, assemblies, manualItems, pricingDb, overheadPct, profitPct, taxRate, shipping, equipment, lightingPackage, gearPackage, miscPackage, lightingOverheadPct, lightingProfitPct, gearOverheadPct, gearProfitPct, miscOverheadPct, miscProfitPct, pricesLoaded, priceCount, competitiveBidEnabled, adjustedLaborRate, materialWastePct]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -516,6 +526,31 @@ export function PricingPanel({ pages, onClose }: PricingPanelProps) {
               />
               <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
                 Standard rate: $30/hr • Current: ${adjustedLaborRate}/hr
+              </div>
+
+              {/* Material Waste Factor */}
+              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #ddd' }}>
+                <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px', color: '#666', fontWeight: '500' }}>
+                  🔧 Material Waste Factor (%)
+                </label>
+                <input
+                  type="number"
+                  value={materialWastePct}
+                  onChange={(e) => setMaterialWastePct(parseFloat(e.target.value) || 0)}
+                  step="0.5"
+                  min="0"
+                  max="50"
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    border: '1px solid #1976d2',
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                  }}
+                />
+                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                  Adds {materialWastePct}% to material costs only (labor unaffected)
+                </div>
               </div>
 
               {/* Lighting Package Markup */}
