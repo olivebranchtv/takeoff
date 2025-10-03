@@ -1054,7 +1054,6 @@ export default function App() {
 
     const projectName = useStore.getState().getProjectName()?.trim() || 'Project Name';
 
-    // Tab 1: Fixture Counts
     const lightingRows = Array.from(countByCode.entries())
       .filter(([code]) => isLighting(code))
       .map(([code, count]) => ({
@@ -1064,82 +1063,29 @@ export default function App() {
       }))
       .sort((a, b) => a.Code.localeCompare(b.Code));
 
+    // Calculate total count
     const totalCount = lightingRows.reduce((sum, row) => sum + row.Count, 0);
 
-    const countsData: any[][] = [
-      [`Project:  ${projectName}`, '', ''],
-      [],
-      ['Code', 'Name', 'Count'],
+    // Create the data array with header and total row
+    const data: any[][] = [
+      [`Project:  ${projectName}`, '', ''], // Project header row
+      [], // Empty row
+      ['Code', 'Name', 'Count'], // Column headers
       ...lightingRows.map(row => [row.Code, row.Name, row.Count]),
-      ['Total', '', totalCount]
+      ['Total', '', totalCount] // Total row
     ];
 
     const wb = XLSX.utils.book_new();
-    const ws1 = XLSX.utils.aoa_to_sheet(countsData);
-    ws1['!cols'] = [
-      { wch: 10 },
-      { wch: 30 },
-      { wch: 10 }
-    ];
-    XLSX.utils.book_append_sheet(wb, ws1, 'Lighting Fixtures');
+    const ws = XLSX.utils.aoa_to_sheet(data);
 
-    // Tab 2: Measurements (Linear Runs)
-    const measurements: any[] = [];
-    pages.forEach((page, pageIdx) => {
-      page.objects.forEach(obj => {
-        if (obj.type !== 'count' && obj.code) {
-          const lengthFt = obj.lengthFt ?? obj.result?.baseLengthFt ?? 0;
-          const emtSize = obj.result?.raceway?.emtSize || obj.measure?.emtSize || '';
-          const racewayLf = obj.result?.raceway?.lengthFt || 0;
-
-          measurements.push({
-            Code: obj.code,
-            Name: nameForCode(obj.code),
-            Type: obj.type === 'segment' ? 'Segment' : obj.type === 'polyline' ? 'Polyline' : 'Freeform',
-            'Length (LF)': lengthFt,
-            'EMT Size': emtSize,
-            'Raceway LF': racewayLf,
-            Page: pageIdx + 1,
-            Note: obj.note || ''
-          });
-        }
-      });
-    });
-
-    measurements.sort((a, b) => a.Code.localeCompare(b.Code) || a.Page - b.Page);
-
-    const totalLength = measurements.reduce((sum, m) => sum + (m['Length (LF)'] || 0), 0);
-    const totalRaceway = measurements.reduce((sum, m) => sum + (m['Raceway LF'] || 0), 0);
-
-    const measurementsData: any[][] = [
-      [`Project:  ${projectName}`, '', '', '', '', '', '', ''],
-      [],
-      ['Code', 'Name', 'Type', 'Length (LF)', 'EMT Size', 'Raceway LF', 'Page', 'Note'],
-      ...measurements.map(m => [
-        m.Code,
-        m.Name,
-        m.Type,
-        typeof m['Length (LF)'] === 'number' ? +m['Length (LF)'].toFixed(2) : '',
-        m['EMT Size'],
-        typeof m['Raceway LF'] === 'number' ? +m['Raceway LF'].toFixed(2) : '',
-        m.Page,
-        m.Note
-      ]),
-      ['Total', '', '', totalLength.toFixed(2), '', totalRaceway.toFixed(2), '', '']
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 10 },  // Code column
+      { wch: 30 },  // Name column
+      { wch: 10 }   // Count column
     ];
 
-    const ws2 = XLSX.utils.aoa_to_sheet(measurementsData);
-    ws2['!cols'] = [
-      { wch: 10 },  // Code
-      { wch: 30 },  // Name
-      { wch: 12 },  // Type
-      { wch: 12 },  // Length
-      { wch: 10 },  // EMT Size
-      { wch: 12 },  // Raceway LF
-      { wch: 8 },   // Page
-      { wch: 30 }   // Note
-    ];
-    XLSX.utils.book_append_sheet(wb, ws2, 'Measurements');
+    XLSX.utils.book_append_sheet(wb, ws, 'Lighting');
 
     const baseName = projectName + ' - Fixtures';
     XLSX.writeFile(wb, `${baseName}.xlsx`);
