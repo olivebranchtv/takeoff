@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <link rel="icon" type="image/png" href="/SKD Logo.png" />
+    <title>SKD Services - Takeoff Tool</title>
+    <style>
+      html, body, #root { height: 100%; margin: 0; }
+      body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; font-size: 16px; }
+      .toolbar { display:flex; gap:12px; padding:12px 16px; border-bottom:1px solid #ddd; align-items:center; }
+      .btn { padding:10px 16px; border:1px solid #bbb; border-radius:6px; background:#fff; cursor:pointer; font-size: 16px; }
+      .btn.active { background:#efefef; }
+      .viewer { height: calc(100% - 58px); display:flex; }
+      .sidebar { width: 280px; border-right:1px solid #ddd; padding:10px; overflow:auto; background:#fafafa; }
+      .content { flex:1; position:relative; overflow:auto; background:#f6f7f9; }
+      .pageBox { position: relative; margin: 24px auto; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.1); }
+      .hud { position:fixed; right:12px; bottom:12px; background:#000; color:#fff; padding:8px 12px; border-radius:6px; opacity:.8; font-size:14px; }
+      .badge { font-size:15px; border:1px solid #ddd; padding:3px 10px; border-radius:4px; }
+      .calib { position:absolute; right:8px; top:8px; background:#fff; border:1px solid #ddd; padding:4px 8px; border-radius:4px; font-size:13px;}
+      .drop { border:2px dashed #aaa; padding:16px; text-align:center; border-radius:8px; background:#fff; margin:16px; font-size: 16px; }
+      .tagPalette button { margin-right:8px; margin-bottom:8px; }
+      .fileRow { display:flex; gap:10px; align-items:center; margin:6px 0; }
+      .label { font-size:16px; color:#555; font-weight:600; }
+      .zoomBox { display:flex; gap:6px; align-items:center; }
+      .sectionTitle { font-weight:600; margin:10px 0 6px; font-size:16px; }
+      ul.help { padding-left:20px; font-size:15px; line-height:1.5; margin:6px 0 16px; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

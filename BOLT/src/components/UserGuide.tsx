@@ -1,0 +1,929 @@
+/**
+ * User Guide Modal - Complete A to Z Guide
+ */
+
+import React from 'react';
+
+interface UserGuideProps {
+  onClose: () => void;
+}
+
+export function UserGuide({ onClose }: UserGuideProps) {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.7)',
+        zIndex: 10000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+        overflow: 'auto'
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: '#fff',
+          borderRadius: '12px',
+          width: '95%',
+          maxWidth: '900px',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 25px 80px rgba(0,0,0,0.5)'
+        }}
+      >
+        <div
+          style={{
+            padding: '20px 24px',
+            borderBottom: '2px solid #e0e0e0',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: '#0d3b66',
+            color: '#fff',
+            borderTopLeftRadius: '12px',
+            borderTopRightRadius: '12px'
+          }}
+        >
+          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold' }}>
+            📘 Electrical Takeoff & Bidding - User Guide
+          </h2>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#fff',
+              fontSize: '32px',
+              cursor: 'pointer',
+              lineHeight: '24px',
+              padding: '0 8px'
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        <div
+          style={{
+            flex: 1,
+            overflow: 'auto',
+            padding: '30px',
+            fontSize: '15px',
+            lineHeight: '1.7'
+          }}
+        >
+          <Section title="🚀 Quick Start - 3 Easy Steps">
+            <Step num={1} title="Do Your Takeoff (5-15 minutes)">
+              <ul>
+                <li>Click <strong>"Load PDF"</strong> and select electrical drawings</li>
+                <li><strong>Calibrate</strong> each page (click two points of known distance)</li>
+                <li><strong>Add project tags</strong> from master database (R1, L1, S1, etc.)</li>
+                <li><strong>Tag devices</strong> on drawings using Count tool</li>
+                <li><strong>Draw homeruns</strong> using Segment/Polyline tools</li>
+                <li><strong>Assign assemblies</strong> to each tag</li>
+              </ul>
+            </Step>
+
+            <Step num={2} title="Calculate Costs (2 minutes)">
+              <ul>
+                <li>Click <strong>"💰 Pricing & Bidding"</strong> (green button)</li>
+                <li>Click <strong>"📁 Upload Pricing Excel"</strong> to load material costs</li>
+                <li>Adjust <strong>Overhead %</strong> (default: 10%)</li>
+                <li>Adjust <strong>Profit %</strong> (default: 10%)</li>
+                <li>Add <strong>Equipment Rental</strong> costs if needed</li>
+              </ul>
+            </Step>
+
+            <Step num={3} title="Generate Bid (1 minute)">
+              <ul>
+                <li>Review cost summary</li>
+                <li>Click <strong>"Export Bid Summary (Excel)"</strong></li>
+                <li>Send to client!</li>
+              </ul>
+            </Step>
+          </Section>
+
+          <Section title="📐 Step-by-Step: Complete Takeoff Process">
+            <SubSection title="A. Load and Prepare Drawings">
+              <ol>
+                <li><strong>Click "Load PDF"</strong> in top toolbar</li>
+                <li>Select your electrical drawings (can be multi-page)</li>
+                <li>PDF loads and displays first page</li>
+                <li>Use page navigation arrows to switch between pages</li>
+              </ol>
+            </SubSection>
+
+            <SubSection title="B. Calibrate Each Page">
+              <ol>
+                <li>Find a known dimension on drawing (e.g., 10'-0" wall)</li>
+                <li>Click <strong>Calibrate button</strong> in toolbar</li>
+                <li>Click first point of known dimension</li>
+                <li>Click second point</li>
+                <li>Enter actual distance in feet (e.g., 10)</li>
+                <li>System calculates pixels per foot</li>
+                <li><strong>Important:</strong> Repeat for EACH page (scales may vary)</li>
+              </ol>
+            </SubSection>
+
+            <SubSection title="C. Add Project Tags">
+              <ol>
+                <li>Click <strong>"Add from DB"</strong> button in Project Tags bar</li>
+                <li>Browse master tag database (75+ pre-configured tags)</li>
+                <li>Click tags to add to project (R1-R50, L1-L50, S1-S50, etc.)</li>
+                <li>Close picker when done</li>
+                <li>Tags appear in Project Tags bar for quick access</li>
+              </ol>
+              <div style={{background: '#e3f2fd', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>💡 Tag Naming Convention:</strong>
+                <ul style={{marginBottom: 0, marginTop: '8px'}}>
+                  <li><strong>R1-R50:</strong> Receptacles</li>
+                  <li><strong>L1-L50:</strong> Lighting fixtures</li>
+                  <li><strong>S1-S50:</strong> Switches</li>
+                  <li><strong>P1-P10:</strong> Panels</li>
+                  <li><strong>D1-D50:</strong> Data/communications</li>
+                </ul>
+              </div>
+            </SubSection>
+
+            <SubSection title="D. Tag Devices on Drawings">
+              <ol>
+                <li>Select a tag from Project Tags bar (e.g., R1)</li>
+                <li>Tool automatically switches to <strong>Count</strong> mode</li>
+                <li>Click on each device location on the drawing</li>
+                <li>Symbol appears with tag code</li>
+                <li>Switch to next tag and repeat</li>
+                <li>Continue until all devices are tagged</li>
+              </ol>
+              <div style={{background: '#fff3cd', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>⚠️ Tips:</strong>
+                <ul style={{marginBottom: 0, marginTop: '8px'}}>
+                  <li>Use consistent naming (R1 for all standard receptacles)</li>
+                  <li>Different tags for different types (R1 = 20A, R2 = GFCI)</li>
+                  <li>Click accurately on device locations</li>
+                  <li>Can delete symbols by selecting and pressing Delete</li>
+                </ul>
+              </div>
+            </SubSection>
+
+            <SubSection title="E. Draw Homerun Conduits">
+              <ol>
+                <li>Click <strong>Segment tool</strong> for straight runs</li>
+                <li>Or click <strong>Polyline tool</strong> for multi-segment runs</li>
+                <li>Click to start homerun at device/panel</li>
+                <li>Click intermediate points (corners, turns)</li>
+                <li>Double-click to finish</li>
+                <li>Measurement dialog appears</li>
+                <li>Enter conduit size, wire specs, conductor count</li>
+                <li>System auto-calculates quantities</li>
+              </ol>
+            </SubSection>
+
+            <SubSection title="F. Assign Assemblies to Tags">
+              <ol>
+                <li>Click <strong>"Assemblies"</strong> button in toolbar</li>
+                <li>Assembly Manager modal opens</li>
+                <li>Find your tag in the list (e.g., R1)</li>
+                <li>Click <strong>"Choose Assembly"</strong></li>
+                <li>Browse 150+ pre-built assemblies from cloud database</li>
+                <li>Select appropriate assembly (e.g., "RECEP-20A")</li>
+                <li>Assembly details show materials and quantities</li>
+                <li>Click to assign</li>
+                <li>Repeat for all tags</li>
+              </ol>
+              <div style={{background: '#d4edda', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>✅ Available Assemblies (150+):</strong>
+                <ul style={{marginBottom: 0, marginTop: '8px'}}>
+                  <li>Receptacles (15A, 20A, GFCI, IG, Floor, USB, 208V, 240V)</li>
+                  <li>Switches (1P, 3W, 4W, Dimmer, Occupancy, Timer)</li>
+                  <li>Lighting (2x4/2x2 Troffers, High-Bays, Downlights)</li>
+                  <li>Panels (42-ckt, 24-ckt, Disconnects)</li>
+                  <li>Data/Comm (CAT6, CAT6A, Fiber)</li>
+                  <li>Fire Alarm, Security, Emergency Power</li>
+                  <li>And 130+ more specialized assemblies!</li>
+                </ul>
+              </div>
+              <div style={{background: '#e3f2fd', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>☁️ Cloud Database:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  All assemblies are stored in Supabase cloud database and automatically synced when you open the app.
+                  The app verifies sync status and reports any differences in the console on startup.
+                </p>
+              </div>
+            </SubSection>
+          </Section>
+
+          <Section title="📊 Export Bill of Materials">
+            <SubSection title="G. Export Full BOM (Excel)">
+              <ol>
+                <li>Click <strong>"Export Excel (Full BOM)"</strong></li>
+                <li>Professional Excel workbook downloads with 7 sheets:</li>
+                <ul>
+                  <li><strong>Cover Sheet:</strong> Project details, scope, and exclusions</li>
+                  <li><strong>Summary by Category:</strong> High-level device counts by CSI division</li>
+                  <li><strong>Bill of Materials:</strong> Complete material list with pricing, labor hours, and extended costs</li>
+                  <li><strong>Assembly Breakdown:</strong> Shows which assemblies were used and their materials</li>
+                  <li><strong>Device Counts:</strong> Tag-by-tag count with totals by category</li>
+                  <li><strong>Conduit & Wire Summary:</strong> All homerun conduit and conductor quantities</li>
+                  <li><strong>Takeoff Detail:</strong> Itemized measurements for every tag and line</li>
+                </ul>
+                <li>Includes waste factors automatically applied (wire 10%, conduit 5%, devices 2%)</li>
+                <li>Material costs pulled from Supabase database</li>
+                <li>Labor hours calculated using NECA standards</li>
+                <li>Total row shows sum of all material costs and labor hours</li>
+                <li>Ready to send to vendors for quotes or use for bidding</li>
+              </ol>
+            </SubSection>
+
+            <SubSection title="H. Export BOM Summary (CSV)">
+              <ul>
+                <li>Click <strong>"Export CSV"</strong> in BOM Panel</li>
+                <li>Quick CSV export with fixture counts by code</li>
+                <li>Includes total raceway LF, conductor LF, and boxes</li>
+                <li>Wire breakdown by size and material</li>
+                <li><strong>NEW:</strong> Includes TOTAL row summing all fixture counts</li>
+                <li>Perfect for quick reviews and email summaries</li>
+              </ul>
+            </SubSection>
+
+            <SubSection title="I. Manual Input Items (NEW!)">
+              <div style={{background: '#e3f2fd', padding: '15px', borderRadius: '6px', marginBottom: '15px'}}>
+                <strong>✨ Add Custom Items Directly to BOM:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  Need to add items that aren't part of your takeoff? Use Manual Input to add custom materials,
+                  equipment, or specialty items directly to your BOM with full pricing and labor control.
+                </p>
+              </div>
+              <ol>
+                <li>Open the <strong>BOM Panel</strong> (middle button in toolbar)</li>
+                <li>Scroll to the <strong>"Manual Input Items"</strong> section at the bottom</li>
+                <li>Click <strong>"+ Add Manual Item"</strong> button</li>
+                <li>Fill in the item details:</li>
+                <ul>
+                  <li><strong>Description:</strong> Item name (e.g., "Temporary Power Panel", "Site Mobilization")</li>
+                  <li><strong>Category:</strong> Select from dropdown (Panels, Equipment, Labor, Misc, etc.)</li>
+                  <li><strong>Quantity:</strong> Number of units</li>
+                  <li><strong>Unit:</strong> EA, LF, LS (Lump Sum), HR, etc.</li>
+                  <li><strong>Unit Cost:</strong> Material cost per unit</li>
+                  <li><strong>Labor Hours:</strong> Hours per unit</li>
+                </ul>
+                <li>Click <strong>"Add Item"</strong> to save</li>
+                <li>Item appears in the manual items list with calculated totals</li>
+                <li>Edit or delete items using the action buttons</li>
+              </ol>
+              <div style={{background: '#fff3cd', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>💡 Common Use Cases:</strong>
+                <ul style={{marginBottom: 0, marginTop: '8px'}}>
+                  <li><strong>Temporary Power:</strong> Temp panels, cords, drops not in drawings</li>
+                  <li><strong>Site Costs:</strong> Mobilization, permits, inspections, bonds</li>
+                  <li><strong>Equipment:</strong> Rental lifts, scaffolding, specialty tools</li>
+                  <li><strong>Specialty Items:</strong> Emergency generator hookup, testing, commissioning</li>
+                  <li><strong>Labor Only:</strong> Add "As-Built Drawings" as LS with 40 labor hours</li>
+                  <li><strong>Allowances:</strong> "Owner Changes Allowance" $5,000 lump sum</li>
+                </ul>
+              </div>
+              <div style={{background: '#d4edda', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>✅ Benefits:</strong>
+                <ul style={{marginBottom: 0, marginTop: '8px'}}>
+                  <li>Manual items integrate fully with BOM pricing calculations</li>
+                  <li>Included in Excel BOM export</li>
+                  <li>Labor hours add to total project labor</li>
+                  <li>Material costs add to material subtotal</li>
+                  <li>Subject to same overhead, profit, and tax calculations</li>
+                  <li>Saved with project file (.skdproj)</li>
+                </ul>
+              </div>
+            </SubSection>
+          </Section>
+
+          <Section title="🤖 AI Document Analysis (NEW!)">
+            <SubSection title="Automatic Drawing Analysis with OpenAI">
+              <div style={{background: '#e3f2fd', padding: '15px', borderRadius: '6px', marginBottom: '15px'}}>
+                <strong>✨ AI-Powered Features:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  Upload your electrical drawings and let AI extract key information automatically -
+                  fixture schedules, panel schedules, scope of work, and comprehensive project assumptions!
+                </p>
+              </div>
+              <ol>
+                <li>Click <strong>"⚙️ Settings"</strong> in top toolbar</li>
+                <li>Scroll to <strong>"AI Document Analysis"</strong> section</li>
+                <li>Enter your OpenAI API key (get from <a href="https://platform.openai.com" target="_blank" rel="noopener">platform.openai.com</a>)</li>
+                <li>Click Save</li>
+                <li>Load your PDF drawings</li>
+                <li>Click <strong>"🤖 Analyze with AI"</strong> button in toolbar</li>
+                <li>AI analyzes all pages and extracts information</li>
+                <li>Analysis modal opens with organized tabs</li>
+              </ol>
+            </SubSection>
+
+            <SubSection title="AI Analysis Tabs">
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '15px'}}>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>📋 Overview</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Fixture responsibility (owner vs contractor)</li>
+                    <li>Summary of lighting schedule</li>
+                    <li>Key project notes</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>📌 Assumptions</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Fixture supply & responsibility details</li>
+                    <li>Electrical contractor scope</li>
+                    <li>Lighting fixture schedule location</li>
+                    <li>Detailed fixtures list with specs</li>
+                    <li>Other pages notes</li>
+                    <li>Lighting controls & devices</li>
+                    <li>Fixture counts basis</li>
+                    <li>Waste factors & labor rates</li>
+                    <li>QA notes and clarifications</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>📄 Drawings</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Page-by-page analysis</li>
+                    <li>Page type identification</li>
+                    <li>Key findings per page</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>💡 Lighting</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Complete fixture schedule extracted</li>
+                    <li>Type, description, manufacturer</li>
+                    <li>Model, wattage, voltage, mounting</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>⚡ Panels</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Panel schedule details</li>
+                    <li>Voltage, phases, main breaker</li>
+                    <li>Location and feed information</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>📝 Scope</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Included work items</li>
+                    <li>Excluded work items</li>
+                    <li>Division of responsibilities</li>
+                  </ul>
+                </div>
+              </div>
+            </SubSection>
+
+            <SubSection title="Export AI Analysis Report">
+              <ul>
+                <li>Click <strong>"📥 Export Report"</strong> button in AI Analysis modal</li>
+                <li>Excel file downloads with complete analysis</li>
+                <li>Includes all assumptions organized by category</li>
+                <li>Fixture responsibility breakdown</li>
+                <li>Complete lighting and panel schedules</li>
+                <li>Scope of work details</li>
+                <li>Perfect for project documentation and bid reviews</li>
+              </ul>
+            </SubSection>
+
+            <SubSection title="AI Assumptions - Professional Format">
+              <div style={{background: '#fff3cd', padding: '15px', borderRadius: '6px', marginTop: '10px'}}>
+                <strong>📌 The AI generates comprehensive assumptions similar to what a senior estimator would write:</strong>
+                <ul style={{marginTop: '8px', marginBottom: 0, fontSize: '14px'}}>
+                  <li><strong>Fixture Supply:</strong> "All light fixtures (A-F) furnished by Owner (AutoZone)"</li>
+                  <li><strong>Electrical Scope:</strong> "Electrical Contractor scope is installation only, including conduit, wire, junction boxes, supports, and terminations"</li>
+                  <li><strong>Schedule Location:</strong> "The only Lighting Fixture Schedule is located on Sheet E-3 'Lighting Plans and Details'"</li>
+                  <li><strong>Fixtures Listed:</strong> "Type A: 2x4 LED Troffer, 30W" with all fixture types detailed</li>
+                  <li><strong>Controls:</strong> "M1 Occupancy Sensors are Owner-furnished. Recommended labor unit: 0.75-1.0 hrs each"</li>
+                  <li><strong>Waste Factors:</strong> "Wire 10%, conduit 5%, devices 2%"</li>
+                  <li><strong>Labor Rates:</strong> "Labor rate: $30/hr. Labor unit references: NECA Manual"</li>
+                </ul>
+              </div>
+            </SubSection>
+          </Section>
+
+          <Section title="☁️ Cloud Database Integration">
+            <SubSection title="Supabase Backend">
+              <div style={{background: '#e3f2fd', padding: '15px', borderRadius: '6px', marginBottom: '15px'}}>
+                <strong>🚀 Enterprise-Grade Cloud Database:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  The application uses Supabase (PostgreSQL) cloud database for persistent storage of assemblies,
+                  pricing data, and project tags. All data is automatically synced and available across sessions.
+                </p>
+              </div>
+            </SubSection>
+
+            <SubSection title="What's Stored in the Cloud">
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '15px'}}>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>⚙️ Assemblies (150+)</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Complete material breakdowns</li>
+                    <li>Labor hours per item</li>
+                    <li>Waste factors</li>
+                    <li>Assembly metadata</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>💰 Pricing Data (389+ items)</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Material costs by item code</li>
+                    <li>Labor hours per unit</li>
+                    <li>Category organization</li>
+                    <li>Updated from Excel uploads</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>🏷️ Master Tags</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Standardized tag codes</li>
+                    <li>Tag descriptions</li>
+                    <li>Category assignments</li>
+                    <li>Quick-select database</li>
+                  </ul>
+                </div>
+                <div style={{background: '#f8f9fa', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0'}}>
+                  <strong style={{color: '#667eea'}}>⚙️ Settings & Defaults</strong>
+                  <ul style={{fontSize: '13px', marginTop: '8px', marginBottom: 0}}>
+                    <li>Default markup percentages</li>
+                    <li>Tax rates</li>
+                    <li>Labor rates</li>
+                    <li>Waste factor defaults</li>
+                  </ul>
+                </div>
+              </div>
+            </SubSection>
+
+            <SubSection title="Automatic Sync on Startup">
+              <div style={{background: '#d4edda', padding: '15px', borderRadius: '6px', marginBottom: '15px'}}>
+                <strong>✅ What Happens When You Open the App:</strong>
+                <ol style={{marginTop: '8px', marginBottom: 0}}>
+                  <li>Loads 389 tags from Supabase</li>
+                  <li>Checks assemblies sync status</li>
+                  <li>Compares local (151) vs database assemblies</li>
+                  <li>Reports: "143 matched, 0 missing in DB, 0 extra in DB"</li>
+                  <li>Performs full sync if needed</li>
+                  <li>Loads all 154 assemblies from Supabase</li>
+                  <li>Console shows detailed sync status</li>
+                </ol>
+              </div>
+            </SubSection>
+
+            <SubSection title="Benefits of Cloud Storage">
+              <ul>
+                <li><strong>No Data Loss:</strong> All pricing and assemblies saved permanently</li>
+                <li><strong>Instant Access:</strong> Load data in seconds on any computer</li>
+                <li><strong>Always Updated:</strong> Latest prices available immediately after upload</li>
+                <li><strong>Sync Verification:</strong> Console shows sync status on every startup</li>
+                <li><strong>Multi-Device:</strong> Use on different computers with same data</li>
+                <li><strong>Automatic Backups:</strong> Supabase handles database backups</li>
+                <li><strong>Scalable:</strong> Add unlimited assemblies and pricing items</li>
+              </ul>
+            </SubSection>
+
+            <SubSection title="Console Sync Messages">
+              <div style={{background: '#f8f9fa', padding: '15px', borderRadius: '6px'}}>
+                <strong>On Startup, Check Browser Console (F12) to See:</strong>
+                <pre style={{background: '#fff', padding: '10px', borderRadius: '4px', overflow: 'auto', fontSize: '12px', marginTop: '8px'}}>
+{`✅ Loaded 389 tags from Supabase
+✅ Tags loaded successfully from Supabase
+ℹ️ Checking assemblies sync status...
+📊 Assembly comparison: 143 matched, 0 missing in DB, 0 extra in DB
+📊 Database has 143 active assemblies, expected 151
+✅ Saved 151 assemblies to database
+✅ Full sync completed
+📍 Loading all assemblies from Supabase...
+✅ Loaded 154 assemblies from Supabase`}
+                </pre>
+              </div>
+            </SubSection>
+          </Section>
+
+          <Section title="💰 Pricing and Bidding">
+            <SubSection title="I. Prepare Your Pricing Database">
+              <div style={{background: '#e3f2fd', padding: '15px', borderRadius: '6px', marginBottom: '15px'}}>
+                <strong>☁️ Cloud-Based Pricing:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  Material prices are stored in Supabase cloud database. Upload your Excel pricing file once,
+                  and prices are saved automatically for all future projects. The app loads 389+ tags with pricing
+                  on startup.
+                </p>
+              </div>
+              <div style={{background: '#f8f9fa', padding: '15px', borderRadius: '6px', marginBottom: '15px'}}>
+                <strong>Excel Format Required:</strong>
+                <pre style={{background: '#fff', padding: '10px', borderRadius: '4px', overflow: 'auto', fontSize: '13px', marginTop: '8px'}}>
+{`Item Code      | Description           | Category | Unit | Material Cost | Labor Hours
+---------------|------------------------|----------|------|---------------|-------------
+BOX-4SQ-1.5    | 4" Square Box         | Boxes    | EA   | 2.45          | 0.25
+RECEP-20A-125V | Receptacle 20A        | Devices  | EA   | 3.75          | 0.33
+WIRE-12-THHN   | #12 THHN CU           | Wire     | FT   | 0.35          | 0.015
+EMT-0.75       | EMT 3/4"              | Raceways | FT   | 0.42          | 0.12`}
+                </pre>
+              </div>
+              <ul>
+                <li>Get vendor quotes (Graybar, Rexel, CED)</li>
+                <li>Format in Excel with columns: Item Code, Description, Category, Unit, Material Cost, Labor Hours</li>
+                <li>Save as .xlsx file (Master_Pricing_Database_[date].xlsx)</li>
+                <li>Upload once - prices stored in cloud for all projects</li>
+              </ul>
+            </SubSection>
+
+            <SubSection title="J. Calculate Project Costs">
+              <ol>
+                <li>Click <strong>"💰 Pricing & Bidding"</strong> (green button)</li>
+                <li>Pricing panel opens on right side</li>
+                <li>Click <strong>"📁 Upload Pricing Excel"</strong></li>
+                <li>Select your pricing file</li>
+                <li>System uploads to Supabase and loads all material costs automatically</li>
+                <li>Status shows "✓ [Number] Material Prices Loaded from Supabase"</li>
+                <li>Prices are now available for all current and future projects</li>
+              </ol>
+              <div style={{background: '#fff3cd', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>💡 Tip:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  You only need to upload your pricing once! The cloud database saves all prices and makes them
+                  instantly available whenever you use the app. Update prices anytime by uploading a new file.
+                </p>
+              </div>
+            </SubSection>
+
+            <SubSection title="K. Configure Markup Settings">
+              <ul>
+                <li><strong>Overhead %:</strong> Default 10% (adjust for your company)</li>
+                <li><strong>Profit Margin %:</strong> Default 10% (adjust per job)</li>
+                <li><strong>Sales Tax %:</strong> Default 9.5% (your local rate)</li>
+                <li><strong>Shipping Cost $:</strong> Flat freight charge</li>
+                <li><strong>Equipment Rental $:</strong> Lifts, tools, generators</li>
+              </ul>
+            </SubSection>
+
+            <SubSection title="L. Review Cost Breakdown">
+              <div style={{background: '#f0f4f8', padding: '15px', borderRadius: '6px'}}>
+                <strong>System automatically calculates:</strong>
+                <ul style={{marginTop: '8px', marginBottom: 0}}>
+                  <li><strong>Material Cost:</strong> Quantities × Unit Prices</li>
+                  <li><strong>Material Tax:</strong> Material Cost × Tax %</li>
+                  <li><strong>Labor Cost:</strong> Hours × $30/hr (industry-standard hours per assembly)</li>
+                  <li><strong>Equipment:</strong> Your entered amount</li>
+                  <li><strong>Subtotal:</strong> Sum of all above</li>
+                  <li><strong>Overhead:</strong> Subtotal × Overhead %</li>
+                  <li><strong>Profit:</strong> (Subtotal + Overhead) × Profit %</li>
+                  <li><strong>TOTAL BID PRICE:</strong> Final amount</li>
+                </ul>
+              </div>
+            </SubSection>
+
+            <SubSection title="M. Competitive Bid Pricing (NEW!)">
+              <div style={{background: '#e3f2fd', padding: '15px', borderRadius: '6px', marginBottom: '15px'}}>
+                <strong>🎯 Work Backwards from Target Price:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  Know your competitor's price or have a target budget? Use Competitive Bid Pricing to automatically
+                  calculate what markup percentages you need to hit that exact number while maintaining your desired profit.
+                </p>
+              </div>
+              <ol>
+                <li>In the Pricing Panel, locate the <strong>"Competitive Bid Pricing"</strong> section</li>
+                <li>Enter your <strong>Target Total Price</strong> (the bid amount you want to match or beat)</li>
+                <li>Enter your <strong>Desired Profit %</strong> (e.g., 8%, 10%, 12%)</li>
+                <li>Click <strong>"Calculate Required Overhead"</strong></li>
+                <li>System calculates backwards from your target:</li>
+                <ul>
+                  <li>Takes your base costs (material + labor + equipment + tax)</li>
+                  <li>Applies your desired profit percentage</li>
+                  <li>Determines what overhead % will hit your target total exactly</li>
+                </ul>
+                <li>Review the <strong>suggested overhead %</strong> that appears</li>
+                <li>Click <strong>"Apply These Settings"</strong> to update your bid</li>
+                <li>Your pricing panel now shows the exact target price</li>
+              </ol>
+              <div style={{background: '#fff3cd', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>📊 Example Scenario:</strong>
+                <ul style={{marginBottom: 0, marginTop: '8px'}}>
+                  <li><strong>Your Costs:</strong> Material $15,000 + Labor $8,500 + Tax $1,200 = $24,700</li>
+                  <li><strong>Competitor Bid:</strong> $32,000</li>
+                  <li><strong>Your Desired Profit:</strong> 10%</li>
+                  <li><strong>Enter Target:</strong> $31,900 (slightly under competitor)</li>
+                  <li><strong>System Calculates:</strong> "Use 16.2% overhead to hit $31,900 with 10% profit"</li>
+                  <li><strong>Apply Settings:</strong> Bid now shows exactly $31,900</li>
+                  <li><strong>Result:</strong> Competitive bid that beats competitor while maintaining profit!</li>
+                </ul>
+              </div>
+              <div style={{background: '#d4edda', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>✅ Benefits:</strong>
+                <ul style={{marginBottom: 0, marginTop: '8px'}}>
+                  <li>Never guess at markup percentages again</li>
+                  <li>Stay competitive while protecting profit margins</li>
+                  <li>Work backwards from budget constraints</li>
+                  <li>See exactly what overhead % is needed</li>
+                  <li>Quickly evaluate if a job is feasible at target price</li>
+                  <li>Perfect for design-build or budget-driven projects</li>
+                </ul>
+              </div>
+              <div style={{background: '#ffe0e0', padding: '12px', borderRadius: '6px', marginTop: '10px', fontSize: '14px'}}>
+                <strong>⚠️ Warning:</strong>
+                <p style={{marginTop: '8px', marginBottom: 0}}>
+                  If the calculated overhead % is negative or unrealistically low (under 5%), the job may not be
+                  profitable at your target price. Consider negotiating a higher budget or finding cost savings.
+                </p>
+              </div>
+            </SubSection>
+
+            <SubSection title="N. Generate Professional Bid">
+              <ol>
+                <li>Review all costs in pricing panel</li>
+                <li>Make final adjustments to overhead/profit</li>
+                <li>Click <strong>"Export Bid Summary (Excel)"</strong></li>
+                <li>Excel file downloads with professional bid summary</li>
+                <li>Includes two sheets:</li>
+                <ul>
+                  <li><strong>Sheet 1:</strong> Bid Summary with all cost breakdowns</li>
+                  <li><strong>Sheet 2:</strong> Division Breakdown by category</li>
+                </ul>
+                <li>Review, add company logo/letterhead if desired</li>
+                <li>Send to client!</li>
+              </ol>
+            </SubSection>
+          </Section>
+
+          <Section title="🛠️ Tools Reference">
+            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px'}}>
+              <ToolCard
+                name="Count"
+                desc="Tag individual devices (receptacles, switches, fixtures)"
+                keys="Click on device locations"
+              />
+              <ToolCard
+                name="Segment"
+                desc="Draw straight conduit runs or homeruns"
+                keys="Click start, click end"
+              />
+              <ToolCard
+                name="Polyline"
+                desc="Draw multi-segment conduit runs with turns"
+                keys="Click points, double-click to finish"
+              />
+              <ToolCard
+                name="Freeform"
+                desc="Draw irregular areas or complex paths"
+                keys="Click points, close to origin"
+              />
+              <ToolCard
+                name="Pan"
+                desc="Move around the drawing"
+                keys="Drag to pan, scroll to zoom"
+              />
+              <ToolCard
+                name="Select"
+                desc="Select and modify existing objects"
+                keys="Click to select, Delete to remove"
+              />
+            </div>
+          </Section>
+
+          <Section title="⚙️ Settings and Defaults">
+            <SubSection title="Current System Defaults">
+              <ul>
+                <li><strong>Labor Rate:</strong> $30.00/hr</li>
+                <li><strong>Overhead:</strong> 15%</li>
+                <li><strong>Profit Margin:</strong> 10%</li>
+                <li><strong>Sales Tax:</strong> 8.5%</li>
+                <li><strong>Waste Factors:</strong> 2-15% by material type</li>
+              </ul>
+            </SubSection>
+
+            <SubSection title="Waste Factors Applied in BOM">
+              <ul>
+                <li><strong>Wire & Cable:</strong> 10%</li>
+                <li><strong>Conduit:</strong> 10%</li>
+                <li><strong>Boxes:</strong> 5%</li>
+                <li><strong>Devices:</strong> 5%</li>
+                <li><strong>Fixtures:</strong> 2%</li>
+                <li><strong>Fittings:</strong> 15%</li>
+              </ul>
+            </SubSection>
+          </Section>
+
+          <Section title="💡 Tips for Success">
+            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px'}}>
+              <TipCard title="For Accurate Takeoffs">
+                <ul style={{fontSize: '14px', marginBottom: 0}}>
+                  <li>Calibrate every page carefully</li>
+                  <li>Use consistent tag naming</li>
+                  <li>Assign correct assemblies</li>
+                  <li>Review BOM before exporting</li>
+                </ul>
+              </TipCard>
+              <TipCard title="For Competitive Bids">
+                <ul style={{fontSize: '14px', marginBottom: 0}}>
+                  <li>Get quotes from 3+ vendors</li>
+                  <li>Use realistic labor hours</li>
+                  <li>Adjust overhead for job size</li>
+                  <li>Consider site conditions</li>
+                </ul>
+              </TipCard>
+              <TipCard title="For Better Efficiency">
+                <ul style={{fontSize: '14px', marginBottom: 0}}>
+                  <li>Save projects frequently</li>
+                  <li>Use Project Tags bar</li>
+                  <li>Export BOM to verify</li>
+                  <li>Keep pricing updated</li>
+                </ul>
+              </TipCard>
+              <TipCard title="For Professional Results">
+                <ul style={{fontSize: '14px', marginBottom: 0}}>
+                  <li>Document everything</li>
+                  <li>Use detailed measurements</li>
+                  <li>Review before submitting</li>
+                  <li>Track win/loss ratios</li>
+                </ul>
+              </TipCard>
+            </div>
+          </Section>
+
+          <Section title="❓ Frequently Asked Questions">
+            <FAQ q="Material costs showing $0?" a="Upload your pricing Excel file by clicking '📁 Upload Pricing Excel' in the Pricing panel, or ensure your Supabase pricing database is populated." />
+            <FAQ q="How do I get an OpenAI API key for AI analysis?" a="Visit platform.openai.com, sign up or log in, go to API Keys section, and create a new key. Add it in Settings > AI Document Analysis." />
+            <FAQ q="How accurate is the AI analysis?" a="Very accurate for extracting fixture schedules, panel schedules, and visible text. Always review and verify the extracted data." />
+            <FAQ q="Why don't I see assumptions in AI analysis?" a="The AI only extracts explicitly stated information from drawings. If drawings don't include detailed assumptions, add them manually." />
+            <FAQ q="Do BOM exports include totals?" a="Yes! The full Excel BOM includes total rows for material costs and labor hours. CSV exports also include fixture count totals." />
+            <FAQ q="How do I change labor rate?" a="Currently $30/hr default based on industry standards. You can adjust markup percentages to account for different labor rates." />
+            <FAQ q="Can I edit assemblies?" a="Yes! Click Assemblies button to view/edit all 75+ assemblies and their material breakdowns." />
+            <FAQ q="Where is my project saved?" a="File > Download .skdproj saves to your downloads folder. File > Open Project loads saved projects. Projects can also be saved to Supabase database." />
+            <FAQ q="Can I use on multiple computers?" a="Yes! Save your .skdproj file and open it on any computer with this application. Or use Supabase storage to access projects from anywhere." />
+            <FAQ q="What if I make a mistake?" a="Use Select tool to click objects and press Delete. Or File > Open Project to reload last saved version." />
+            <FAQ q="How accurate are labor hours?" a="Based on industry standards (NECA Manual of Labor Units). Adjust for your crew's speed and site conditions." />
+            <FAQ q="Can I customize assemblies?" a="Yes! In Assembly Manager, you can view and modify materials in any assembly. Changes are saved to the project." />
+            <FAQ q="What's the difference between BOM CSV and Excel exports?" a="CSV is quick summary with counts. Excel has 7 detailed sheets including pricing, labor, assembly breakdown, and conduit/wire summaries." />
+          </Section>
+
+          <Section title="🎓 Example Project Walkthrough">
+            <div style={{background: '#e8f5e9', padding: '20px', borderRadius: '8px'}}>
+              <h4 style={{marginTop: 0}}>Office TI - 2,500 SF</h4>
+
+              <strong>1. Takeoff (10 min):</strong>
+              <ul>
+                <li>Load floor plan PDF</li>
+                <li>Calibrate: 10' = 120 pixels</li>
+                <li>Add tags: R1-R25 (receptacles), S1-S15 (switches), L1-L10 (lights)</li>
+                <li>Draw 12 homeruns back to panel</li>
+                <li>Assign assemblies: RECEP-20A, SW-1P, LIGHT-2X4, PANEL-42CKT</li>
+              </ul>
+
+              <strong>2. BOM Generated:</strong>
+              <ul>
+                <li>25× Receptacles + boxes + wire + conduit</li>
+                <li>15× Switches + boxes + wire</li>
+                <li>10× LED Troffers + whips</li>
+                <li>1× 42-Circuit Panel + breakers</li>
+                <li>Total: 200+ line items auto-calculated</li>
+              </ul>
+
+              <strong>3. Costs Calculated:</strong>
+              <ul>
+                <li>Material: $2,850.00</li>
+                <li>Labor: 31.5 hrs × $30 = $945.00</li>
+                <li>Subtotal: $3,795.00</li>
+                <li>Overhead (10%): $379.50</li>
+                <li>Profit (10%): $417.45</li>
+                <li><strong>TOTAL BID: $4,591.95</strong></li>
+              </ul>
+
+              <strong>4. Export & Submit:</strong>
+              <ul>
+                <li>Export bid summary Excel</li>
+                <li>Review professional format</li>
+                <li>Send to client</li>
+                <li>Win job! 🎉</li>
+              </ul>
+            </div>
+          </Section>
+
+          <div style={{textAlign: 'center', padding: '30px 0 20px', borderTop: '2px solid #e0e0e0', marginTop: '30px'}}>
+            <h3 style={{color: '#0d3b66', marginBottom: '15px'}}>You're Ready to Start Bidding!</h3>
+            <p style={{fontSize: '16px', color: '#555', marginBottom: '20px'}}>
+              Follow these steps from A to Z and you'll be generating professional bids in 20 minutes.
+            </p>
+            <button
+              onClick={onClose}
+              style={{
+                padding: '12px 30px',
+                background: '#2e7d32',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              Got It - Let's Get Started!
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: '35px' }}>
+      <h3 style={{
+        fontSize: '20px',
+        fontWeight: 'bold',
+        color: '#0d3b66',
+        marginBottom: '15px',
+        paddingBottom: '8px',
+        borderBottom: '3px solid #0d3b66'
+      }}>
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+function SubSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: '20px', marginLeft: '10px' }}>
+      <h4 style={{ fontSize: '16px', fontWeight: 'bold', color: '#2c5f7c', marginBottom: '10px' }}>
+        {title}
+      </h4>
+      {children}
+    </div>
+  );
+}
+
+function Step({ num, title, children }: { num: number; title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+        <div style={{
+          width: '32px',
+          height: '32px',
+          borderRadius: '50%',
+          background: '#2e7d32',
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 'bold',
+          fontSize: '16px'
+        }}>
+          {num}
+        </div>
+        <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>{title}</h4>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function ToolCard({ name, desc, keys }: { name: string; desc: string; keys: string }) {
+  return (
+    <div style={{
+      background: '#f8f9fa',
+      padding: '15px',
+      borderRadius: '8px',
+      border: '1px solid #e0e0e0'
+    }}>
+      <h5 style={{ margin: '0 0 8px 0', fontSize: '15px', fontWeight: 'bold', color: '#0d3b66' }}>
+        {name}
+      </h5>
+      <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#555' }}>{desc}</p>
+      <div style={{ fontSize: '13px', color: '#777', fontStyle: 'italic' }}>{keys}</div>
+    </div>
+  );
+}
+
+function TipCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{
+      background: '#fff3cd',
+      padding: '15px',
+      borderRadius: '8px',
+      border: '1px solid #ffc107'
+    }}>
+      <h5 style={{ margin: '0 0 10px 0', fontSize: '15px', fontWeight: 'bold', color: '#856404' }}>
+        {title}
+      </h5>
+      {children}
+    </div>
+  );
+}
+
+function FAQ({ q, a }: { q: string; a: string }) {
+  return (
+    <div style={{ marginBottom: '15px' }}>
+      <strong style={{ color: '#0d3b66' }}>Q: {q}</strong>
+      <p style={{ margin: '5px 0 0 20px', color: '#555' }}>A: {a}</p>
+    </div>
+  );
+}
