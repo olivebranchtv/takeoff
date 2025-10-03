@@ -349,18 +349,31 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   function saveEdit() {
     if (!editId) return;
     const category = resolvedCategory();
-    // Explicitly include assemblyId in next, even if undefined (to indicate "NO ASSEMBLY")
+
+    // Build next object - handle assemblyId carefully
     const next: Draft = {
-      ...draft,
       code: draft.code.trim().toUpperCase(),
+      name: draft.name,
       category,
-      assemblyId: draft.assemblyId // Explicitly include, even if undefined
+      color: draft.color,
     };
+
+    // Only include assemblyId if it exists in draft (to allow removal)
+    if ('assemblyId' in draft) {
+      next.assemblyId = draft.assemblyId;
+    }
+    if ('customMaterialCost' in draft) {
+      next.customMaterialCost = draft.customMaterialCost;
+    }
+    if ('customLaborHours' in draft) {
+      next.customLaborHours = draft.customLaborHours;
+    }
+
     const msg = validate(next);
     if (msg) { setError(msg); return; }
 
-    console.log('[TagManager] saveEdit - draft.assemblyId:', draft.assemblyId);
-    console.log('[TagManager] saveEdit - next:', next);
+    console.log('[TagManager] saveEdit - draft:', draft);
+    console.log('[TagManager] saveEdit - assemblyId in draft:', 'assemblyId' in draft, draft.assemblyId);
 
     // When editing, ALWAYS update by ID, not by code lookup
     const patch: any = {
@@ -369,9 +382,10 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       category: (next.category || '').trim(),
       color: next.color || '#FFA500',
     };
-    if ('assemblyId' in next) {
-      patch.assemblyId = next.assemblyId;
-    }
+
+    // ALWAYS include assemblyId in patch (even if undefined) to allow removal
+    patch.assemblyId = next.assemblyId;
+
     if ('customMaterialCost' in next) {
       patch.customMaterialCost = next.customMaterialCost;
     }
@@ -385,9 +399,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     if (category) scrollToCategory(category);
     // Clear editor after successful save
     cancelEdit();
-
-    // Optional: small toast/alert to confirm overwrite behavior
-    // alert('Saved. This code now overrides the default in the master database.');
   }
 
   function remove(id: string) {
@@ -663,16 +674,26 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
               <div style={{ marginTop: 10 }}>
                 <div style={S.label}>Assembly (Optional)</div>
                 <select
-                  value={draft.assemblyId || 'NONE'}
+                  value={draft.assemblyId || ''}
                   onChange={e => {
                     const value = e.target.value;
-                    setDraft(d => ({ ...d, assemblyId: value === 'NONE' ? undefined : value }));
+                    console.log('[TagManager] Assembly dropdown changed to:', value);
+                    if (value === '' || value === 'NONE') {
+                      // Explicitly remove assemblyId
+                      setDraft(d => {
+                        const newDraft = { ...d };
+                        delete newDraft.assemblyId;
+                        return newDraft;
+                      });
+                    } else {
+                      setDraft(d => ({ ...d, assemblyId: value }));
+                    }
                   }}
                   style={{ ...S.input, width: '100%', maxWidth: '500px' }}
                 >
-                  <option value="NONE">NO ASSEMBLY</option>
+                  <option value="">NO ASSEMBLY</option>
                   {assemblies && assemblies.filter((a: any) => a.isActive).map((assembly: any) => (
-                    <option key={assembly.id} value={assembly.code}>
+                    <option key={assembly.id} value={assembly.id}>
                       {assembly.code} - {assembly.name} ({assembly.items.length} items)
                     </option>
                   ))}
