@@ -169,7 +169,7 @@ export default function App() {
       setProjectTags(reordered);
 
       // Sync with store's tag order
-      reorderProjectTags(reordered as Tag[]);
+      reorderProjectTags(reordered.map(t => t.id));
     }
     setDraggedTagIndex(null);
     setDragOverTagIndex(null);
@@ -247,7 +247,7 @@ export default function App() {
         setTimeSinceLastSave('Not saved');
         return;
       }
-      const saveDate = typeof lastSaveTime === 'number' ? new Date(lastSaveTime) : new Date();
+      const saveDate = lastSaveTime instanceof Date ? lastSaveTime : new Date(lastSaveTime);
       const seconds = Math.floor((Date.now() - saveDate.getTime()) / 1000);
       if (seconds < 10) setTimeSinceLastSave('Just now');
       else if (seconds < 60) setTimeSinceLastSave(`${seconds}s ago`);
@@ -379,13 +379,11 @@ export default function App() {
       name: state.projectName || 'Untitled Project',
       pages: state.pages,
       tags: state.tags,
-      projectTags: projectTags, // CRITICAL: Save project tags (including uncounted)
       pdf: pdfBytesBase64 ? { name: pdfName || fileName || 'document.pdf', bytesBase64: pdfBytesBase64 } : undefined
     };
-    console.log('[Save to DB] Saving project with PDF:', !!projectData.pdf, 'PDF bytes length:', projectData.pdf?.bytesBase64?.length, 'Project tags:', projectTags.length);
-    const success = await saveProjectToSupabase(projectData, state.projectName || 'Untitled');
+    const success = await saveProjectToSupabase(projectData);
     if (success) {
-      state.setLastSaveTime(Date.now());
+      state.setLastSaveTime(new Date());
       alert('✅ Project saved to database successfully!');
     } else {
       alert('❌ Failed to save project to database');
@@ -415,7 +413,6 @@ export default function App() {
     }
 
     const projectData = await loadProjectByIdFromSupabase(projects[index].id);
-    console.log('[Load from DB] Project data loaded:', !!projectData, 'Has PDF:', !!projectData?.pdf, 'PDF bytes length:', projectData?.pdf?.bytesBase64?.length);
     if (projectData) {
       // Load project into store
       useStore.getState().fromProject(projectData);
@@ -429,16 +426,10 @@ export default function App() {
       setFileName(storeState.fileName);
       setProjectName(storeState.projectName);
 
-      // CRITICAL: Load project tags directly from saved data (don't filter out uncounted tags)
-      if (Array.isArray(projectData.projectTags) && projectData.projectTags.length > 0) {
-        setProjectTags(projectData.projectTags);
-        console.log('[Database Load] ✅ Loaded project tags from saved data (including uncounted):', projectData.projectTags.length);
-      } else {
-        // Fallback to store method if no direct projectTags
-        const projectTagsFromStore = storeState.getProjectTags();
-        setProjectTags(projectTagsFromStore);
-        console.log('[Database Load] Synced project tags from store:', projectTagsFromStore.length);
-      }
+      // Sync project tags from store
+      const projectTagsFromStore = storeState.getProjectTags();
+      setProjectTags(projectTagsFromStore);
+      console.log('[Database Load] Synced project tags:', projectTagsFromStore.length);
 
       // Restore PDF if it was saved
       if (projectData.pdf?.bytesBase64) {
@@ -1047,8 +1038,8 @@ export default function App() {
         pages,
         tags,
         assemblies,
-        [],
-        baseName
+        baseName,
+        pdfName || fileName || 'Drawing Set'
       );
     } catch (error) {
       console.error('BOM export error:', error);
@@ -1063,7 +1054,6 @@ export default function App() {
 
     const projectName = useStore.getState().getProjectName()?.trim() || 'Project Name';
 
-    // Tab 1: Fixture Counts
     const lightingRows = Array.from(countByCode.entries())
       .filter(([code]) => isLighting(code))
       .map(([code, count]) => ({
@@ -1073,82 +1063,29 @@ export default function App() {
       }))
       .sort((a, b) => a.Code.localeCompare(b.Code));
 
+    // Calculate total count
     const totalCount = lightingRows.reduce((sum, row) => sum + row.Count, 0);
 
-    const countsData: any[][] = [
-      [`Project:  ${projectName}`, '', ''],
-      [],
-      ['Code', 'Name', 'Count'],
+    // Create the data array with header and total row
+    const data: any[][] = [
+      [`Project:  ${projectName}`, '', ''], // Project header row
+      [], // Empty row
+      ['Code', 'Name', 'Count'], // Column headers
       ...lightingRows.map(row => [row.Code, row.Name, row.Count]),
-      ['Total', '', totalCount]
+      ['Total', '', totalCount] // Total row
     ];
 
     const wb = XLSX.utils.book_new();
-    const ws1 = XLSX.utils.aoa_to_sheet(countsData);
-    ws1['!cols'] = [
-      { wch: 10 },
-      { wch: 30 },
-      { wch: 10 }
-    ];
-    XLSX.utils.book_append_sheet(wb, ws1, 'Lighting Fixtures');
+    const ws = XLSX.utils.aoa_to_sheet(data);
 
-    // Tab 2: Measurements (Linear Runs)
-    const measurements: any[] = [];
-    pages.forEach((page, pageIdx) => {
-      page.objects.forEach(obj => {
-        if (obj.type !== 'count' && obj.code) {
-          const lengthFt = obj.lengthFt ?? obj.result?.baseLengthFt ?? 0;
-          const emtSize = obj.result?.raceway?.emtSize || obj.measure?.emtSize || '';
-          const racewayLf = obj.result?.raceway?.lengthFt || 0;
-
-          measurements.push({
-            Code: obj.code,
-            Name: nameForCode(obj.code),
-            Type: obj.type === 'segment' ? 'Segment' : obj.type === 'polyline' ? 'Polyline' : 'Freeform',
-            'Length (LF)': lengthFt,
-            'EMT Size': emtSize,
-            'Raceway LF': racewayLf,
-            Page: pageIdx + 1,
-            Note: obj.note || ''
-          });
-        }
-      });
-    });
-
-    measurements.sort((a, b) => a.Code.localeCompare(b.Code) || a.Page - b.Page);
-
-    const totalLength = measurements.reduce((sum, m) => sum + (m['Length (LF)'] || 0), 0);
-    const totalRaceway = measurements.reduce((sum, m) => sum + (m['Raceway LF'] || 0), 0);
-
-    const measurementsData: any[][] = [
-      [`Project:  ${projectName}`, '', '', '', '', '', '', ''],
-      [],
-      ['Code', 'Name', 'Type', 'Length (LF)', 'EMT Size', 'Raceway LF', 'Page', 'Note'],
-      ...measurements.map(m => [
-        m.Code,
-        m.Name,
-        m.Type,
-        typeof m['Length (LF)'] === 'number' ? +m['Length (LF)'].toFixed(2) : '',
-        m['EMT Size'],
-        typeof m['Raceway LF'] === 'number' ? +m['Raceway LF'].toFixed(2) : '',
-        m.Page,
-        m.Note
-      ]),
-      ['Total', '', '', totalLength.toFixed(2), '', totalRaceway.toFixed(2), '', '']
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 10 },  // Code column
+      { wch: 30 },  // Name column
+      { wch: 10 }   // Count column
     ];
 
-    const ws2 = XLSX.utils.aoa_to_sheet(measurementsData);
-    ws2['!cols'] = [
-      { wch: 10 },  // Code
-      { wch: 30 },  // Name
-      { wch: 12 },  // Type
-      { wch: 12 },  // Length
-      { wch: 10 },  // EMT Size
-      { wch: 12 },  // Raceway LF
-      { wch: 8 },   // Page
-      { wch: 30 }   // Note
-    ];
-    XLSX.utils.book_append_sheet(wb, ws2, 'Measurements');
+    XLSX.utils.book_append_sheet(wb, ws, 'Lighting');
 
     const baseName = projectName + ' - Fixtures';
     XLSX.writeFile(wb, `${baseName}.xlsx`);
@@ -1165,18 +1102,16 @@ export default function App() {
 
   /* NEW: CSV – Itemized with raceway/conductors/boxes */
   const exportCSVItemizedRaceway = () => {
-    const { assemblies, manualItems } = useStore.getState();
-    const rows = buildBOMRows(pages, tags, assemblies, manualItems);
-    const csv = toCSVItemizedWithRaceway(pages, tags);
+    const rows = buildBOMRows(pages, 'itemized');
+    const csv = toCSVItemizedWithRaceway(rows);
     const baseName = (useStore.getState().getProjectName()?.trim() || 'BOM') + ' - Itemized (Raceway).csv';
     downloadCSV(baseName, csv);
   };
 
   /* NEW: CSV – Summarized with raceway totals */
   const exportCSVSummarizedRaceway = () => {
-    const { assemblies, manualItems } = useStore.getState();
-    const rows = buildBOMRows(pages, tags, assemblies, manualItems);
-    const csv = toCSVSummarizedWithRaceway(pages, tags);
+    const rows = buildBOMRows(pages, 'summarized');
+    const csv = toCSVSummarizedWithRaceway(rows);
     const baseName = (useStore.getState().getProjectName()?.trim() || 'BOM') + ' - Summarized (Raceway).csv';
     downloadCSV(baseName, csv);
   };
@@ -1185,10 +1120,10 @@ export default function App() {
   const exportExcelDetailedMeasurements = async () => {
     const XLSX = await ensureXLSX();
     const { calculateAssemblyMaterials } = await import('@/utils/assemblies');
-    const { tags, assemblies, manualItems } = useStore.getState();
+    const { tags, assemblies } = useStore.getState();
 
-    const itemRows = buildBOMRows(pages, tags, assemblies, manualItems);
-    const sumRows  = buildBOMRows(pages, tags, assemblies, manualItems);
+    const itemRows = buildBOMRows(pages, 'itemized');
+    const sumRows  = buildBOMRows(pages, 'summarized');
 
     // Build objects so numbers stay numeric in Excel
     const itemObjs = itemRows.map(r => {
@@ -1215,7 +1150,7 @@ export default function App() {
         Page: r.pageIndex,
         Name: r.tagName || '',
         Category: r.category || '',
-        Note: (r.notes ?? '').toString().replace(/\n/g, ' ').trim(),
+        Note: (r.note ?? '').toString().replace(/\n/g, ' ').trim(),
       };
     });
 
@@ -1232,7 +1167,7 @@ export default function App() {
     }));
 
     // Calculate assembly materials
-    const assemblyMaterials = calculateAssemblyMaterials(assemblies, tags);
+    const assemblyMaterials = calculateAssemblyMaterials(pages, tags, assemblies);
     const assemblyObjs = assemblyMaterials.map(mat => ({
       Description: mat.description,
       Quantity: +mat.quantity.toFixed(2),
@@ -1375,7 +1310,7 @@ export default function App() {
               marginLeft: 12,
               whiteSpace: 'nowrap'
             }}
-            title={lastSaveTime ? `Last saved: ${(typeof lastSaveTime === 'number' ? new Date(lastSaveTime) : new Date()).toLocaleString()}` : 'Not saved to database yet'}
+            title={lastSaveTime ? `Last saved: ${(lastSaveTime instanceof Date ? lastSaveTime : new Date(lastSaveTime)).toLocaleString()}` : 'Not saved to database yet'}
           >
             <span style={{fontSize: '16px'}}>{lastSaveTime ? '☁️' : '⚠️'}</span>
             <span>{timeSinceLastSave || 'Not saved'}</span>
@@ -1506,26 +1441,7 @@ export default function App() {
                 <span style={{width:16, height:16, borderRadius:3, border:'1px solid #444', background: (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color}} />
                 <span style={{minWidth:24, textAlign:'center', fontWeight: active ? 700 : 600}}>{t.code}</span>
                 <span
-                  onClick={(e)=>{
-                    e.stopPropagation();
-                    if (confirm(`⚠️ Remove tag "${t.code}" from project?\n\nThis will:\n• Remove the tag from the project bar\n• Delete all "${t.code}" objects from the PDF\n• Remove all entries from the Live BOM`)) {
-                      // Remove all objects with this tag code from all pages
-                      const state = useStore.getState();
-                      const updatedPages = state.pages.map(page => ({
-                        ...page,
-                        objects: page.objects.filter((obj: any) => obj.tag !== t.code)
-                      }));
-                      state.setPages(updatedPages);
-
-                      // Remove from project tags
-                      setProjectTags(list => list.filter(x => x.id !== t.id));
-
-                      // Clear current tag if it matches
-                      if (currentTag === t.code) setCurrentTag('');
-
-                      console.log(`[Tag Removal] Deleted all "${t.code}" objects from PDF and Live BOM`);
-                    }
-                  }}
+                  onClick={(e)=>{ e.stopPropagation(); setProjectTags(list => list.filter(x => x.id !== t.id)); if (currentTag === t.code) setCurrentTag(''); }}
                   title="Remove from Project Tags"
                   style={{position:'absolute', top:-4, right:-4, width:16, height:16, lineHeight:'14px', textAlign:'center',
                           border:'1px solid #bbb', borderRadius:'50%', background:'#fff', cursor:'pointer', fontSize:10}}
@@ -1856,9 +1772,9 @@ function SidebarBOM({ bom, onToggle }:{
   }, []);
 
   const itemized = React.useMemo(() => {
-    const allRows = buildBOMRows(pages, storeTags, assemblies, manualItems);
+    const allRows = buildBOMRows(pages, 'itemized');
     return allRows.filter(r => r.shape !== 'count');
-  }, [pages, storeTags, assemblies, manualItems]);
+  }, [pages]);
 
   // Group tags by category
   const categorizedTags = React.useMemo(() => {
@@ -2142,7 +2058,7 @@ function SidebarBOM({ bom, onToggle }:{
                   className="btn"
                   onClick={() => {
                     if (newItem.description && newItem.quantity > 0) {
-                      addManualItem({ id: Date.now().toString(), ...newItem });
+                      addManualItem(newItem);
                       setNewItem({description:'',quantity:0,unit:'EA',category:'',itemCode:'',notes:''});
                       setShowManualEntry(false);
                     } else {
