@@ -73,12 +73,16 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const groupRefs = useRef(new Map<string, HTMLTableRowElement>());
   const tableWrapRef = useRef<HTMLDivElement>(null);
   const scrollToCategory = (cat: string | undefined) => {
-    const row = groupRefs.current.get(cat || 'Uncategorized');
-    if (row && tableWrapRef.current) {
-      const container = tableWrapRef.current;
-      const rowTop = row.offsetTop;
-      container.scrollTo({ top: rowTop - 50, behavior: 'smooth' });
-    }
+    // Use requestAnimationFrame to ensure refs are set after render
+    requestAnimationFrame(() => {
+      const targetCat = cat || 'Uncategorized';
+      const row = groupRefs.current.get(targetCat);
+      if (row && tableWrapRef.current) {
+        const container = tableWrapRef.current;
+        const rowTop = row.offsetTop;
+        container.scrollTo({ top: rowTop - 50, behavior: 'smooth' });
+      }
+    });
   };
 
   // Reset UI & ensure defaults exist (but never overwrite user edits)
@@ -192,8 +196,6 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       };
     }
   }, [draft.assemblyId, draft.category, assemblies]);
-
-  useEffect(() => { groupRefs.current = new Map(); }, [filteredGroups]);
 
   if (!open) return null;
 
