@@ -379,9 +379,10 @@ export default function App() {
       name: state.projectName || 'Untitled Project',
       pages: state.pages,
       tags: state.tags,
+      projectTags: projectTags, // CRITICAL: Save project tags (including uncounted)
       pdf: pdfBytesBase64 ? { name: pdfName || fileName || 'document.pdf', bytesBase64: pdfBytesBase64 } : undefined
     };
-    console.log('[Save to DB] Saving project with PDF:', !!projectData.pdf, 'PDF bytes length:', projectData.pdf?.bytesBase64?.length);
+    console.log('[Save to DB] Saving project with PDF:', !!projectData.pdf, 'PDF bytes length:', projectData.pdf?.bytesBase64?.length, 'Project tags:', projectTags.length);
     const success = await saveProjectToSupabase(projectData);
     if (success) {
       state.setLastSaveTime(new Date());
@@ -428,10 +429,16 @@ export default function App() {
       setFileName(storeState.fileName);
       setProjectName(storeState.projectName);
 
-      // Sync project tags from store
-      const projectTagsFromStore = storeState.getProjectTags();
-      setProjectTags(projectTagsFromStore);
-      console.log('[Database Load] Synced project tags:', projectTagsFromStore.length);
+      // CRITICAL: Load project tags directly from saved data (don't filter out uncounted tags)
+      if (Array.isArray(projectData.projectTags) && projectData.projectTags.length > 0) {
+        setProjectTags(projectData.projectTags);
+        console.log('[Database Load] ✅ Loaded project tags from saved data (including uncounted):', projectData.projectTags.length);
+      } else {
+        // Fallback to store method if no direct projectTags
+        const projectTagsFromStore = storeState.getProjectTags();
+        setProjectTags(projectTagsFromStore);
+        console.log('[Database Load] Synced project tags from store:', projectTagsFromStore.length);
+      }
 
       // Restore PDF if it was saved
       if (projectData.pdf?.bytesBase64) {
@@ -1497,7 +1504,26 @@ export default function App() {
                 <span style={{width:16, height:16, borderRadius:3, border:'1px solid #444', background: (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color}} />
                 <span style={{minWidth:24, textAlign:'center', fontWeight: active ? 700 : 600}}>{t.code}</span>
                 <span
-                  onClick={(e)=>{ e.stopPropagation(); setProjectTags(list => list.filter(x => x.id !== t.id)); if (currentTag === t.code) setCurrentTag(''); }}
+                  onClick={(e)=>{
+                    e.stopPropagation();
+                    if (confirm(`⚠️ Remove tag "${t.code}" from project?\n\nThis will:\n• Remove the tag from the project bar\n• Delete all "${t.code}" objects from the PDF\n• Remove all entries from the Live BOM`)) {
+                      // Remove all objects with this tag code from all pages
+                      const state = useStore.getState();
+                      const updatedPages = state.pages.map(page => ({
+                        ...page,
+                        objects: page.objects.filter((obj: any) => obj.tag !== t.code)
+                      }));
+                      state.setPages(updatedPages);
+
+                      // Remove from project tags
+                      setProjectTags(list => list.filter(x => x.id !== t.id));
+
+                      // Clear current tag if it matches
+                      if (currentTag === t.code) setCurrentTag('');
+
+                      console.log(`[Tag Removal] Deleted all "${t.code}" objects from PDF and Live BOM`);
+                    }
+                  }}
                   title="Remove from Project Tags"
                   style={{position:'absolute', top:-4, right:-4, width:16, height:16, lineHeight:'14px', textAlign:'center',
                           border:'1px solid #bbb', borderRadius:'50%', background:'#fff', cursor:'pointer', fontSize:10}}
