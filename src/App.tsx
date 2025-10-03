@@ -169,7 +169,7 @@ export default function App() {
       setProjectTags(reordered);
 
       // Sync with store's tag order
-      reorderProjectTags(reordered.map(t => t.id));
+      reorderProjectTags(reordered as Tag[]);
     }
     setDraggedTagIndex(null);
     setDragOverTagIndex(null);
@@ -247,7 +247,7 @@ export default function App() {
         setTimeSinceLastSave('Not saved');
         return;
       }
-      const saveDate = lastSaveTime instanceof Date ? lastSaveTime : new Date(lastSaveTime);
+      const saveDate = typeof lastSaveTime === 'number' ? new Date(lastSaveTime) : new Date();
       const seconds = Math.floor((Date.now() - saveDate.getTime()) / 1000);
       if (seconds < 10) setTimeSinceLastSave('Just now');
       else if (seconds < 60) setTimeSinceLastSave(`${seconds}s ago`);
@@ -383,9 +383,9 @@ export default function App() {
       pdf: pdfBytesBase64 ? { name: pdfName || fileName || 'document.pdf', bytesBase64: pdfBytesBase64 } : undefined
     };
     console.log('[Save to DB] Saving project with PDF:', !!projectData.pdf, 'PDF bytes length:', projectData.pdf?.bytesBase64?.length, 'Project tags:', projectTags.length);
-    const success = await saveProjectToSupabase(projectData);
+    const success = await saveProjectToSupabase(projectData, state.projectName || 'Untitled');
     if (success) {
-      state.setLastSaveTime(new Date());
+      state.setLastSaveTime(Date.now());
       alert('✅ Project saved to database successfully!');
     } else {
       alert('❌ Failed to save project to database');
@@ -1047,8 +1047,8 @@ export default function App() {
         pages,
         tags,
         assemblies,
-        baseName,
-        pdfName || fileName || 'Drawing Set'
+        [],
+        baseName
       );
     } catch (error) {
       console.error('BOM export error:', error);
@@ -1165,16 +1165,18 @@ export default function App() {
 
   /* NEW: CSV – Itemized with raceway/conductors/boxes */
   const exportCSVItemizedRaceway = () => {
-    const rows = buildBOMRows(pages, 'itemized');
-    const csv = toCSVItemizedWithRaceway(rows);
+    const { assemblies, manualItems } = useStore.getState();
+    const rows = buildBOMRows(pages, tags, assemblies, manualItems);
+    const csv = toCSVItemizedWithRaceway(pages, tags);
     const baseName = (useStore.getState().getProjectName()?.trim() || 'BOM') + ' - Itemized (Raceway).csv';
     downloadCSV(baseName, csv);
   };
 
   /* NEW: CSV – Summarized with raceway totals */
   const exportCSVSummarizedRaceway = () => {
-    const rows = buildBOMRows(pages, 'summarized');
-    const csv = toCSVSummarizedWithRaceway(rows);
+    const { assemblies, manualItems } = useStore.getState();
+    const rows = buildBOMRows(pages, tags, assemblies, manualItems);
+    const csv = toCSVSummarizedWithRaceway(pages, tags);
     const baseName = (useStore.getState().getProjectName()?.trim() || 'BOM') + ' - Summarized (Raceway).csv';
     downloadCSV(baseName, csv);
   };
@@ -1183,10 +1185,10 @@ export default function App() {
   const exportExcelDetailedMeasurements = async () => {
     const XLSX = await ensureXLSX();
     const { calculateAssemblyMaterials } = await import('@/utils/assemblies');
-    const { tags, assemblies } = useStore.getState();
+    const { tags, assemblies, manualItems } = useStore.getState();
 
-    const itemRows = buildBOMRows(pages, 'itemized');
-    const sumRows  = buildBOMRows(pages, 'summarized');
+    const itemRows = buildBOMRows(pages, tags, assemblies, manualItems);
+    const sumRows  = buildBOMRows(pages, tags, assemblies, manualItems);
 
     // Build objects so numbers stay numeric in Excel
     const itemObjs = itemRows.map(r => {
@@ -1213,7 +1215,7 @@ export default function App() {
         Page: r.pageIndex,
         Name: r.tagName || '',
         Category: r.category || '',
-        Note: (r.note ?? '').toString().replace(/\n/g, ' ').trim(),
+        Note: (r.notes ?? '').toString().replace(/\n/g, ' ').trim(),
       };
     });
 
@@ -1230,7 +1232,7 @@ export default function App() {
     }));
 
     // Calculate assembly materials
-    const assemblyMaterials = calculateAssemblyMaterials(pages, tags, assemblies);
+    const assemblyMaterials = calculateAssemblyMaterials(assemblies, tags);
     const assemblyObjs = assemblyMaterials.map(mat => ({
       Description: mat.description,
       Quantity: +mat.quantity.toFixed(2),
@@ -1373,7 +1375,7 @@ export default function App() {
               marginLeft: 12,
               whiteSpace: 'nowrap'
             }}
-            title={lastSaveTime ? `Last saved: ${(lastSaveTime instanceof Date ? lastSaveTime : new Date(lastSaveTime)).toLocaleString()}` : 'Not saved to database yet'}
+            title={lastSaveTime ? `Last saved: ${(typeof lastSaveTime === 'number' ? new Date(lastSaveTime) : new Date()).toLocaleString()}` : 'Not saved to database yet'}
           >
             <span style={{fontSize: '16px'}}>{lastSaveTime ? '☁️' : '⚠️'}</span>
             <span>{timeSinceLastSave || 'Not saved'}</span>
@@ -1854,9 +1856,9 @@ function SidebarBOM({ bom, onToggle }:{
   }, []);
 
   const itemized = React.useMemo(() => {
-    const allRows = buildBOMRows(pages, 'itemized');
+    const allRows = buildBOMRows(pages, storeTags, assemblies, manualItems);
     return allRows.filter(r => r.shape !== 'count');
-  }, [pages]);
+  }, [pages, storeTags, assemblies, manualItems]);
 
   // Group tags by category
   const categorizedTags = React.useMemo(() => {
@@ -2140,7 +2142,7 @@ function SidebarBOM({ bom, onToggle }:{
                   className="btn"
                   onClick={() => {
                     if (newItem.description && newItem.quantity > 0) {
-                      addManualItem(newItem);
+                      addManualItem({ id: Date.now().toString(), ...newItem });
                       setNewItem({description:'',quantity:0,unit:'EA',category:'',itemCode:'',notes:''});
                       setShowManualEntry(false);
                     } else {
