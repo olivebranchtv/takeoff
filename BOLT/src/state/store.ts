@@ -787,10 +787,14 @@ export const useStore = create<State>()((set, get) => ({
 
         console.log(`[fromProject] Loading project with ${rawTags.length} tags from saved data`);
 
-        // Merge in any missing master tags
+        // Merge in any missing master tags (but skip deleted ones)
         const existingCodes = new Set(rawTags.map(t => (t.code || '').toUpperCase()));
+        const deletedCodes = new Set(get().deletedTagCodes.map(c => c.toUpperCase()));
         const missingMasterTags = DEFAULT_MASTER_TAGS
-          .filter(mt => !existingCodes.has((mt.code || '').toUpperCase()))
+          .filter(mt => {
+            const mtCode = (mt.code || '').toUpperCase();
+            return !existingCodes.has(mtCode) && !deletedCodes.has(mtCode);
+          })
           .map(mt => {
             const tag: Tag = {
               id: crypto.randomUUID(),
@@ -805,9 +809,12 @@ export const useStore = create<State>()((set, get) => ({
             return tag;
           });
 
-        console.log(`[fromProject] Adding ${missingMasterTags.length} missing master tags`);
+        console.log(`[fromProject] Adding ${missingMasterTags.length} missing master tags (skipping ${deletedCodes.size} deleted)`);
         if (missingMasterTags.length > 0) {
           console.log(`[fromProject] Missing tags:`, missingMasterTags.map(t => t.code).join(', '));
+        }
+        if (deletedCodes.size > 0) {
+          console.log(`[fromProject] Deleted tags:`, Array.from(deletedCodes).join(', '));
         }
 
         const allTags = [...rawTags, ...missingMasterTags];
