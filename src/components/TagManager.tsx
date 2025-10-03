@@ -474,7 +474,9 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         added++;
       }
     });
-    alert(`Default master tags loaded. Added ${added} new tag(s), skipped ${skipped} deleted tag(s). Total master: ${DEFAULT_MASTER_TAGS.length}.`);
+
+    const availableMasterTags = DEFAULT_MASTER_TAGS.length - deleted.size;
+    alert(`Default master tags loaded. Added ${added} new tag(s), skipped ${skipped} permanently deleted tag(s). Available master tags: ${availableMasterTags} (${deleted.size} permanently deleted).`);
   }
 
   const headerNote = 'Edits here permanently override defaults for matching codes in the master database.';
