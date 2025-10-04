@@ -24,12 +24,16 @@ export function useTagAutoSave() {
     saveTimeoutRef.current = setTimeout(async () => {
       setIsSaving(true);
       try {
-        console.log('💾 Auto-saving tag library to database...');
+        console.log('💾 Auto-saving tag library to database...', {
+          tagCount: tags.length,
+          deletedCount: deletedTagCodes.length,
+          colorOverrideCount: Object.keys(colorOverrides).length
+        });
         const success = await saveTagsToSupabase(tags, colorOverrides, deletedTagCodes);
         if (success) {
-          console.log('✅ Tag library saved to database');
+          console.log('✅ Tag library saved to database successfully');
         } else {
-          console.error('❌ Failed to save tag library');
+          console.error('❌ Failed to save tag library - check Supabase errors above');
         }
       } catch (error) {
         console.error('❌ Error saving tag library:', error);
@@ -43,5 +47,5 @@ export function useTagAutoSave() {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [tags, colorOverrides, deletedTagCodes]);
+  }, [tags, colorOverrides, deletedTagCodes, setIsSaving]);
 }
