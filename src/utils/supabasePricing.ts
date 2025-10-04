@@ -547,6 +547,45 @@ export async function lookupMaterialPricingByCode(code: string): Promise<{ mater
       return null;
     }
 
+    // Strategy 0: Check tag-to-item mapping table first
+    console.log(`🔍 Strategy 0: Checking tag mapping for "${cleanCode}"...`);
+    const { data: mappingData, error: mappingError } = await supabase
+      .from('tag_item_mapping')
+      .select('item_code')
+      .ilike('tag_code', cleanCode)
+      .limit(1)
+      .maybeSingle();
+
+    if (mappingError && mappingError.code !== 'PGRST116') {
+      console.error('❌ Error looking up tag mapping:', mappingError);
+    }
+
+    if (mappingData?.item_code) {
+      const mappedCode = mappingData.item_code.trim().toUpperCase();
+      console.log(`✅ Found mapping: "${cleanCode}" → "${mappedCode}"`);
+
+      // Now lookup the mapped item code
+      const { data: itemData, error: itemError } = await supabase
+        .from('material_pricing')
+        .select('material_cost, labor_hours, item_code')
+        .ilike('item_code', mappedCode)
+        .limit(1)
+        .maybeSingle();
+
+      if (itemError && itemError.code !== 'PGRST116') {
+        console.error(`❌ Error looking up mapped item "${mappedCode}":`, itemError);
+      }
+
+      if (itemData) {
+        console.log(`✅ Found pricing for mapped code "${mappedCode}":`, itemData);
+        return {
+          materialCost: Number(itemData.material_cost) || 0,
+          laborHours: Number(itemData.labor_hours) || 0
+        };
+      }
+    }
+    console.log(`⚠️ No mapping found for "${cleanCode}"`);
+
     // Strategy 1: Try exact match on item_code (case-insensitive)
     console.log(`🔍 Strategy 1: Trying exact match for "${cleanCode}"...`);
     let { data, error } = await supabase
