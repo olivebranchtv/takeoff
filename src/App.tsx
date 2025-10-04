@@ -1550,8 +1550,6 @@ export default function App() {
                     }
                     const countToRemove = projectTags.filter(t => t.category?.toLowerCase() === normalizedInput).length;
                     if (confirm(`Remove all ${countToRemove} tags from category "${matchingCategory}"?`)) {
-                      const tagsToRemove = projectTags.filter(t => t.category?.toLowerCase() === normalizedInput);
-                      tagsToRemove.forEach(t => removeProjectTag(t.id));
                       setProjectTags(list => list.filter(t => t.category?.toLowerCase() !== normalizedInput));
                       if (projectTags.some(t => t.code === currentTag && t.category?.toLowerCase() === normalizedInput)) {
                         setCurrentTag('');
@@ -1567,7 +1565,6 @@ export default function App() {
                   className="btn"
                   onClick={() => {
                     if (confirm(`Remove all ${projectTags.length} tags from project?`)) {
-                      projectTags.forEach(t => removeProjectTag(t.id));
                       setProjectTags([]);
                       setCurrentTag('');
                     }
