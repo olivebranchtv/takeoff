@@ -14,7 +14,6 @@ import { useStore } from '@/state/store';
 import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
 import { pathLength } from '@/utils/geometry';
 import { useAutoSave } from '@/hooks/useAutoSave';
-import { useTagAutoSave } from '@/hooks/useTagAutoSave';
 import { useInitialize } from '@/hooks/useInitialize';
 
 /* NEW: raceway BOM helpers */
@@ -128,9 +127,6 @@ export default function App() {
 
   /* ---------- Initialize: Load tags from Supabase ---------- */
   useInitialize();
-
-  /* ---------- Auto-save TAGS ONLY to Supabase (Projects are saved manually) ---------- */
-  useTagAutoSave();
 
   /* ---------- Warn before closing if project not saved ---------- */
   useAutoSave();

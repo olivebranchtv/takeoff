@@ -206,9 +206,9 @@ type State = {
   redo: (pageIndex:number) => void;
 
   // tag DB ops (persisted, upsert-by-code)
-  addTag: (t: Omit<Tag,'id'>) => void;
-  updateTag: (id: string, patch: Partial<Tag>) => void;
-  deleteTag: (id: string) => void;
+  addTag: (t: Omit<Tag,'id'>) => Promise<void>;
+  updateTag: (id: string, patch: Partial<Tag>) => Promise<void>;
+  deleteTag: (id: string) => Promise<void>;
   importTags: (list: Tag[] | Omit<Tag,'id'>[]) => void;
   exportTags: () => Tag[];
   colorForCode: (code: string) => string;
@@ -403,7 +403,8 @@ export const useStore = create<State>()((set, get) => ({
       }),
 
       // ===== TAG DB (persist + upsert-by-code) =====
-      addTag: (t) => set((s) => {
+      addTag: async (t) => {
+        const s = get();
         const codeKey = norm(t.code);
         const idx = s.tags.findIndex(x => norm(x.code) === codeKey);
         const incomingColor = t.color || ORANGE;
@@ -471,16 +472,22 @@ export const useStore = create<State>()((set, get) => ({
           else delete overrides[codeKey];
         }
 
-        // Tags are auto-saved by useTagAutoSave hook - no manual save needed
+        // Save immediately to database
+        set({ tags, colorOverrides: overrides });
 
-        return { tags, colorOverrides: overrides };
-      }),
+        const { saveTagsToSupabase } = await import('@/utils/supabasePricing');
+        if (saveTagsToSupabase) {
+          const currentState = get();
+          await saveTagsToSupabase(currentState.tags, currentState.colorOverrides, currentState.deletedTagCodes);
+        }
+      },
 
-      updateTag: (id, patch) => set((s) => {
-        if (!patch) return {};
+      updateTag: async (id, patch) => {
+        if (!patch) return;
+        const s = get();
         const tags = [...s.tags];
         const currentIdx = tags.findIndex(t => t.id === id);
-        if (currentIdx < 0) return {};
+        if (currentIdx < 0) return;
 
         console.log('[Store] updateTag - patch:', patch);
         console.log('[Store] updateTag - has assemblyId property:', 'assemblyId' in patch);
@@ -553,57 +560,64 @@ export const useStore = create<State>()((set, get) => ({
           delete overrides[nextCode];
         }
 
-        // Tags are auto-saved by useTagAutoSave hook - no manual save needed
+        // Save immediately to database
+        set({ tags, colorOverrides: overrides, projectTagIds: s.projectTagIds.filter(pid => pid !== id) });
 
-        return { tags, colorOverrides: overrides, projectTagIds: s.projectTagIds.filter(pid => pid !== id) };
-      }),
+        const { saveTagsToSupabase } = await import('@/utils/supabasePricing');
+        if (saveTagsToSupabase) {
+          const currentState = get();
+          await saveTagsToSupabase(currentState.tags, currentState.colorOverrides, currentState.deletedTagCodes);
+        }
+      },
 
       deleteTag: async (id) => {
         const s = get();
         const tag = s.tags.find(t => t.id === id);
 
-        if (tag) {
-          // Delete from master pricing database if tag has a customMaterialCost or customLaborHours (linked to master DB)
-          // OR if the tag code matches an item code in the database
-          const { supabase } = await import('@/utils/supabasePricing');
-          if (supabase) {
-            try {
-              // Check if this tag code exists in material_pricing
-              const { data: existingItem } = await supabase
+        if (!tag) return;
+
+        console.log(`🗑️ PERMANENTLY DELETING tag "${tag.code}" (${tag.name})`);
+
+        // Delete from master pricing database if it exists there
+        const { supabase, saveTagsToSupabase } = await import('@/utils/supabasePricing');
+        if (supabase) {
+          try {
+            // Check if this tag code exists in material_pricing
+            const { data: existingItem } = await supabase
+              .from('material_pricing')
+              .select('item_code')
+              .eq('item_code', tag.code)
+              .maybeSingle();
+
+            if (existingItem) {
+              console.log(`🗑️ Deleting "${tag.code}" from master pricing database...`);
+              const { error } = await supabase
                 .from('material_pricing')
-                .select('item_code')
-                .eq('item_code', tag.code)
-                .maybeSingle();
+                .delete()
+                .eq('item_code', tag.code);
 
-              if (existingItem) {
-                console.log(`🗑️ Deleting "${tag.code}" from master pricing database...`);
-                const { error } = await supabase
-                  .from('material_pricing')
-                  .delete()
-                  .eq('item_code', tag.code);
-
-                if (error) {
-                  console.error('Error deleting from master database:', error);
-                } else {
-                  console.log(`✅ Deleted "${tag.code}" from master pricing database`);
-                }
+              if (error) {
+                console.error('❌ Error deleting from master pricing database:', error);
+              } else {
+                console.log(`✅ Deleted "${tag.code}" from master pricing database`);
               }
-            } catch (error) {
-              console.error('Error checking/deleting from master database:', error);
             }
+          } catch (error) {
+            console.error('❌ Error checking/deleting from master pricing database:', error);
           }
         }
 
-        set(s => {
+        // Update state: remove tag, track as deleted, remove from all pages
+        const newState = set(s => {
           const tags = s.tags.filter(t => t.id !== id);
           const overrides = { ...s.colorOverrides };
-          if (tag) delete overrides[norm(tag.code)];
+          delete overrides[norm(tag.code)];
 
           // Track deleted tag code to prevent re-import
-          const deletedTagCodes = tag ? [...s.deletedTagCodes, norm(tag.code)] : s.deletedTagCodes;
+          const deletedTagCodes = [...s.deletedTagCodes, norm(tag.code)];
 
           // Remove all objects with this tag code from all pages
-          const pages = tag ? s.pages.map(page => ({
+          const pages = s.pages.map(page => ({
             ...page,
             objects: page.objects.filter(obj => {
               // Remove count objects with this tag code
@@ -623,12 +637,22 @@ export const useStore = create<State>()((set, get) => ({
               }
               return obj;
             })
-          })) : s.pages;
-
-          // Tags are auto-saved by useTagAutoSave hook - no manual save needed
+          }));
 
           return { tags, projectTagIds: s.projectTagIds.filter(pid => pid !== id), colorOverrides: overrides, deletedTagCodes, pages };
         });
+
+        // Immediately save to database
+        if (saveTagsToSupabase) {
+          const currentState = get();
+          console.log(`💾 Saving deletion to database...`);
+          const success = await saveTagsToSupabase(currentState.tags, currentState.colorOverrides, currentState.deletedTagCodes);
+          if (success) {
+            console.log(`✅ Tag "${tag.code}" permanently deleted from database`);
+          } else {
+            console.error(`❌ Failed to save deletion to database`);
+          }
+        }
       },
 
       importTags: (list) => set((s) => {
