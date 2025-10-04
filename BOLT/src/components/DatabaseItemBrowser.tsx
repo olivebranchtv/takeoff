@@ -24,6 +24,14 @@ export function DatabaseItemBrowser({ open, onClose, onSelectCode }: Props) {
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<{ cost: string; hours: string }>({ cost: '', hours: '' });
   const [saving, setSaving] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newItem, setNewItem] = useState<DatabaseItem>({
+    item_code: '',
+    description: '',
+    category: '',
+    material_cost: 0,
+    labor_hours: 0
+  });
 
   useEffect(() => {
     if (open) {
@@ -162,6 +170,70 @@ export function DatabaseItemBrowser({ open, onClose, onSelectCode }: Props) {
     setEditValues({ cost: '', hours: '' });
   }
 
+  async function addNewItem() {
+    if (!supabase) {
+      alert('Database not connected');
+      return;
+    }
+
+    if (!newItem.item_code.trim() || !newItem.description.trim() || !newItem.category.trim()) {
+      alert('Please fill in all fields (Item Code, Description, and Category)');
+      return;
+    }
+
+    if (newItem.material_cost < 0 || newItem.labor_hours < 0) {
+      alert('Cost and labor hours must be positive numbers');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { data, error } = await supabase
+        .from('material_pricing')
+        .insert([{
+          item_code: newItem.item_code.trim().toUpperCase(),
+          description: newItem.description.trim(),
+          category: newItem.category.trim(),
+          material_cost: newItem.material_cost,
+          labor_hours: newItem.labor_hours
+        }])
+        .select();
+
+      if (error) {
+        console.error('Error adding item:', error);
+        alert('Error adding item: ' + error.message);
+        return;
+      }
+
+      await loadItems();
+      setShowAddForm(false);
+      setNewItem({
+        item_code: '',
+        description: '',
+        category: '',
+        material_cost: 0,
+        labor_hours: 0
+      });
+      alert('✓ Item added successfully!');
+    } catch (err) {
+      console.error('Exception adding item:', err);
+      alert('Error adding item');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function cancelAdd() {
+    setShowAddForm(false);
+    setNewItem({
+      item_code: '',
+      description: '',
+      category: '',
+      material_cost: 0,
+      labor_hours: 0
+    });
+  }
+
   if (!open) return null;
 
   const categories = ['ALL', ...Array.from(new Set(items.map(i => i.category)))].sort();
@@ -228,20 +300,180 @@ export function DatabaseItemBrowser({ open, onClose, onSelectCode }: Props) {
               Click any item to use its code, or click Edit to update pricing
             </p>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '8px 16px',
-              background: '#f3f4f6',
-              border: '2px solid #d1d5db',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: 600
-            }}
-          >
-            Close
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => setShowAddForm(!showAddForm)}
+              style={{
+                padding: '8px 16px',
+                background: showAddForm ? '#f3f4f6' : '#10b981',
+                color: showAddForm ? '#4b5563' : 'white',
+                border: showAddForm ? '2px solid #d1d5db' : 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+            >
+              {showAddForm ? 'Cancel Add' : '+ Add New Item'}
+            </button>
+            <button
+              onClick={onClose}
+              style={{
+                padding: '8px 16px',
+                background: '#f3f4f6',
+                border: '2px solid #d1d5db',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+            >
+              Close
+            </button>
+          </div>
         </div>
+
+        {showAddForm && (
+          <div style={{
+            padding: '20px 24px',
+            background: '#f0fdf4',
+            borderBottom: '2px solid #86efac'
+          }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: 700, color: '#166534' }}>
+              Add New Database Item
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '4px', color: '#374151' }}>
+                  Item Code *
+                </label>
+                <input
+                  type="text"
+                  value={newItem.item_code}
+                  onChange={e => setNewItem(v => ({ ...v, item_code: e.target.value }))}
+                  placeholder="e.g., WIRE-12-THHN"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '2px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontFamily: 'monospace'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '4px', color: '#374151' }}>
+                  Category *
+                </label>
+                <input
+                  type="text"
+                  value={newItem.category}
+                  onChange={e => setNewItem(v => ({ ...v, category: e.target.value }))}
+                  placeholder="e.g., Wire"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '2px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '4px', color: '#374151' }}>
+                Description *
+              </label>
+              <input
+                type="text"
+                value={newItem.description}
+                onChange={e => setNewItem(v => ({ ...v, description: e.target.value }))}
+                placeholder="e.g., 12 AWG THHN Copper Wire"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '2px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '14px'
+                }}
+              />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '4px', color: '#374151' }}>
+                  Material Cost ($)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={newItem.material_cost}
+                  onChange={e => setNewItem(v => ({ ...v, material_cost: parseFloat(e.target.value) || 0 }))}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '2px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '4px', color: '#374151' }}>
+                  Labor Hours
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={newItem.labor_hours}
+                  onChange={e => setNewItem(v => ({ ...v, labor_hours: parseFloat(e.target.value) || 0 }))}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '2px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={addNewItem}
+                disabled={saving}
+                style={{
+                  padding: '10px 20px',
+                  background: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  opacity: saving ? 0.6 : 1
+                }}
+              >
+                {saving ? 'Adding...' : '✓ Add Item'}
+              </button>
+              <button
+                onClick={cancelAdd}
+                disabled={saving}
+                style={{
+                  padding: '10px 20px',
+                  background: '#f3f4f6',
+                  color: '#4b5563',
+                  border: '2px solid #d1d5db',
+                  borderRadius: '6px',
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: '14px'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         <div style={{
           padding: '16px 24px',

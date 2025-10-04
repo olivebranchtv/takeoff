@@ -158,6 +158,80 @@ export async function saveMaterialPricingToSupabase(materials: Omit<MaterialPric
   }
 }
 
+/**
+ * Save or update a single tag to the master material_pricing database
+ * @param tag - The tag with item code, description, material cost, and labor hours
+ * @returns true if successful, false otherwise
+ */
+export async function saveTagToMasterDatabase(tag: {
+  code: string;
+  name: string;
+  category: string;
+  customMaterialCost?: number;
+  customLaborHours?: number;
+}): Promise<boolean> {
+  if (!supabase) {
+    console.warn('❌ Supabase not configured. Cannot save to master database.');
+    return false;
+  }
+
+  try {
+    const defaultUserId = '00000000-0000-0000-0000-000000000000';
+
+    // Check if item already exists
+    const { data: existing } = await supabase
+      .from('material_pricing')
+      .select('id')
+      .eq('item_code', tag.code)
+      .eq('user_id', defaultUserId)
+      .maybeSingle();
+
+    const materialData = {
+      item_code: tag.code,
+      category: tag.category,
+      description: tag.name,
+      unit: 'EA',
+      material_cost: tag.customMaterialCost || 0,
+      labor_hours: tag.customLaborHours || 0,
+      user_id: defaultUserId,
+      last_updated: new Date().toISOString()
+    };
+
+    if (existing) {
+      // Update existing record
+      const { error } = await supabase
+        .from('material_pricing')
+        .update(materialData)
+        .eq('id', existing.id);
+
+      if (error) {
+        console.error('❌ Error updating master database:', error);
+        alert(`Failed to update master database: ${error.message}`);
+        return false;
+      }
+      console.log(`✅ Updated "${tag.code}" in master database`);
+    } else {
+      // Insert new record
+      const { error } = await supabase
+        .from('material_pricing')
+        .insert(materialData);
+
+      if (error) {
+        console.error('❌ Error inserting to master database:', error);
+        alert(`Failed to save to master database: ${error.message}`);
+        return false;
+      }
+      console.log(`✅ Saved "${tag.code}" to master database`);
+    }
+
+    return true;
+  } catch (error: any) {
+    console.error('❌ Unexpected error saving to master database:', error);
+    alert(`Unexpected error: ${error.message || error}`);
+    return false;
+  }
+}
+
 export async function loadCompanySettings(): Promise<CompanySettings | null> {
   if (!supabase) return null;
 
@@ -544,6 +618,38 @@ export async function loadTagsFromSupabase(): Promise<{ tags: any[]; colorOverri
     };
   } catch (error) {
     console.error('Error loading tags:', error);
+    return null;
+  }
+}
+
+/**
+ * Lookup material pricing by item_code to get cost and labor hours
+ */
+export async function lookupMaterialPricingByCode(code: string): Promise<{ materialCost: number; laborHours: number } | null> {
+  if (!supabase) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from('material_pricing')
+      .select('material_cost, labor_hours')
+      .eq('item_code', code)
+      .maybeSingle();
+
+    if (error) {
+      console.error(`Error looking up pricing for code "${code}":`, error);
+      return null;
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return {
+      materialCost: data.material_cost || 0,
+      laborHours: data.labor_hours || 0
+    };
+  } catch (error) {
+    console.error(`Error looking up pricing for code "${code}":`, error);
     return null;
   }
 }
