@@ -491,40 +491,87 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     }
   }
 
-  function autoPopulateAssemblies() {
+  async function autoPopulateAssemblies() {
     if (!confirm('Auto-assign assemblies to all tags based on their codes and categories?\n\nNote: ALL lights will get the Standard Lighting Fixture Installation assembly (box, conduit, wire, fittings).')) return;
 
+    console.log('🔄 Starting auto-assign assemblies...');
     let updated = 0;
-    (tags as Tag[]).forEach((tag: Tag) => {
+
+    // Batch update: modify all tags in memory first
+    const updatedTags = (tags as Tag[]).map(tag => {
       // Only auto-assign if no assembly is currently set
       if (!(tag as any).assemblyId) {
         const assemblyId = getAssemblyIdForTag(tag.code, tag.category);
         if (assemblyId) {
-          updateTag(tag.id, { assemblyId } as any);
+          console.log(`  Auto-assigning assembly to ${tag.code}: ${assemblyId}`);
           updated++;
+          return { ...tag, assemblyId };
         }
       }
+      return tag;
     });
 
-    alert(`Auto-assigned assemblies to ${updated} tags.`);
+    if (updated > 0) {
+      // Save all changes at once
+      console.log(`💾 Saving ${updated} assembly assignments to database...`);
+      const { saveTagsToSupabase } = await import('@/utils/supabasePricing');
+
+      // Update store
+      useStore.setState({ tags: updatedTags });
+
+      // Save to database
+      if (saveTagsToSupabase) {
+        const currentState = useStore.getState();
+        const success = await saveTagsToSupabase(currentState.tags, currentState.colorOverrides, currentState.deletedTagCodes);
+        if (success) {
+          console.log(`✅ Auto-assigned assemblies to ${updated} tags`);
+          alert(`Auto-assigned assemblies to ${updated} tags.`);
+        } else {
+          console.error(`❌ Failed to save assembly assignments to database`);
+          alert(`Failed to save changes to database.`);
+        }
+      }
+    } else {
+      alert('No tags needed assembly assignment.');
+    }
   }
 
-  function assignLightAssemblies() {
+  async function assignLightAssemblies() {
     if (!confirm('Assign Standard Lighting Assembly to ALL light tags?\n\nThis will add the Standard Lighting Fixture Installation assembly (box, conduit, wire, fittings) to all lights category tags.')) return;
 
+    console.log('🔄 Starting light assembly assignment...');
     let assigned = 0;
-    (tags as Tag[]).forEach((tag: Tag) => {
-      // Check if it's a Lights category tag
-      const isLightCategory = tag.category?.toLowerCase().includes('light');
 
+    // Batch update: modify all tags in memory first
+    const updatedTags = (tags as Tag[]).map(tag => {
+      const isLightCategory = tag.category?.toLowerCase().includes('light');
       if (isLightCategory) {
-        // Assign the standard lighting assembly - only pass the assemblyId field
-        updateTag(tag.id, { assemblyId: 'light-standard-install' } as any);
+        console.log(`  Assigning light assembly to ${tag.code} (${tag.name})`);
         assigned++;
+        return { ...tag, assemblyId: 'light-standard-install' };
       }
+      return tag;
     });
 
-    alert(`Assigned Standard Lighting Assembly to ${assigned} light tags. Each light now includes installation materials (box, conduit, wire, fittings).`);
+    // Save all changes at once
+    console.log(`💾 Saving ${assigned} light assembly assignments to database...`);
+    const { saveTagsToSupabase } = await import('@/utils/supabasePricing');
+
+    // Update store
+    useStore.setState({ tags: updatedTags });
+
+    // Save to database
+    if (saveTagsToSupabase) {
+      const currentState = useStore.getState();
+      const success = await saveTagsToSupabase(currentState.tags, currentState.colorOverrides, currentState.deletedTagCodes);
+      if (success) {
+        console.log(`✅ Assigned Standard Lighting Assembly to ${assigned} light tags`);
+        alert(`Assigned Standard Lighting Assembly to ${assigned} light tags. Each light now includes installation materials (box, conduit, wire, fittings).`);
+      } else {
+        console.error(`❌ Failed to save light assembly assignments to database`);
+        alert(`Failed to save changes to database.`);
+      }
+    }
   }
 
   function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
