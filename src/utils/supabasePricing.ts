@@ -553,25 +553,35 @@ export async function lookupMaterialPricingByCode(code: string): Promise<{ mater
       };
     }
 
-    // Strategy 2: Try partial match on item_code (e.g., "XFMR-PAD" matches "XFMR-PAD-L")
-    // Look for item_code that matches the beginning of the tag code
-    const { data: partialData, error: partialError } = await supabase
+    // Strategy 2: Try prefix match - find database codes that are prefixes of the tag code
+    // Example: tag "XFMR-PAD-L" should match database "XFMR-PAD"
+    // We search for any item_code that the cleanCode starts with
+    const { data: allItems, error: allError } = await supabase
       .from('material_pricing')
-      .select('material_cost, labor_hours, item_code')
-      .ilike('item_code', `${cleanCode.split('-').slice(0, -1).join('-')}%`)
-      .limit(1)
-      .maybeSingle();
+      .select('material_cost, labor_hours, item_code');
 
-    if (partialError && partialError.code !== 'PGRST116') {
-      console.error('Error looking up material pricing (partial):', partialError);
-    }
+    if (allError) {
+      console.error('Error fetching material pricing:', allError);
+    } else if (allItems && allItems.length > 0) {
+      // Find the longest matching prefix
+      let bestMatch = null;
+      let bestMatchLength = 0;
 
-    if (partialData) {
-      console.log(`✓ Found partial match for code "${cleanCode}":`, partialData);
-      return {
-        materialCost: Number(partialData.material_cost) || 0,
-        laborHours: Number(partialData.labor_hours) || 0
-      };
+      for (const item of allItems) {
+        const dbCode = (item.item_code || '').trim().toUpperCase();
+        if (dbCode && cleanCode.startsWith(dbCode) && dbCode.length > bestMatchLength) {
+          bestMatch = item;
+          bestMatchLength = dbCode.length;
+        }
+      }
+
+      if (bestMatch) {
+        console.log(`✓ Found prefix match for code "${cleanCode}":`, bestMatch);
+        return {
+          materialCost: Number(bestMatch.material_cost) || 0,
+          laborHours: Number(bestMatch.labor_hours) || 0
+        };
+      }
     }
 
     // Strategy 3: Try matching on description
