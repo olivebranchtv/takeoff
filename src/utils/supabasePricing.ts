@@ -547,3 +547,35 @@ export async function loadTagsFromSupabase(): Promise<{ tags: any[]; colorOverri
     return null;
   }
 }
+
+/**
+ * Lookup material pricing by item_code to get cost and labor hours
+ */
+export async function lookupMaterialPricingByCode(code: string): Promise<{ materialCost: number; laborHours: number } | null> {
+  if (!supabase) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from('material_pricing')
+      .select('material_cost, labor_hours')
+      .eq('item_code', code)
+      .maybeSingle();
+
+    if (error) {
+      console.error(`Error looking up pricing for code "${code}":`, error);
+      return null;
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return {
+      materialCost: data.material_cost || 0,
+      laborHours: data.labor_hours || 0
+    };
+  } catch (error) {
+    console.error(`Error looking up pricing for code "${code}":`, error);
+    return null;
+  }
+}

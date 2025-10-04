@@ -5,6 +5,8 @@ import type { Tag } from '@/types';
 import { downloadTagsFile } from '@/utils/persist';
 import { DEFAULT_MASTER_TAGS } from '@/constants/masterTags';
 import { getAssemblyIdForTag } from '@/utils/tagAssemblyMapping';
+import { lookupMaterialPricingByCode } from '@/utils/supabasePricing';
+import { DatabaseItemBrowser } from './DatabaseItemBrowser';
 
 type Props = {
   open: boolean;
@@ -59,6 +61,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const [catSelect, setCatSelect] = useState<string>('');
   const [customCategory, setCustomCategory] = useState<string>('');
   const [editorCollapsed, setEditorCollapsed] = useState(false);
+  const [showDatabaseBrowser, setShowDatabaseBrowser] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const editorCardRef = useRef<HTMLDivElement>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
@@ -148,6 +151,24 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     return final.map(cat => ({ category: cat, items: byCat.get(cat) || [] }));
   }, [tags, query, sortedCategories]);
 
+  // State for database lookup pricing
+  const [databasePricing, setDatabasePricing] = useState<{ materialCost: number; laborHours: number } | null>(null);
+
+  // Fetch database pricing when tag code changes
+  useEffect(() => {
+    console.log(`📝 TagManager useEffect triggered. draft.code = "${draft.code}"`);
+    if (draft.code && draft.code.trim()) {
+      console.log(`📝 Calling lookupMaterialPricingByCode for "${draft.code.trim()}"`);
+      lookupMaterialPricingByCode(draft.code.trim()).then(pricing => {
+        console.log(`📝 Lookup result:`, pricing);
+        setDatabasePricing(pricing);
+      });
+    } else {
+      console.log(`📝 No code to lookup, setting pricing to null`);
+      setDatabasePricing(null);
+    }
+  }, [draft.code]);
+
   // Calculate default/current cost and labor for the draft tag
   const currentDefaults = useMemo(() => {
     const selectedAssembly = draft.assemblyId
@@ -167,17 +188,25 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         totalLabor += itemLabor;
       });
 
-      return { cost: totalCost, labor: totalLabor, source: 'assembly' };
+      return { cost: totalCost, labor: totalLabor, source: 'assembly', found: true };
+    } else if (databasePricing) {
+      // Use actual database values for this specific material code
+      return {
+        cost: databasePricing.materialCost,
+        labor: databasePricing.laborHours,
+        source: 'database',
+        found: true
+      };
     } else {
-      // Use category-based defaults
-      const isLight = draft.category?.toLowerCase().includes('light');
+      // No data found
       return {
         cost: 0,
-        labor: isLight ? 1.0 : 0.5,
-        source: isLight ? 'default (lights)' : 'default'
+        labor: 0,
+        source: 'none',
+        found: false
       };
     }
-  }, [draft.assemblyId, draft.category, assemblies]);
+  }, [draft.assemblyId, draft.category, assemblies, databasePricing]);
 
   if (!open) return null;
 
@@ -185,7 +214,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const norm = (s: string) => (s || '').trim().toUpperCase();
 
   /** Upsert-by-code (case-insensitive). Overwrites any existing/default tag with same code. */
-  function upsertByCode(next: Draft, currentEditId?: string | null) {
+  async function upsertByCode(next: Draft, currentEditId?: string | null) {
     const codeKey = norm(next.code);
     const existing = (tags as Tag[]).find(t => norm(t.code) === codeKey);
 
@@ -216,7 +245,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
       // If user was editing a different duplicate record, remove it to avoid twins
       if (currentEditId && currentEditId !== existing.id) {
-        try { deleteTag(currentEditId); } catch {}
+        try { await deleteTag(currentEditId); } catch {}
       }
       return existing.id;
     } else {
@@ -260,15 +289,18 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   function startEdit(t: Tag) {
     setEditId(t.id);
-    setDraft({
+    // Only include optional fields if they exist on the tag
+    const draftData: Draft = {
       code: t.code,
       name: t.name,
       category: t.category,
       color: t.color,
-      assemblyId: t.assemblyId,
-      customMaterialCost: t.customMaterialCost,
-      customLaborHours: t.customLaborHours
-    });
+    };
+    if (t.assemblyId !== undefined) draftData.assemblyId = t.assemblyId;
+    if (t.customMaterialCost !== undefined) draftData.customMaterialCost = t.customMaterialCost;
+    if (t.customLaborHours !== undefined) draftData.customLaborHours = t.customLaborHours;
+
+    setDraft(draftData);
     setError('');
     setEditorCollapsed(false);
     const cat = t.category || '';
@@ -282,6 +314,15 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       setCatSelect('');
       setCustomCategory('');
     }
+
+    // Load database pricing when editing (for display purposes only, don't auto-populate)
+    if (t.code && t.code.trim()) {
+      lookupMaterialPricingByCode(t.code.trim()).then(pricing => {
+        setDatabasePricing(pricing);
+        // Don't auto-populate custom values - let user explicitly set them
+      });
+    }
+
     requestAnimationFrame(() => {
       editorCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       codeInputRef.current?.focus();
@@ -311,26 +352,26 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     return catSelect || draft.category || '';
   }
 
-  function add() {
+  async function add() {
     const category = resolvedCategory();
     const next: Draft = { ...draft, code: draft.code.trim().toUpperCase(), category };
     const msg = validate(next);
     if (msg) { setError(msg); return; }
 
-    upsertByCode(next, null);
+    await upsertByCode(next, null);
     setDraft(d => ({ ...d, code: '', name: '' }));
     setError('');
     codeInputRef.current?.focus();
     if (category) scrollToCategory(category);
   }
 
-  function addAndAddToProject() {
+  async function addAndAddToProject() {
     const category = resolvedCategory();
     const next: Draft = { ...draft, code: draft.code.trim().toUpperCase(), category };
     const msg = validate(next);
     if (msg) { setError(msg); return; }
 
-    const canonicalId = upsertByCode(next, null);
+    const canonicalId = await upsertByCode(next, null);
 
     // Also add to current project if callback provided
     if (onAddToProject && canonicalId) {
@@ -349,32 +390,74 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   function saveEdit() {
     if (!editId) return;
     const category = resolvedCategory();
-    // Explicitly include assemblyId in next, even if undefined (to indicate "NO ASSEMBLY")
+
+    // Build next object - handle assemblyId carefully
     const next: Draft = {
-      ...draft,
       code: draft.code.trim().toUpperCase(),
+      name: draft.name,
       category,
-      assemblyId: draft.assemblyId // Explicitly include, even if undefined
+      color: draft.color,
     };
+
+    // Only include assemblyId if it exists in draft (to allow removal)
+    if ('assemblyId' in draft) {
+      next.assemblyId = draft.assemblyId;
+    }
+    if ('customMaterialCost' in draft) {
+      next.customMaterialCost = draft.customMaterialCost;
+    }
+    if ('customLaborHours' in draft) {
+      next.customLaborHours = draft.customLaborHours;
+    }
+
     const msg = validate(next);
     if (msg) { setError(msg); return; }
 
-    console.log('[TagManager] saveEdit - draft.assemblyId:', draft.assemblyId);
-    console.log('[TagManager] saveEdit - next:', next);
+    console.log('[TagManager] saveEdit - draft:', draft);
+    console.log('[TagManager] saveEdit - assemblyId in draft:', 'assemblyId' in draft, draft.assemblyId);
 
-    const canonicalId = upsertByCode(next, editId);
+    // When editing, ALWAYS update by ID, not by code lookup
+    const patch: any = {
+      code: next.code,
+      name: next.name || '',
+      category: (next.category || '').trim(),
+      color: next.color || '#FFA500',
+    };
+
+    // Only include optional fields if they're present in draft
+    // This allows both setting AND removing them
+    if ('assemblyId' in draft) {
+      patch.assemblyId = next.assemblyId;
+    }
+    if ('customMaterialCost' in draft) {
+      patch.customMaterialCost = next.customMaterialCost;
+    }
+    if ('customLaborHours' in draft) {
+      patch.customLaborHours = next.customLaborHours;
+    }
+
+    console.log('[TagManager] saveEdit - calling updateTag with ID:', editId, 'patch:', patch);
+    updateTag(editId, patch);
+
     if (category) scrollToCategory(category);
     // Clear editor after successful save
     cancelEdit();
-
-    // Optional: small toast/alert to confirm overwrite behavior
-    // alert('Saved. This code now overrides the default in the master database.');
   }
 
-  function remove(id: string) {
+  async function remove(id: string) {
     const tag = (tags as Tag[]).find(t => t.id === id);
     if (!tag) return;
-    if (confirm(`Delete tag ${tag.code}?`)) deleteTag(id);
+
+    const confirmMsg = `Delete tag "${tag.code}"?\n\n` +
+      `This will:\n` +
+      `• Remove the tag from your tag library\n` +
+      `• Delete it from the master pricing database (if it exists there)\n` +
+      `• Remove all instances from your drawings\n\n` +
+      `This action CANNOT be undone.`;
+
+    if (confirm(confirmMsg)) {
+      await deleteTag(id);
+    }
   }
 
   function autoPopulateAssemblies() {
@@ -474,7 +557,9 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         added++;
       }
     });
-    alert(`Default master tags loaded. Added ${added} new tag(s), skipped ${skipped} deleted tag(s). Total master: ${DEFAULT_MASTER_TAGS.length}.`);
+
+    const availableMasterTags = DEFAULT_MASTER_TAGS.length - deleted.size;
+    alert(`Default master tags loaded. Added ${added} new tag(s), skipped ${skipped} permanently deleted tag(s). Available master tags: ${availableMasterTags} (${deleted.size} permanently deleted).`);
   }
 
   const headerNote = 'Edits here permanently override defaults for matching codes in the master database.';
@@ -521,6 +606,14 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
               style={{ background: '#fbbf24', color: '#000' }}
             >
               Assign Light Assemblies
+            </button>
+            <button
+              className="btn"
+              onClick={() => setShowDatabaseBrowser(true)}
+              title="Browse all available item codes in the master database"
+              style={{ background: '#3b82f6', color: '#fff', fontWeight: 600 }}
+            >
+              Browse Database
             </button>
             <button className="btn" onClick={() => fileRef.current?.click()}>Import JSON</button>
             <button className="btn" onClick={() => downloadTagsFile('tags.json', exportTags())}>Export JSON</button>
@@ -642,16 +735,26 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
               <div style={{ marginTop: 10 }}>
                 <div style={S.label}>Assembly (Optional)</div>
                 <select
-                  value={draft.assemblyId || 'NONE'}
+                  value={draft.assemblyId || ''}
                   onChange={e => {
                     const value = e.target.value;
-                    setDraft(d => ({ ...d, assemblyId: value === 'NONE' ? undefined : value }));
+                    console.log('[TagManager] Assembly dropdown changed to:', value);
+                    if (value === '' || value === 'NONE') {
+                      // Explicitly remove assemblyId
+                      setDraft(d => {
+                        const newDraft = { ...d };
+                        delete newDraft.assemblyId;
+                        return newDraft;
+                      });
+                    } else {
+                      setDraft(d => ({ ...d, assemblyId: value }));
+                    }
                   }}
                   style={{ ...S.input, width: '100%', maxWidth: '500px' }}
                 >
-                  <option value="NONE">NO ASSEMBLY</option>
+                  <option value="">NO ASSEMBLY</option>
                   {assemblies && assemblies.filter((a: any) => a.isActive).map((assembly: any) => (
-                    <option key={assembly.id} value={assembly.code}>
+                    <option key={assembly.id} value={assembly.id}>
                       {assembly.code} - {assembly.name} ({assembly.items.length} items)
                     </option>
                   ))}
@@ -669,14 +772,27 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     min="0"
                     step="0.01"
                     value={draft.customMaterialCost ?? ''}
-                    onChange={e => setDraft(d => ({ ...d, customMaterialCost: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                    placeholder={currentDefaults.cost > 0 ? `Current: $${currentDefaults.cost.toFixed(2)}` : 'Optional override'}
+                    onChange={e => {
+                      const value = e.target.value ? parseFloat(e.target.value) : undefined;
+                      setDraft(d => {
+                        const newDraft = { ...d };
+                        if (value === undefined) {
+                          delete newDraft.customMaterialCost;
+                        } else {
+                          newDraft.customMaterialCost = value;
+                        }
+                        return newDraft;
+                      });
+                    }}
+                    placeholder={currentDefaults.cost > 0 ? `Will use: $${currentDefaults.cost.toFixed(2)}` : 'Leave empty to use default'}
                     style={S.input}
                   />
-                  <div style={{ fontSize: '12px', color: draft.customMaterialCost !== undefined ? '#059669' : '#666', marginTop: '4px', fontWeight: draft.customMaterialCost !== undefined ? 600 : 400 }}>
+                  <div style={{ fontSize: '12px', color: draft.customMaterialCost !== undefined ? '#059669' : (currentDefaults.found ? '#2563eb' : '#dc2626'), marginTop: '4px', fontWeight: draft.customMaterialCost !== undefined ? 600 : (currentDefaults.found ? 500 : 600) }}>
                     {draft.customMaterialCost !== undefined
-                      ? `✓ Custom override: $${draft.customMaterialCost.toFixed(2)}/unit`
-                      : `Current from ${currentDefaults.source}: $${currentDefaults.cost.toFixed(2)}/unit`
+                      ? `✓ Custom value set: $${draft.customMaterialCost.toFixed(2)}/unit`
+                      : currentDefaults.found
+                        ? `Database: $${currentDefaults.cost.toFixed(2)}/unit (${currentDefaults.source})`
+                        : '⚠ No database pricing found - enter custom value'
                     }
                   </div>
                 </div>
@@ -687,14 +803,27 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     min="0"
                     step="0.1"
                     value={draft.customLaborHours ?? ''}
-                    onChange={e => setDraft(d => ({ ...d, customLaborHours: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                    placeholder={`Current: ${currentDefaults.labor.toFixed(2)} hrs`}
+                    onChange={e => {
+                      const value = e.target.value ? parseFloat(e.target.value) : undefined;
+                      setDraft(d => {
+                        const newDraft = { ...d };
+                        if (value === undefined) {
+                          delete newDraft.customLaborHours;
+                        } else {
+                          newDraft.customLaborHours = value;
+                        }
+                        return newDraft;
+                      });
+                    }}
+                    placeholder={currentDefaults.labor > 0 ? `Will use: ${currentDefaults.labor.toFixed(2)} hrs` : 'Leave empty to use default'}
                     style={S.input}
                   />
-                  <div style={{ fontSize: '12px', color: draft.customLaborHours !== undefined ? '#059669' : '#666', marginTop: '4px', fontWeight: draft.customLaborHours !== undefined ? 600 : 400 }}>
+                  <div style={{ fontSize: '12px', color: draft.customLaborHours !== undefined ? '#059669' : (currentDefaults.found ? '#2563eb' : '#dc2626'), marginTop: '4px', fontWeight: draft.customLaborHours !== undefined ? 600 : (currentDefaults.found ? 500 : 600) }}>
                     {draft.customLaborHours !== undefined
-                      ? `✓ Custom override: ${draft.customLaborHours.toFixed(2)} hrs/unit`
-                      : `Current from ${currentDefaults.source}: ${currentDefaults.labor.toFixed(2)} hrs/unit`
+                      ? `✓ Custom value set: ${draft.customLaborHours.toFixed(2)} hrs/unit`
+                      : currentDefaults.found
+                        ? `Database: ${currentDefaults.labor.toFixed(2)} hrs/unit (${currentDefaults.source})`
+                        : '⚠ No database pricing found - enter custom value'
                     }
                   </div>
                 </div>
@@ -844,6 +973,15 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
         <input ref={fileRef} type="file" accept="application/json" onChange={onPickFile} style={{ display:'none' }} />
       </div>
+
+      <DatabaseItemBrowser
+        open={showDatabaseBrowser}
+        onClose={() => setShowDatabaseBrowser(false)}
+        onSelectCode={(code) => {
+          setDraft(d => ({ ...d, code: code }));
+          setShowDatabaseBrowser(false);
+        }}
+      />
     </div>
   );
 }
