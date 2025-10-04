@@ -500,7 +500,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       if (!(tag as any).assemblyId) {
         const assemblyId = getAssemblyIdForTag(tag.code, tag.category);
         if (assemblyId) {
-          updateTag(tag.id, { ...tag, assemblyId } as any);
+          updateTag(tag.id, { assemblyId } as any);
           updated++;
         }
       }
@@ -518,8 +518,8 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       const isLightCategory = tag.category?.toLowerCase().includes('light');
 
       if (isLightCategory) {
-        // Assign the standard lighting assembly
-        updateTag(tag.id, { ...tag, assemblyId: 'light-standard-install' } as any);
+        // Assign the standard lighting assembly - only pass the assemblyId field
+        updateTag(tag.id, { assemblyId: 'light-standard-install' } as any);
         assigned++;
       }
     });
