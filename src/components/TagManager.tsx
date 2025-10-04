@@ -214,7 +214,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const norm = (s: string) => (s || '').trim().toUpperCase();
 
   /** Upsert-by-code (case-insensitive). Overwrites any existing/default tag with same code. */
-  function upsertByCode(next: Draft, currentEditId?: string | null) {
+  async function upsertByCode(next: Draft, currentEditId?: string | null) {
     const codeKey = norm(next.code);
     const existing = (tags as Tag[]).find(t => norm(t.code) === codeKey);
 
@@ -245,7 +245,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
       // If user was editing a different duplicate record, remove it to avoid twins
       if (currentEditId && currentEditId !== existing.id) {
-        try { deleteTag(currentEditId); } catch {}
+        try { await deleteTag(currentEditId); } catch {}
       }
       return existing.id;
     } else {
@@ -352,26 +352,26 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     return catSelect || draft.category || '';
   }
 
-  function add() {
+  async function add() {
     const category = resolvedCategory();
     const next: Draft = { ...draft, code: draft.code.trim().toUpperCase(), category };
     const msg = validate(next);
     if (msg) { setError(msg); return; }
 
-    upsertByCode(next, null);
+    await upsertByCode(next, null);
     setDraft(d => ({ ...d, code: '', name: '' }));
     setError('');
     codeInputRef.current?.focus();
     if (category) scrollToCategory(category);
   }
 
-  function addAndAddToProject() {
+  async function addAndAddToProject() {
     const category = resolvedCategory();
     const next: Draft = { ...draft, code: draft.code.trim().toUpperCase(), category };
     const msg = validate(next);
     if (msg) { setError(msg); return; }
 
-    const canonicalId = upsertByCode(next, null);
+    const canonicalId = await upsertByCode(next, null);
 
     // Also add to current project if callback provided
     if (onAddToProject && canonicalId) {
@@ -444,10 +444,20 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     cancelEdit();
   }
 
-  function remove(id: string) {
+  async function remove(id: string) {
     const tag = (tags as Tag[]).find(t => t.id === id);
     if (!tag) return;
-    if (confirm(`Delete tag ${tag.code}?`)) deleteTag(id);
+
+    const confirmMsg = `Delete tag "${tag.code}"?\n\n` +
+      `This will:\n` +
+      `• Remove the tag from your tag library\n` +
+      `• Delete it from the master pricing database (if it exists there)\n` +
+      `• Remove all instances from your drawings\n\n` +
+      `This action CANNOT be undone.`;
+
+    if (confirm(confirmMsg)) {
+      await deleteTag(id);
+    }
   }
 
   function autoPopulateAssemblies() {

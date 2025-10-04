@@ -558,42 +558,78 @@ export const useStore = create<State>()((set, get) => ({
         return { tags, colorOverrides: overrides, projectTagIds: s.projectTagIds.filter(pid => pid !== id) };
       }),
 
-      deleteTag: (id) => set(s => {
+      deleteTag: async (id) => {
+        const s = get();
         const tag = s.tags.find(t => t.id === id);
-        const tags = s.tags.filter(t => t.id !== id);
-        const overrides = { ...s.colorOverrides };
-        if (tag) delete overrides[norm(tag.code)];
 
-        // Track deleted tag code to prevent re-import
-        const deletedTagCodes = tag ? [...s.deletedTagCodes, norm(tag.code)] : s.deletedTagCodes;
+        if (tag) {
+          // Delete from master pricing database if tag has a customMaterialCost or customLaborHours (linked to master DB)
+          // OR if the tag code matches an item code in the database
+          const { supabase } = await import('@/utils/supabasePricing');
+          if (supabase) {
+            try {
+              // Check if this tag code exists in material_pricing
+              const { data: existingItem } = await supabase
+                .from('material_pricing')
+                .select('item_code')
+                .eq('item_code', tag.code)
+                .maybeSingle();
 
-        // Remove all objects with this tag code from all pages
-        const pages = tag ? s.pages.map(page => ({
-          ...page,
-          objects: page.objects.filter(obj => {
-            // Remove count objects with this tag code
-            if (obj.type === 'count') {
-              return norm(obj.code) !== norm(tag.code);
+              if (existingItem) {
+                console.log(`🗑️ Deleting "${tag.code}" from master pricing database...`);
+                const { error } = await supabase
+                  .from('material_pricing')
+                  .delete()
+                  .eq('item_code', tag.code);
+
+                if (error) {
+                  console.error('Error deleting from master database:', error);
+                } else {
+                  console.log(`✅ Deleted "${tag.code}" from master pricing database`);
+                }
+              }
+            } catch (error) {
+              console.error('Error checking/deleting from master database:', error);
             }
-            // Keep all other objects but clear their code if it matches
-            if (obj.code && norm(obj.code) === norm(tag.code)) {
-              return true; // Keep the object but we'll clear the code below
-            }
-            return true;
-          }).map(obj => {
-            // Clear code from line-like objects if it matches the deleted tag
-            if (obj.type !== 'count' && obj.code && norm(obj.code) === norm(tag.code)) {
-              const { code, ...rest } = obj;
-              return rest as typeof obj;
-            }
-            return obj;
-          })
-        })) : s.pages;
+          }
+        }
 
-        // Tags are auto-saved by useTagAutoSave hook - no manual save needed
+        set(s => {
+          const tags = s.tags.filter(t => t.id !== id);
+          const overrides = { ...s.colorOverrides };
+          if (tag) delete overrides[norm(tag.code)];
 
-        return { tags, projectTagIds: s.projectTagIds.filter(pid => pid !== id), colorOverrides: overrides, deletedTagCodes, pages };
-      }),
+          // Track deleted tag code to prevent re-import
+          const deletedTagCodes = tag ? [...s.deletedTagCodes, norm(tag.code)] : s.deletedTagCodes;
+
+          // Remove all objects with this tag code from all pages
+          const pages = tag ? s.pages.map(page => ({
+            ...page,
+            objects: page.objects.filter(obj => {
+              // Remove count objects with this tag code
+              if (obj.type === 'count') {
+                return norm(obj.code) !== norm(tag.code);
+              }
+              // Keep all other objects but clear their code if it matches
+              if (obj.code && norm(obj.code) === norm(tag.code)) {
+                return true; // Keep the object but we'll clear the code below
+              }
+              return true;
+            }).map(obj => {
+              // Clear code from line-like objects if it matches the deleted tag
+              if (obj.type !== 'count' && obj.code && norm(obj.code) === norm(tag.code)) {
+                const { code, ...rest } = obj;
+                return rest as typeof obj;
+              }
+              return obj;
+            })
+          })) : s.pages;
+
+          // Tags are auto-saved by useTagAutoSave hook - no manual save needed
+
+          return { tags, projectTagIds: s.projectTagIds.filter(pid => pid !== id), colorOverrides: overrides, deletedTagCodes, pages };
+        });
+      },
 
       importTags: (list) => set((s) => {
         const incoming = asArray<Tag | Omit<Tag,'id'>>(list);
