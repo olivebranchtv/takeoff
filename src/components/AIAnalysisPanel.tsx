@@ -214,7 +214,7 @@ export function AIAnalysisPanel({ analysis, onClose, onExport }: AIAnalysisPanel
               <Block title="Fixture Counts" tone="indigo" items={safe.assumptions.fixtureCountsBasis} />
               <Block title="Waste Factors / Labor Basis" tone="yellow" items={safe.assumptions.wasteFactors} />
               <Block title="Labor Rate & Unit References" tone="yellow" items={safe.assumptions.laborRates} />
-              <Block title="QA Notes" tone="orange" items={safe.assumptions.qaNotes} />
+              <Block title="QA Notes" tone="amber" items={safe.assumptions.qaNotes} />
               <Block title="Other Assumptions" tone="indigo" items={safe.assumptions.other} />
               {isAllEmpty([
                 safe.assumptions.fixtureSupply,
@@ -247,7 +247,7 @@ export function AIAnalysisPanel({ analysis, onClose, onExport }: AIAnalysisPanel
                         <th style={{ ...th, textAlign: 'center' }}>Qty</th>
                         <th style={th}>Wattage</th>
                         <th style={th}>Voltage</th>
-                        <th style={th}}>Mounting</th>
+                        <th style={th}>Mounting</th>
                         <th style={th}>Notes</th>
                       </tr>
                     </thead>
@@ -734,12 +734,13 @@ function Badge({ label, tone }: { label: string; tone: 'blue' | 'green' | 'amber
   );
 }
 
-function Block({ title, tone, items }: { title: string; tone: 'indigo' | 'amber' | 'yellow' | 'teal'; items: any[] }) {
+function Block({ title, tone, items }: { title: string; tone: 'indigo' | 'amber' | 'yellow' | 'teal' | 'orange'; items: any[] }) {
   const palette: Record<string, { bg: string; border: string }> = {
     indigo: { bg: '#eef2ff', border: '#c7d2fe' },
     amber: { bg: '#fffbeb', border: '#fde68a' },
     yellow: { bg: '#fef9c3', border: '#fde68a' },
     teal: { bg: '#ecfeff', border: '#a5f3fc' },
+    orange: { bg: '#fff7ed', border: '#fed7aa' },
   };
   const p = palette[tone];
   return (
@@ -748,6 +749,15 @@ function Block({ title, tone, items }: { title: string; tone: 'indigo' | 'amber'
       <div style={{ padding: 16, background: p.bg, border: `1px solid ${p.border}`, borderRadius: 8 }}>
         <List items={items} empty={`No ${title.toLowerCase()} found`} />
       </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div style={{ padding: 16, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, textAlign: 'center' }}>
+      <div style={{ fontSize: 28, fontWeight: 800, color: '#0ea5e9', marginBottom: 4 }}>{value}</div>
+      <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>{label}</div>
     </div>
   );
 }
