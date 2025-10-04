@@ -539,10 +539,11 @@ export async function lookupMaterialPricingByCode(code: string): Promise<{ mater
     const cleanCode = code.trim().toUpperCase();
     console.log(`🔍 Cleaned code: "${cleanCode}"`);
 
-    // Skip lookup for simple single-letter codes (A, B, C, etc.) or very short codes
-    // These are typically user tags that shouldn't match database items
-    if (cleanCode.length <= 2) {
-      console.log(`⏩ Skipping lookup for short code "${cleanCode}" - too generic to match database items`);
+    // Skip lookup for simple single-letter codes (A, B, C, etc.) WITHOUT dashes
+    // These are typically user-defined lighting tags that shouldn't match database items
+    // But allow codes like "A-1" or multi-part codes like "XFMR-PAD-L"
+    if (cleanCode.length === 1 || (cleanCode.length === 2 && !cleanCode.includes('-'))) {
+      console.log(`⏩ Skipping lookup for short code "${cleanCode}" - likely a user tag`);
       return null;
     }
 
