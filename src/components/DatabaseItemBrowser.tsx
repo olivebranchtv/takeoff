@@ -108,6 +108,47 @@ export function DatabaseItemBrowser({ open, onClose, onSelectCode }: Props) {
     }
   }
 
+  async function deleteItem(item: DatabaseItem) {
+    if (!supabase) {
+      alert('Database not connected');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `⚠️ Delete "${item.item_code}"?\n\n` +
+      `This will permanently remove this item from your master pricing database.\n\n` +
+      `Description: ${item.description}\n` +
+      `Cost: $${item.material_cost.toFixed(2)}\n` +
+      `Hours: ${item.labor_hours.toFixed(2)}\n\n` +
+      `Any tags using this item code will lose their pricing reference.\n\n` +
+      `This action CANNOT be undone.`
+    );
+
+    if (!confirmed) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('material_pricing')
+        .delete()
+        .eq('item_code', item.item_code);
+
+      if (error) {
+        console.error('Error deleting item:', error);
+        alert('Error deleting item: ' + error.message);
+        return;
+      }
+
+      setItems(prev => prev.filter(i => i.item_code !== item.item_code));
+      alert('✓ Item deleted successfully!');
+    } catch (err) {
+      console.error('Exception deleting item:', err);
+      alert('Error deleting item');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function startEdit(item: DatabaseItem) {
     setEditingItem(item.item_code);
     setEditValues({
@@ -285,7 +326,7 @@ export function DatabaseItemBrowser({ open, onClose, onSelectCode }: Props) {
                           border: isEditing ? '2px solid #fb923c' : '1px solid #e5e7eb',
                           borderRadius: '6px',
                           display: 'grid',
-                          gridTemplateColumns: '180px 1fr 140px 140px 140px',
+                          gridTemplateColumns: '180px 1fr 140px 140px 180px',
                           gap: '12px',
                           alignItems: 'center',
                           transition: 'all 0.2s'
@@ -413,6 +454,21 @@ export function DatabaseItemBrowser({ open, onClose, onSelectCode }: Props) {
                                 }}
                               >
                                 Edit
+                              </button>
+                              <button
+                                onClick={() => deleteItem(item)}
+                                style={{
+                                  padding: '6px 12px',
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontWeight: 600,
+                                  fontSize: '12px'
+                                }}
+                              >
+                                Delete
                               </button>
                               {onSelectCode && (
                                 <button
