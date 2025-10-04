@@ -11,7 +11,6 @@ export function useAutoSave() {
   const fileName = useStore(s => s.fileName);
   const pdfBytesBase64 = useStore(s => s.pdfBytesBase64);
   const pdfName = useStore(s => s.pdfName);
-  const projectTagIds = useStore(s => s.projectTagIds);
   const setLastSaveTime = useStore(s => s.setLastSaveTime);
 
   const periodicSaveRef = useRef<NodeJS.Timeout>();
@@ -25,7 +24,6 @@ export function useAutoSave() {
         name: projectName,
         pages,
         tags,
-        projectTagIds,
         pdf: pdfBytesBase64 ? {
           bytesBase64: pdfBytesBase64,
           name: pdfName || fileName

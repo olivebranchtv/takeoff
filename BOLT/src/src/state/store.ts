@@ -799,8 +799,8 @@ export const useStore = create<State>()((set, get) => ({
       },
 
       toProject: () => {
-        const { fileName, pages, tags, projectName, projectTagIds } = get();
-        const payload: any = { fileName, pages, tags, projectTagIds };
+        const { fileName, pages, tags, projectName } = get();
+        const payload: any = { fileName, pages, tags };
         if (projectName) payload.name = projectName;
         return payload as ProjectSave;
       },
@@ -831,31 +831,23 @@ export const useStore = create<State>()((set, get) => ({
           })
           .sort((a,b)=>a.pageIndex-b.pageIndex);
 
-        // Load projectTagIds from saved data if available, otherwise calculate from usage
-        let projectTagIds: string[];
-
-        if (d.projectTagIds && Array.isArray(d.projectTagIds) && d.projectTagIds.length > 0) {
-          // Use saved projectTagIds (user's explicit selection)
-          projectTagIds = d.projectTagIds.filter((id: string) => tags.some(t => t.id === id));
-          console.log(`[fromProject] Loaded ${projectTagIds.length} project tags from saved data`);
-        } else {
-          // Fallback: Calculate from actual usage in drawings (old behavior)
-          const usedTagCodes = new Set<string>();
-          pages.forEach(page => {
-            page.objects.forEach(obj => {
-              if ('code' in obj && obj.code) {
-                usedTagCodes.add(obj.code.toUpperCase());
-              }
-            });
+        // Find all tags that are actually used in the project (have objects with their code)
+        const usedTagCodes = new Set<string>();
+        pages.forEach(page => {
+          page.objects.forEach(obj => {
+            if ('code' in obj && obj.code) {
+              usedTagCodes.add(obj.code.toUpperCase());
+            }
           });
+        });
 
-          projectTagIds = tags
-            .filter(t => usedTagCodes.has(t.code.toUpperCase()))
-            .map(t => t.id);
+        // Only populate projectTagIds with tags that are actually used
+        const projectTagIds = tags
+          .filter(t => usedTagCodes.has(t.code.toUpperCase()))
+          .map(t => t.id);
 
-          console.log(`[fromProject] Found ${usedTagCodes.size} unique tag codes used in project`);
-          console.log(`[fromProject] Calculated ${projectTagIds.length} project tags from usage`);
-        }
+        console.log(`[fromProject] Found ${usedTagCodes.size} unique tag codes used in project`);
+        console.log(`[fromProject] Setting ${projectTagIds.length} project tags`);
 
         set({
           fileName: typeof d.fileName === 'string' ? d.fileName : (typeof d.source === 'string' ? d.source : 'untitled.pdf'),

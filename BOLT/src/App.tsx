@@ -14,6 +14,7 @@ import { useStore } from '@/state/store';
 import type { AnyTakeoffObject, ProjectSave, Tag } from '@/types';
 import { pathLength } from '@/utils/geometry';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { useTagAutoSave } from '@/hooks/useTagAutoSave';
 import { useInitialize } from '@/hooks/useInitialize';
 
 /* NEW: raceway BOM helpers */
@@ -128,8 +129,22 @@ export default function App() {
   /* ---------- Initialize: Load tags from Supabase ---------- */
   useInitialize();
 
-  /* ---------- Auto-save to Supabase ---------- */
+  /* ---------- Auto-save TAGS ONLY to Supabase (Projects are saved manually) ---------- */
+  useTagAutoSave();
+
+  /* ---------- Warn before closing if project not saved ---------- */
   useAutoSave();
+
+  // Prevent accidental browser close
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = ''; // Chrome requires returnValue to be set
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   /* ---------- store ---------- */
   const {
@@ -145,6 +160,7 @@ export default function App() {
     setSelectedIds,
     setProjectName,
     reorderProjectTags,
+    removeProjectTag,
     lastSaveTime,
   } = useStore();
 
@@ -1495,7 +1511,12 @@ export default function App() {
                 <span style={{width:16, height:16, borderRadius:3, border:'1px solid #444', background: (t.category || '').toLowerCase().includes('light') ? '#FFA500' : t.color}} />
                 <span style={{minWidth:24, textAlign:'center', fontWeight: active ? 700 : 600}}>{t.code}</span>
                 <span
-                  onClick={(e)=>{ e.stopPropagation(); setProjectTags(list => list.filter(x => x.id !== t.id)); if (currentTag === t.code) setCurrentTag(''); }}
+                  onClick={(e)=>{
+                    e.stopPropagation();
+                    removeProjectTag(t.id);
+                    setProjectTags(list => list.filter(x => x.id !== t.id));
+                    if (currentTag === t.code) setCurrentTag('');
+                  }}
                   title="Remove from Project Tags"
                   style={{position:'absolute', top:-4, right:-4, width:16, height:16, lineHeight:'14px', textAlign:'center',
                           border:'1px solid #bbb', borderRadius:'50%', background:'#fff', cursor:'pointer', fontSize:10}}
