@@ -5,7 +5,7 @@ import type { Tag } from '@/types';
 import { downloadTagsFile } from '@/utils/persist';
 import { DEFAULT_MASTER_TAGS } from '@/constants/masterTags';
 import { getAssemblyIdForTag } from '@/utils/tagAssemblyMapping';
-import { lookupMaterialPricingByCode } from '@/utils/supabasePricing';
+import { lookupMaterialPricingByCode, supabase } from '@/utils/supabasePricing';
 import { DatabaseItemBrowser } from './DatabaseItemBrowser';
 
 type Props = {
@@ -62,6 +62,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const [customCategory, setCustomCategory] = useState<string>('');
   const [editorCollapsed, setEditorCollapsed] = useState(false);
   const [showDatabaseBrowser, setShowDatabaseBrowser] = useState(false);
+  const [saveToMasterDb, setSaveToMasterDb] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const editorCardRef = useRef<HTMLDivElement>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
@@ -213,13 +214,77 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   // ============ helpers ============
   const norm = (s: string) => (s || '').trim().toUpperCase();
 
+  /** Insert into material_pricing table */
+  async function insertIntoMasterDatabase(code: string, name: string, category: string, cost: number, labor: number) {
+    if (!supabase) {
+      console.error('Supabase not available');
+      return false;
+    }
+
+    try {
+      // Check if item already exists
+      const { data: existing } = await supabase
+        .from('material_pricing')
+        .select('item_code')
+        .eq('item_code', code)
+        .maybeSingle();
+
+      if (existing) {
+        // Update existing
+        const { error } = await supabase
+          .from('material_pricing')
+          .update({
+            description: name,
+            category: category,
+            material_cost: cost,
+            labor_hours: labor
+          })
+          .eq('item_code', code);
+
+        if (error) {
+          console.error('Error updating material_pricing:', error);
+          return false;
+        }
+        console.log(`✅ Updated ${code} in material_pricing table`);
+      } else {
+        // Insert new
+        const { error } = await supabase
+          .from('material_pricing')
+          .insert({
+            item_code: code,
+            description: name,
+            category: category,
+            material_cost: cost,
+            labor_hours: labor
+          });
+
+        if (error) {
+          console.error('Error inserting into material_pricing:', error);
+          return false;
+        }
+        console.log(`✅ Inserted ${code} into material_pricing table`);
+      }
+      return true;
+    } catch (err) {
+      console.error('Exception in insertIntoMasterDatabase:', err);
+      return false;
+    }
+  }
+
   /** Upsert-by-code (case-insensitive). Overwrites any existing/default tag with same code. */
-  async function upsertByCode(next: Draft, currentEditId?: string | null) {
+  async function upsertByCode(next: Draft, currentEditId?: string | null, shouldSaveToMasterDb: boolean = false) {
     const codeKey = norm(next.code);
     const existing = (tags as Tag[]).find(t => norm(t.code) === codeKey);
 
     console.log('[TagManager] upsertByCode - next.assemblyId:', next.assemblyId);
     console.log('[TagManager] upsertByCode - has assemblyId property:', 'assemblyId' in next);
+
+    // If user wants to save to master database, insert/update material_pricing
+    if (shouldSaveToMasterDb && ('customMaterialCost' in next) && ('customLaborHours' in next)) {
+      const cost = next.customMaterialCost ?? 0;
+      const labor = next.customLaborHours ?? 0;
+      await insertIntoMasterDatabase(codeKey, next.name || '', next.category || '', cost, labor);
+    }
 
     if (existing) {
       // Update the canonical record (existing)
@@ -358,9 +423,10 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     const msg = validate(next);
     if (msg) { setError(msg); return; }
 
-    await upsertByCode(next, null);
+    await upsertByCode(next, null, saveToMasterDb);
     setDraft(d => ({ ...d, code: '', name: '' }));
     setError('');
+    setSaveToMasterDb(false);
     codeInputRef.current?.focus();
     if (category) scrollToCategory(category);
   }
@@ -371,7 +437,8 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     const msg = validate(next);
     if (msg) { setError(msg); return; }
 
-    const canonicalId = await upsertByCode(next, null);
+    const canonicalId = await upsertByCode(next, null, saveToMasterDb);
+    setSaveToMasterDb(false);
 
     // Also add to current project if callback provided
     if (onAddToProject && canonicalId) {
@@ -387,7 +454,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     if (category) scrollToCategory(category);
   }
 
-  function saveEdit() {
+  async function saveEdit() {
     if (!editId) return;
     const category = resolvedCategory();
 
@@ -416,6 +483,13 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     console.log('[TagManager] saveEdit - draft:', draft);
     console.log('[TagManager] saveEdit - assemblyId in draft:', 'assemblyId' in draft, draft.assemblyId);
 
+    // If user wants to save to master database, insert/update material_pricing
+    if (saveToMasterDb && ('customMaterialCost' in next) && ('customLaborHours' in next)) {
+      const cost = next.customMaterialCost ?? 0;
+      const labor = next.customLaborHours ?? 0;
+      await insertIntoMasterDatabase(next.code, next.name || '', next.category || '', cost, labor);
+    }
+
     // When editing, ALWAYS update by ID, not by code lookup
     const patch: any = {
       code: next.code,
@@ -439,6 +513,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     console.log('[TagManager] saveEdit - calling updateTag with ID:', editId, 'patch:', patch);
     updateTag(editId, patch);
 
+    setSaveToMasterDb(false);
     if (category) scrollToCategory(category);
     // Clear editor after successful save
     cancelEdit();
@@ -828,6 +903,24 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                   </div>
                 </div>
               </div>
+
+              {/* Checkbox for saving to master database */}
+              {(draft.customMaterialCost !== undefined || draft.customLaborHours !== undefined) && (
+                <div style={{ marginTop: 16, padding: '12px', background: '#eff6ff', border: '2px solid #3b82f6', borderRadius: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, color: '#1e40af' }}>
+                    <input
+                      type="checkbox"
+                      checked={saveToMasterDb}
+                      onChange={e => setSaveToMasterDb(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                    <span>Also save custom pricing to Master Database (material_pricing table)</span>
+                  </label>
+                  <div style={{ fontSize: '12px', color: '#4b5563', marginTop: '6px', marginLeft: '26px' }}>
+                    This will make your custom pricing available for all future tags with the same item code
+                  </div>
+                </div>
+              )}
 
               <div style={{ marginTop: 24, paddingTop: 20, borderTop: '2px solid #d1d5db', display:'flex', alignItems:'center', gap: 12, flexWrap: 'wrap' }}>
                 {editId ? (
