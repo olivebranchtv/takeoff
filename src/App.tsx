@@ -161,7 +161,6 @@ export default function App() {
     setProjectName,
     reorderProjectTags,
     removeProjectTag,
-    addProjectTag,
     lastSaveTime,
   } = useStore();
 
@@ -1643,7 +1642,6 @@ export default function App() {
                   onClick={()=>{
                     const pick = flatPickerList.find(t => t.id === pickerSel);
                     if (!pick) return;
-                    addProjectTag(pick);
                     setProjectTags(list => (list.some(x => x.id === pick.id) ? list : [...list, pick]));
                     setCurrentTag(pick.code);
                     setTool('count');
@@ -1713,7 +1711,6 @@ export default function App() {
         open={tagsOpen}
         onClose={()=>setTagsOpen(false)}
         onAddToProject={(t: Tag) => {
-          addProjectTag(t);
           setProjectTags(list => (list.some(x => x.id === t.id) ? list
             : [...list, { id: t.id, code: t.code, name: t.name, color: t.color, category: t.category }]));
           setCurrentTag(t.code);
