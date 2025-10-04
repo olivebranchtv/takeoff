@@ -260,15 +260,18 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   function startEdit(t: Tag) {
     setEditId(t.id);
-    setDraft({
+    // Only include optional fields if they exist on the tag
+    const draftData: Draft = {
       code: t.code,
       name: t.name,
       category: t.category,
       color: t.color,
-      assemblyId: t.assemblyId,
-      customMaterialCost: t.customMaterialCost,
-      customLaborHours: t.customLaborHours
-    });
+    };
+    if (t.assemblyId !== undefined) draftData.assemblyId = t.assemblyId;
+    if (t.customMaterialCost !== undefined) draftData.customMaterialCost = t.customMaterialCost;
+    if (t.customLaborHours !== undefined) draftData.customLaborHours = t.customLaborHours;
+
+    setDraft(draftData);
     setError('');
     setEditorCollapsed(false);
     const cat = t.category || '';
@@ -383,13 +386,15 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       color: next.color || '#FFA500',
     };
 
-    // ALWAYS include assemblyId in patch (even if undefined) to allow removal
-    patch.assemblyId = next.assemblyId;
-
-    if ('customMaterialCost' in next) {
+    // Only include optional fields if they're present in draft
+    // This allows both setting AND removing them
+    if ('assemblyId' in draft) {
+      patch.assemblyId = next.assemblyId;
+    }
+    if ('customMaterialCost' in draft) {
       patch.customMaterialCost = next.customMaterialCost;
     }
-    if ('customLaborHours' in next) {
+    if ('customLaborHours' in draft) {
       patch.customLaborHours = next.customLaborHours;
     }
 
@@ -711,7 +716,18 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     min="0"
                     step="0.01"
                     value={draft.customMaterialCost ?? ''}
-                    onChange={e => setDraft(d => ({ ...d, customMaterialCost: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                    onChange={e => {
+                      const value = e.target.value ? parseFloat(e.target.value) : undefined;
+                      setDraft(d => {
+                        const newDraft = { ...d };
+                        if (value === undefined) {
+                          delete newDraft.customMaterialCost;
+                        } else {
+                          newDraft.customMaterialCost = value;
+                        }
+                        return newDraft;
+                      });
+                    }}
                     placeholder={currentDefaults.cost > 0 ? `Current: $${currentDefaults.cost.toFixed(2)}` : 'Optional override'}
                     style={S.input}
                   />
@@ -729,7 +745,18 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     min="0"
                     step="0.1"
                     value={draft.customLaborHours ?? ''}
-                    onChange={e => setDraft(d => ({ ...d, customLaborHours: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                    onChange={e => {
+                      const value = e.target.value ? parseFloat(e.target.value) : undefined;
+                      setDraft(d => {
+                        const newDraft = { ...d };
+                        if (value === undefined) {
+                          delete newDraft.customLaborHours;
+                        } else {
+                          newDraft.customLaborHours = value;
+                        }
+                        return newDraft;
+                      });
+                    }}
                     placeholder={`Current: ${currentDefaults.labor.toFixed(2)} hrs`}
                     style={S.input}
                   />
