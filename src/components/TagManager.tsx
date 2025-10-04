@@ -499,11 +499,10 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       color: next.color || '#FFA500',
     };
 
-    // Only include optional fields if they're present in draft
-    // This allows both setting AND removing them
-    if ('assemblyId' in draft) {
-      patch.assemblyId = next.assemblyId;
-    }
+    // Always include assemblyId in patch (even if undefined) to allow removal
+    patch.assemblyId = 'assemblyId' in draft ? draft.assemblyId : undefined;
+
+    // Only include custom pricing if present
     if ('customMaterialCost' in draft) {
       patch.customMaterialCost = next.customMaterialCost;
     }
