@@ -207,7 +207,8 @@ export function getAssemblyIdForTag(tagCode: string, tagCategory?: string): stri
   }
 
   // ===== SITE POWER =====
-  if (code.includes('POLE') && !code.includes('HEAD')) return 'pole-light-photocell';
+  // Match actual pole lights, not panel codes like "600/MLO/3 POLE"
+  if (code.includes('POLE') && !code.includes('HEAD') && !code.includes('/') && !code.includes('MLO') && !code.includes('MDP') && !code.includes('LP') && !code.includes('PP')) return 'pole-light-photocell';
   if (code === 'SITE-LP-HEAD') return 'site-pole-head';
   if (code.includes('BOLLARD')) return 'bollard-light';
   if (code.includes('EVSE') || code.includes('EV')) return 'ev-charger-level2';
