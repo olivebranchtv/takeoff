@@ -6,6 +6,7 @@ import { downloadTagsFile } from '@/utils/persist';
 import { DEFAULT_MASTER_TAGS } from '@/constants/masterTags';
 import { getAssemblyIdForTag } from '@/utils/tagAssemblyMapping';
 import { lookupMaterialPricingByCode } from '@/utils/supabasePricing';
+import { DatabaseItemBrowser } from './DatabaseItemBrowser';
 
 type Props = {
   open: boolean;
@@ -60,6 +61,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const [catSelect, setCatSelect] = useState<string>('');
   const [customCategory, setCustomCategory] = useState<string>('');
   const [editorCollapsed, setEditorCollapsed] = useState(false);
+  const [showDatabaseBrowser, setShowDatabaseBrowser] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const editorCardRef = useRef<HTMLDivElement>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
@@ -595,6 +597,14 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
             >
               Assign Light Assemblies
             </button>
+            <button
+              className="btn"
+              onClick={() => setShowDatabaseBrowser(true)}
+              title="Browse all available item codes in the master database"
+              style={{ background: '#3b82f6', color: '#fff', fontWeight: 600 }}
+            >
+              Browse Database
+            </button>
             <button className="btn" onClick={() => fileRef.current?.click()}>Import JSON</button>
             <button className="btn" onClick={() => downloadTagsFile('tags.json', exportTags())}>Export JSON</button>
             <button className="btn" onClick={onClose}>Close</button>
@@ -953,6 +963,15 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
         <input ref={fileRef} type="file" accept="application/json" onChange={onPickFile} style={{ display:'none' }} />
       </div>
+
+      <DatabaseItemBrowser
+        open={showDatabaseBrowser}
+        onClose={() => setShowDatabaseBrowser(false)}
+        onSelectCode={(code) => {
+          setDraft(d => ({ ...d, code: code }));
+          setShowDatabaseBrowser(false);
+        }}
+      />
     </div>
   );
 }
