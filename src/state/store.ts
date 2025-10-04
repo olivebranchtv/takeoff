@@ -820,7 +820,8 @@ export const useStore = create<State>()((set, get) => ({
           tags,
           selectedIds: [],
           history: {},
-          projectTagIds
+          projectTagIds,
+          aiAnalysisResult: null
         });
       },
 
