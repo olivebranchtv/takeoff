@@ -182,21 +182,22 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         totalLabor += itemLabor;
       });
 
-      return { cost: totalCost, labor: totalLabor, source: 'assembly' };
+      return { cost: totalCost, labor: totalLabor, source: 'assembly', found: true };
     } else if (databasePricing) {
       // Use actual database values for this specific material code
       return {
         cost: databasePricing.materialCost,
         labor: databasePricing.laborHours,
-        source: 'database'
+        source: 'database',
+        found: true
       };
     } else {
-      // Fallback to category-based defaults if no database match
-      const isLight = draft.category?.toLowerCase().includes('light');
+      // No data found
       return {
         cost: 0,
-        labor: isLight ? 1.0 : 0.5,
-        source: isLight ? 'default (lights)' : 'default'
+        labor: 0,
+        source: 'none',
+        found: false
       };
     }
   }, [draft.assemblyId, draft.category, assemblies, databasePricing]);
@@ -307,6 +308,22 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       setCatSelect('');
       setCustomCategory('');
     }
+
+    // Load database pricing when editing
+    if (t.code && t.code.trim()) {
+      lookupMaterialPricingByCode(t.code.trim()).then(pricing => {
+        setDatabasePricing(pricing);
+        // If tag doesn't have custom values, pre-populate with database values
+        if (pricing && t.customMaterialCost === undefined && t.customLaborHours === undefined) {
+          setDraft(prev => ({
+            ...prev,
+            customMaterialCost: pricing.materialCost,
+            customLaborHours: pricing.laborHours
+          }));
+        }
+      });
+    }
+
     requestAnimationFrame(() => {
       editorCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       codeInputRef.current?.focus();
@@ -753,14 +770,12 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     placeholder={currentDefaults.cost > 0 ? `Current: $${currentDefaults.cost.toFixed(2)}` : 'Optional override'}
                     style={S.input}
                   />
-                  <div style={{ fontSize: '12px', color: draft.customMaterialCost !== undefined ? '#059669' : '#666', marginTop: '4px', fontWeight: draft.customMaterialCost !== undefined ? 600 : 400 }}>
+                  <div style={{ fontSize: '12px', color: draft.customMaterialCost !== undefined ? '#059669' : (currentDefaults.found ? '#2563eb' : '#dc2626'), marginTop: '4px', fontWeight: draft.customMaterialCost !== undefined ? 600 : (currentDefaults.found ? 500 : 600) }}>
                     {draft.customMaterialCost !== undefined
-                      ? `✓ Custom override: $${draft.customMaterialCost.toFixed(2)}/unit`
-                      : currentDefaults.source === 'database'
-                        ? `Database default: $${currentDefaults.cost.toFixed(2)}/unit`
-                        : currentDefaults.source === 'assembly'
-                          ? `Assembly total: $${currentDefaults.cost.toFixed(2)}/unit`
-                          : `Fallback default: $${currentDefaults.cost.toFixed(2)}/unit`
+                      ? `✓ Custom value set: $${draft.customMaterialCost.toFixed(2)}/unit`
+                      : currentDefaults.found
+                        ? `Database: $${currentDefaults.cost.toFixed(2)}/unit (${currentDefaults.source})`
+                        : '⚠ No database pricing found - enter custom value'
                     }
                   </div>
                 </div>
@@ -786,14 +801,12 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     placeholder={`Current: ${currentDefaults.labor.toFixed(2)} hrs`}
                     style={S.input}
                   />
-                  <div style={{ fontSize: '12px', color: draft.customLaborHours !== undefined ? '#059669' : '#666', marginTop: '4px', fontWeight: draft.customLaborHours !== undefined ? 600 : 400 }}>
+                  <div style={{ fontSize: '12px', color: draft.customLaborHours !== undefined ? '#059669' : (currentDefaults.found ? '#2563eb' : '#dc2626'), marginTop: '4px', fontWeight: draft.customLaborHours !== undefined ? 600 : (currentDefaults.found ? 500 : 600) }}>
                     {draft.customLaborHours !== undefined
-                      ? `✓ Custom override: ${draft.customLaborHours.toFixed(2)} hrs/unit`
-                      : currentDefaults.source === 'database'
-                        ? `Database default: ${currentDefaults.labor.toFixed(2)} hrs/unit`
-                        : currentDefaults.source === 'assembly'
-                          ? `Assembly total: ${currentDefaults.labor.toFixed(2)} hrs/unit`
-                          : `Fallback default: ${currentDefaults.labor.toFixed(2)} hrs/unit`
+                      ? `✓ Custom value set: ${draft.customLaborHours.toFixed(2)} hrs/unit`
+                      : currentDefaults.found
+                        ? `Database: ${currentDefaults.labor.toFixed(2)} hrs/unit (${currentDefaults.source})`
+                        : '⚠ No database pricing found - enter custom value'
                     }
                   </div>
                 </div>
