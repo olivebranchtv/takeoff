@@ -539,6 +539,13 @@ export async function lookupMaterialPricingByCode(code: string): Promise<{ mater
     const cleanCode = code.trim().toUpperCase();
     console.log(`🔍 Cleaned code: "${cleanCode}"`);
 
+    // Skip lookup for simple single-letter codes (A, B, C, etc.) or very short codes
+    // These are typically user tags that shouldn't match database items
+    if (cleanCode.length <= 2) {
+      console.log(`⏩ Skipping lookup for short code "${cleanCode}" - too generic to match database items`);
+      return null;
+    }
+
     // Strategy 1: Try exact match on item_code
     console.log(`🔍 Strategy 1: Trying exact match for "${cleanCode}"...`);
     let { data, error } = await supabase

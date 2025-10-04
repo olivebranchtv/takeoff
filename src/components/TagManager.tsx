@@ -313,18 +313,11 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       setCustomCategory('');
     }
 
-    // Load database pricing when editing
+    // Load database pricing when editing (for display purposes only, don't auto-populate)
     if (t.code && t.code.trim()) {
       lookupMaterialPricingByCode(t.code.trim()).then(pricing => {
         setDatabasePricing(pricing);
-        // If tag doesn't have custom values, pre-populate with database values
-        if (pricing && t.customMaterialCost === undefined && t.customLaborHours === undefined) {
-          setDraft(prev => ({
-            ...prev,
-            customMaterialCost: pricing.materialCost,
-            customLaborHours: pricing.laborHours
-          }));
-        }
+        // Don't auto-populate custom values - let user explicitly set them
       });
     }
 
@@ -758,7 +751,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     type="number"
                     min="0"
                     step="0.01"
-                    value={draft.customMaterialCost ?? (currentDefaults.found ? currentDefaults.cost : '')}
+                    value={draft.customMaterialCost ?? ''}
                     onChange={e => {
                       const value = e.target.value ? parseFloat(e.target.value) : undefined;
                       setDraft(d => {
@@ -771,7 +764,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                         return newDraft;
                       });
                     }}
-                    placeholder={currentDefaults.cost > 0 ? `Database: $${currentDefaults.cost.toFixed(2)}` : 'Enter cost per unit'}
+                    placeholder={currentDefaults.cost > 0 ? `Will use: $${currentDefaults.cost.toFixed(2)}` : 'Leave empty to use default'}
                     style={S.input}
                   />
                   <div style={{ fontSize: '12px', color: draft.customMaterialCost !== undefined ? '#059669' : (currentDefaults.found ? '#2563eb' : '#dc2626'), marginTop: '4px', fontWeight: draft.customMaterialCost !== undefined ? 600 : (currentDefaults.found ? 500 : 600) }}>
@@ -789,7 +782,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     type="number"
                     min="0"
                     step="0.1"
-                    value={draft.customLaborHours ?? (currentDefaults.found ? currentDefaults.labor : '')}
+                    value={draft.customLaborHours ?? ''}
                     onChange={e => {
                       const value = e.target.value ? parseFloat(e.target.value) : undefined;
                       setDraft(d => {
@@ -802,7 +795,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                         return newDraft;
                       });
                     }}
-                    placeholder={currentDefaults.labor > 0 ? `Database: ${currentDefaults.labor.toFixed(2)} hrs` : 'Enter labor hours'}
+                    placeholder={currentDefaults.labor > 0 ? `Will use: ${currentDefaults.labor.toFixed(2)} hrs` : 'Leave empty to use default'}
                     style={S.input}
                   />
                   <div style={{ fontSize: '12px', color: draft.customLaborHours !== undefined ? '#059669' : (currentDefaults.found ? '#2563eb' : '#dc2626'), marginTop: '4px', fontWeight: draft.customLaborHours !== undefined ? 600 : (currentDefaults.found ? 500 : 600) }}>
