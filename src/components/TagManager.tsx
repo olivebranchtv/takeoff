@@ -154,11 +154,15 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
   // Fetch database pricing when tag code changes
   useEffect(() => {
+    console.log(`📝 TagManager useEffect triggered. draft.code = "${draft.code}"`);
     if (draft.code && draft.code.trim()) {
+      console.log(`📝 Calling lookupMaterialPricingByCode for "${draft.code.trim()}"`);
       lookupMaterialPricingByCode(draft.code.trim()).then(pricing => {
+        console.log(`📝 Lookup result:`, pricing);
         setDatabasePricing(pricing);
       });
     } else {
+      console.log(`📝 No code to lookup, setting pricing to null`);
       setDatabasePricing(null);
     }
   }, [draft.code]);

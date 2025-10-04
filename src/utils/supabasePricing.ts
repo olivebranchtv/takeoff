@@ -528,12 +528,19 @@ export async function loadTagsFromSupabase(): Promise<{ tags: any[]; colorOverri
 }
 
 export async function lookupMaterialPricingByCode(code: string): Promise<{ materialCost: number; laborHours: number } | null> {
-  if (!supabase) return null;
+  console.log(`🔍 lookupMaterialPricingByCode called with code: "${code}"`);
+
+  if (!supabase) {
+    console.error('❌ Supabase client is not initialized!');
+    return null;
+  }
 
   try {
     const cleanCode = code.trim().toUpperCase();
+    console.log(`🔍 Cleaned code: "${cleanCode}"`);
 
     // Strategy 1: Try exact match on item_code
+    console.log(`🔍 Strategy 1: Trying exact match for "${cleanCode}"...`);
     let { data, error } = await supabase
       .from('material_pricing')
       .select('material_cost, labor_hours, item_code')
@@ -542,25 +549,31 @@ export async function lookupMaterialPricingByCode(code: string): Promise<{ mater
       .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
-      console.error('Error looking up material pricing (exact):', error);
+      console.error('❌ Error looking up material pricing (exact):', error);
     }
 
     if (data) {
-      console.log(`✓ Found exact match for code "${cleanCode}":`, data);
+      console.log(`✅ Found exact match for code "${cleanCode}":`, data);
       return {
         materialCost: Number(data.material_cost) || 0,
         laborHours: Number(data.labor_hours) || 0
       };
     }
+    console.log(`⚠️ No exact match found for "${cleanCode}"`);
+
 
     // Strategy 2: Try prefix match - find database codes that are prefixes of the tag code
     // Example: tag "XFMR-PAD-L" should match database "XFMR-PAD"
-    // Extract base pattern from code (first part before last dash)
+    console.log(`🔍 Strategy 2: Trying prefix matching...`);
     const parts = cleanCode.split('-');
+    console.log(`🔍 Code parts:`, parts);
+
     if (parts.length > 1) {
       // Try progressively shorter prefixes: XFMR-PAD-L → XFMR-PAD → XFMR
       for (let i = parts.length - 1; i > 0; i--) {
         const prefix = parts.slice(0, i).join('-');
+        console.log(`🔍 Trying prefix: "${prefix}%"`);
+
         const { data: prefixData, error: prefixError } = await supabase
           .from('material_pricing')
           .select('material_cost, labor_hours, item_code')
@@ -568,9 +581,11 @@ export async function lookupMaterialPricingByCode(code: string): Promise<{ mater
           .limit(10); // Get up to 10 matches
 
         if (prefixError && prefixError.code !== 'PGRST116') {
-          console.error(`Error looking up material pricing (prefix ${prefix}):`, prefixError);
+          console.error(`❌ Error looking up material pricing (prefix ${prefix}):`, prefixError);
           continue;
         }
+
+        console.log(`🔍 Found ${prefixData?.length || 0} matches for prefix "${prefix}":`, prefixData);
 
         if (prefixData && prefixData.length > 0) {
           // Find the best match (longest item_code that's a prefix of cleanCode)
@@ -579,14 +594,16 @@ export async function lookupMaterialPricingByCode(code: string): Promise<{ mater
 
           for (const item of prefixData) {
             const dbCode = (item.item_code || '').trim().toUpperCase();
+            console.log(`🔍 Checking if "${cleanCode}" starts with "${dbCode}"`);
             if (dbCode && cleanCode.startsWith(dbCode) && dbCode.length > bestMatchLength) {
               bestMatch = item;
               bestMatchLength = dbCode.length;
+              console.log(`✅ Best match updated:`, bestMatch);
             }
           }
 
           if (bestMatch) {
-            console.log(`✓ Found prefix match for code "${cleanCode}":`, bestMatch);
+            console.log(`✅ Found prefix match for code "${cleanCode}":`, bestMatch);
             return {
               materialCost: Number(bestMatch.material_cost) || 0,
               laborHours: Number(bestMatch.labor_hours) || 0
@@ -594,9 +611,11 @@ export async function lookupMaterialPricingByCode(code: string): Promise<{ mater
           }
         }
       }
+      console.log(`⚠️ No prefix match found after trying all prefixes`);
     }
 
     // Strategy 3: Try matching on description
+    console.log(`🔍 Strategy 3: Trying description match for "${cleanCode}"...`);
     const { data: descData, error: descError } = await supabase
       .from('material_pricing')
       .select('material_cost, labor_hours, description')
@@ -605,21 +624,21 @@ export async function lookupMaterialPricingByCode(code: string): Promise<{ mater
       .maybeSingle();
 
     if (descError && descError.code !== 'PGRST116') {
-      console.error('Error looking up material pricing (description):', descError);
+      console.error('❌ Error looking up material pricing (description):', descError);
     }
 
     if (descData) {
-      console.log(`✓ Found description match for code "${cleanCode}":`, descData);
+      console.log(`✅ Found description match for code "${cleanCode}":`, descData);
       return {
         materialCost: Number(descData.material_cost) || 0,
         laborHours: Number(descData.labor_hours) || 0
       };
     }
 
-    console.log(`✗ No pricing found for code "${cleanCode}"`);
+    console.error(`❌ No pricing found for code "${cleanCode}" after trying all strategies`);
     return null;
   } catch (error) {
-    console.error('Error looking up material pricing:', error);
+    console.error('❌ Exception in lookupMaterialPricingByCode:', error);
     return null;
   }
 }
