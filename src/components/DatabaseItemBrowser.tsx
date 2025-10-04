@@ -142,26 +142,36 @@ export function DatabaseItemBrowser({ open, onClose, onSelectCode }: Props) {
   });
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0,0,0,0.7)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 10000,
-      padding: '20px'
-    }}>
-      <div style={{
-        background: 'white',
-        borderRadius: '12px',
-        maxWidth: '1400px',
-        width: '100%',
-        maxHeight: '90vh',
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.7)',
         display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
-      }}>
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10000,
+        padding: '20px'
+      }}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        style={{
+          background: 'white',
+          borderRadius: '12px',
+          maxWidth: '1400px',
+          width: '100%',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <div style={{
           padding: '24px',
           borderBottom: '2px solid #e5e7eb',
