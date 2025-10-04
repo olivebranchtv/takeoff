@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/utils/supabasePricing';
 
 type DatabaseItem = {
+  id?: string;
   item_code: string;
   description: string;
   category: string;
@@ -20,6 +21,9 @@ export function DatabaseItemBrowser({ open, onClose, onSelectCode }: Props) {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [editingItem, setEditingItem] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<{ cost: string; hours: string }>({ cost: '', hours: '' });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -37,7 +41,7 @@ export function DatabaseItemBrowser({ open, onClose, onSelectCode }: Props) {
     try {
       const { data, error } = await supabase
         .from('material_pricing')
-        .select('item_code, description, category, material_cost, labor_hours')
+        .select('id, item_code, description, category, material_cost, labor_hours')
         .not('item_code', 'is', null)
         .neq('item_code', '')
         .order('category')
@@ -56,6 +60,65 @@ export function DatabaseItemBrowser({ open, onClose, onSelectCode }: Props) {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function saveEdit(item: DatabaseItem) {
+    if (!supabase) {
+      alert('Database not connected');
+      return;
+    }
+
+    const newCost = parseFloat(editValues.cost);
+    const newHours = parseFloat(editValues.hours);
+
+    if (isNaN(newCost) || isNaN(newHours) || newCost < 0 || newHours < 0) {
+      alert('Please enter valid positive numbers for cost and hours');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('material_pricing')
+        .update({
+          material_cost: newCost,
+          labor_hours: newHours
+        })
+        .eq('item_code', item.item_code);
+
+      if (error) {
+        console.error('Error updating item:', error);
+        alert('Error updating item: ' + error.message);
+        return;
+      }
+
+      setItems(prev => prev.map(i =>
+        i.item_code === item.item_code
+          ? { ...i, material_cost: newCost, labor_hours: newHours }
+          : i
+      ));
+
+      setEditingItem(null);
+      alert('✓ Item updated successfully!');
+    } catch (err) {
+      console.error('Exception updating item:', err);
+      alert('Error updating item');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function startEdit(item: DatabaseItem) {
+    setEditingItem(item.item_code);
+    setEditValues({
+      cost: String(item.material_cost),
+      hours: String(item.labor_hours)
+    });
+  }
+
+  function cancelEdit() {
+    setEditingItem(null);
+    setEditValues({ cost: '', hours: '' });
   }
 
   if (!open) return null;
@@ -92,7 +155,7 @@ export function DatabaseItemBrowser({ open, onClose, onSelectCode }: Props) {
       <div style={{
         background: 'white',
         borderRadius: '12px',
-        maxWidth: '1200px',
+        maxWidth: '1400px',
         width: '100%',
         maxHeight: '90vh',
         display: 'flex',
@@ -106,9 +169,14 @@ export function DatabaseItemBrowser({ open, onClose, onSelectCode }: Props) {
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
-          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>
-            Master Database Items ({filteredItems.length} items)
-          </h2>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>
+              Master Database Items ({filteredItems.length} items)
+            </h2>
+            <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#666' }}>
+              Click any item to use its code, or click Edit to update pricing
+            </p>
+          </div>
           <button
             onClick={onClose}
             style={{
@@ -195,47 +263,170 @@ export function DatabaseItemBrowser({ open, onClose, onSelectCode }: Props) {
                   {category} ({categoryItems.length})
                 </h3>
                 <div style={{ display: 'grid', gap: '8px' }}>
-                  {categoryItems.map(item => (
-                    <div
-                      key={item.item_code}
-                      style={{
-                        padding: '12px 16px',
-                        background: '#f9fafb',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '6px',
-                        display: 'grid',
-                        gridTemplateColumns: '200px 1fr 120px 120px',
-                        gap: '16px',
-                        alignItems: 'center',
-                        cursor: onSelectCode ? 'pointer' : 'default',
-                        transition: 'all 0.2s'
-                      }}
-                      onClick={() => onSelectCode?.(item.item_code)}
-                      onMouseEnter={e => {
-                        if (onSelectCode) {
-                          e.currentTarget.style.background = '#eff6ff';
-                          e.currentTarget.style.borderColor = '#3b82f6';
-                        }
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.background = '#f9fafb';
-                        e.currentTarget.style.borderColor = '#e5e7eb';
-                      }}
-                    >
-                      <div style={{ fontWeight: 700, color: '#1f2937', fontFamily: 'monospace' }}>
-                        {item.item_code}
+                  {categoryItems.map(item => {
+                    const isEditing = editingItem === item.item_code;
+
+                    return (
+                      <div
+                        key={item.item_code}
+                        style={{
+                          padding: '12px 16px',
+                          background: isEditing ? '#fff7ed' : '#f9fafb',
+                          border: isEditing ? '2px solid #fb923c' : '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          display: 'grid',
+                          gridTemplateColumns: '180px 1fr 140px 140px 140px',
+                          gap: '12px',
+                          alignItems: 'center',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <div style={{ fontWeight: 700, color: '#1f2937', fontFamily: 'monospace', fontSize: '13px' }}>
+                          {item.item_code}
+                        </div>
+                        <div style={{ color: '#4b5563', fontSize: '14px' }}>
+                          {item.description}
+                        </div>
+
+                        {isEditing ? (
+                          <>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={editValues.cost}
+                              onChange={e => setEditValues(v => ({ ...v, cost: e.target.value }))}
+                              placeholder="Cost"
+                              style={{
+                                padding: '6px 10px',
+                                border: '2px solid #d1d5db',
+                                borderRadius: '6px',
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                color: '#059669'
+                              }}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') saveEdit(item);
+                                if (e.key === 'Escape') cancelEdit();
+                              }}
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.1"
+                              value={editValues.hours}
+                              onChange={e => setEditValues(v => ({ ...v, hours: e.target.value }))}
+                              placeholder="Hours"
+                              style={{
+                                padding: '6px 10px',
+                                border: '2px solid #d1d5db',
+                                borderRadius: '6px',
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                color: '#0891b2'
+                              }}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') saveEdit(item);
+                                if (e.key === 'Escape') cancelEdit();
+                              }}
+                            />
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button
+                                onClick={() => saveEdit(item)}
+                                disabled={saving}
+                                style={{
+                                  padding: '6px 12px',
+                                  background: '#10b981',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  cursor: saving ? 'not-allowed' : 'pointer',
+                                  fontWeight: 600,
+                                  fontSize: '12px',
+                                  opacity: saving ? 0.6 : 1
+                                }}
+                              >
+                                {saving ? 'Saving...' : '✓ Save'}
+                              </button>
+                              <button
+                                onClick={cancelEdit}
+                                disabled={saving}
+                                style={{
+                                  padding: '6px 12px',
+                                  background: '#f3f4f6',
+                                  color: '#4b5563',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '6px',
+                                  cursor: saving ? 'not-allowed' : 'pointer',
+                                  fontWeight: 600,
+                                  fontSize: '12px'
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div
+                              style={{
+                                color: '#059669',
+                                fontWeight: 600,
+                                textAlign: 'right',
+                                fontSize: '14px'
+                              }}
+                            >
+                              ${Number(item.material_cost).toFixed(2)}
+                            </div>
+                            <div
+                              style={{
+                                color: '#0891b2',
+                                fontWeight: 600,
+                                textAlign: 'right',
+                                fontSize: '14px'
+                              }}
+                            >
+                              {Number(item.labor_hours).toFixed(2)} hrs
+                            </div>
+                            <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                              <button
+                                onClick={() => startEdit(item)}
+                                style={{
+                                  padding: '6px 12px',
+                                  background: '#3b82f6',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontWeight: 600,
+                                  fontSize: '12px'
+                                }}
+                              >
+                                Edit
+                              </button>
+                              {onSelectCode && (
+                                <button
+                                  onClick={() => onSelectCode(item.item_code)}
+                                  style={{
+                                    padding: '6px 12px',
+                                    background: '#f3f4f6',
+                                    color: '#4b5563',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontWeight: 600,
+                                    fontSize: '12px'
+                                  }}
+                                >
+                                  Use Code
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <div style={{ color: '#4b5563' }}>
-                        {item.description}
-                      </div>
-                      <div style={{ color: '#059669', fontWeight: 600, textAlign: 'right' }}>
-                        ${Number(item.material_cost).toFixed(2)}
-                      </div>
-                      <div style={{ color: '#0891b2', fontWeight: 600, textAlign: 'right' }}>
-                        {Number(item.labor_hours).toFixed(2)} hrs
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))
@@ -249,7 +440,7 @@ export function DatabaseItemBrowser({ open, onClose, onSelectCode }: Props) {
           fontSize: '14px',
           color: '#666'
         }}>
-          <strong>Tip:</strong> {onSelectCode ? 'Click any item to use its code in your tag' : 'Use these exact item codes in your tags for automatic pricing'}
+          <strong>Tip:</strong> Click "Edit" to update cost and labor hours directly in the master database. Changes apply to all tags using this item code.
         </div>
       </div>
     </div>
