@@ -602,6 +602,11 @@ export const useStore = create<State>()((set, get) => ({
           // Track deleted tag code to prevent re-import
           const deletedTagCodes = tag ? [...s.deletedTagCodes, norm(tag.code)] : s.deletedTagCodes;
 
+          if (tag) {
+            console.log(`🗑️ Deleting tag "${tag.code}" - adding to deletedTagCodes (now ${deletedTagCodes.length} codes)`);
+            console.log('   Deleted codes:', deletedTagCodes);
+          }
+
           // Remove all objects with this tag code from all pages
           const pages = tag ? s.pages.map(page => ({
             ...page,

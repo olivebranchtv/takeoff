@@ -440,6 +440,11 @@ export async function saveTagsToSupabase(tags: any[], colorOverrides: any, delet
   try {
     const defaultUserId = '00000000-0000-0000-0000-000000000000';
 
+    console.log(`💾 Saving to Supabase: ${tags.length} tags, ${(deletedTagCodes || []).length} deleted codes`);
+    if (deletedTagCodes && deletedTagCodes.length > 0) {
+      console.log('🗑️ Deleted tag codes being saved:', deletedTagCodes);
+    }
+
     // Sanitize tags to ensure custom pricing fields are numbers, not strings
     const sanitizedTags = tags.map(tag => {
       const sanitized = { ...tag };
@@ -458,12 +463,9 @@ export async function saveTagsToSupabase(tags: any[], colorOverrides: any, delet
       user_id: defaultUserId,
       tags: sanitizedTags,
       color_overrides: colorOverrides,
+      deleted_tag_codes: deletedTagCodes || [],
       updated_at: new Date().toISOString()
     };
-
-    if (deletedTagCodes) {
-      upsertData.deleted_tag_codes = deletedTagCodes;
-    }
 
     // onConflict: 'user_id' means if user_id already exists, update that row
     const { error } = await supabase
