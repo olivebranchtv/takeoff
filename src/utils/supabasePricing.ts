@@ -555,32 +555,44 @@ export async function lookupMaterialPricingByCode(code: string): Promise<{ mater
 
     // Strategy 2: Try prefix match - find database codes that are prefixes of the tag code
     // Example: tag "XFMR-PAD-L" should match database "XFMR-PAD"
-    // We search for any item_code that the cleanCode starts with
-    const { data: allItems, error: allError } = await supabase
-      .from('material_pricing')
-      .select('material_cost, labor_hours, item_code');
+    // Extract base pattern from code (first part before last dash)
+    const parts = cleanCode.split('-');
+    if (parts.length > 1) {
+      // Try progressively shorter prefixes: XFMR-PAD-L → XFMR-PAD → XFMR
+      for (let i = parts.length - 1; i > 0; i--) {
+        const prefix = parts.slice(0, i).join('-');
+        const { data: prefixData, error: prefixError } = await supabase
+          .from('material_pricing')
+          .select('material_cost, labor_hours, item_code')
+          .ilike('item_code', `${prefix}%`)
+          .limit(10); // Get up to 10 matches
 
-    if (allError) {
-      console.error('Error fetching material pricing:', allError);
-    } else if (allItems && allItems.length > 0) {
-      // Find the longest matching prefix
-      let bestMatch = null;
-      let bestMatchLength = 0;
-
-      for (const item of allItems) {
-        const dbCode = (item.item_code || '').trim().toUpperCase();
-        if (dbCode && cleanCode.startsWith(dbCode) && dbCode.length > bestMatchLength) {
-          bestMatch = item;
-          bestMatchLength = dbCode.length;
+        if (prefixError && prefixError.code !== 'PGRST116') {
+          console.error(`Error looking up material pricing (prefix ${prefix}):`, prefixError);
+          continue;
         }
-      }
 
-      if (bestMatch) {
-        console.log(`✓ Found prefix match for code "${cleanCode}":`, bestMatch);
-        return {
-          materialCost: Number(bestMatch.material_cost) || 0,
-          laborHours: Number(bestMatch.labor_hours) || 0
-        };
+        if (prefixData && prefixData.length > 0) {
+          // Find the best match (longest item_code that's a prefix of cleanCode)
+          let bestMatch = null;
+          let bestMatchLength = 0;
+
+          for (const item of prefixData) {
+            const dbCode = (item.item_code || '').trim().toUpperCase();
+            if (dbCode && cleanCode.startsWith(dbCode) && dbCode.length > bestMatchLength) {
+              bestMatch = item;
+              bestMatchLength = dbCode.length;
+            }
+          }
+
+          if (bestMatch) {
+            console.log(`✓ Found prefix match for code "${cleanCode}":`, bestMatch);
+            return {
+              materialCost: Number(bestMatch.material_cost) || 0,
+              laborHours: Number(bestMatch.labor_hours) || 0
+            };
+          }
+        }
       }
     }
 

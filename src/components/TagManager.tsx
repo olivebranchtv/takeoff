@@ -754,7 +754,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     type="number"
                     min="0"
                     step="0.01"
-                    value={draft.customMaterialCost ?? ''}
+                    value={draft.customMaterialCost ?? (currentDefaults.found ? currentDefaults.cost : '')}
                     onChange={e => {
                       const value = e.target.value ? parseFloat(e.target.value) : undefined;
                       setDraft(d => {
@@ -767,7 +767,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                         return newDraft;
                       });
                     }}
-                    placeholder={currentDefaults.cost > 0 ? `Current: $${currentDefaults.cost.toFixed(2)}` : 'Optional override'}
+                    placeholder={currentDefaults.cost > 0 ? `Database: $${currentDefaults.cost.toFixed(2)}` : 'Enter cost per unit'}
                     style={S.input}
                   />
                   <div style={{ fontSize: '12px', color: draft.customMaterialCost !== undefined ? '#059669' : (currentDefaults.found ? '#2563eb' : '#dc2626'), marginTop: '4px', fontWeight: draft.customMaterialCost !== undefined ? 600 : (currentDefaults.found ? 500 : 600) }}>
@@ -785,7 +785,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     type="number"
                     min="0"
                     step="0.1"
-                    value={draft.customLaborHours ?? ''}
+                    value={draft.customLaborHours ?? (currentDefaults.found ? currentDefaults.labor : '')}
                     onChange={e => {
                       const value = e.target.value ? parseFloat(e.target.value) : undefined;
                       setDraft(d => {
@@ -798,7 +798,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                         return newDraft;
                       });
                     }}
-                    placeholder={`Current: ${currentDefaults.labor.toFixed(2)} hrs`}
+                    placeholder={currentDefaults.labor > 0 ? `Database: ${currentDefaults.labor.toFixed(2)} hrs` : 'Enter labor hours'}
                     style={S.input}
                   />
                   <div style={{ fontSize: '12px', color: draft.customLaborHours !== undefined ? '#059669' : (currentDefaults.found ? '#2563eb' : '#dc2626'), marginTop: '4px', fontWeight: draft.customLaborHours !== undefined ? 600 : (currentDefaults.found ? 500 : 600) }}>
