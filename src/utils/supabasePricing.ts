@@ -547,12 +547,12 @@ export async function lookupMaterialPricingByCode(code: string): Promise<{ mater
       return null;
     }
 
-    // Strategy 1: Try exact match on item_code
+    // Strategy 1: Try exact match on item_code (case-insensitive)
     console.log(`🔍 Strategy 1: Trying exact match for "${cleanCode}"...`);
     let { data, error } = await supabase
       .from('material_pricing')
       .select('material_cost, labor_hours, item_code')
-      .eq('item_code', cleanCode)
+      .ilike('item_code', cleanCode) // Use ilike for case-insensitive match
       .limit(1)
       .maybeSingle();
 
@@ -622,43 +622,13 @@ export async function lookupMaterialPricingByCode(code: string): Promise<{ mater
       console.log(`⚠️ No prefix match found after trying all prefixes`);
     }
 
-    // Strategy 3: Try matching on description with smart keyword extraction
-    console.log(`🔍 Strategy 3: Trying description match for "${cleanCode}"...`);
-
-    // Extract meaningful keywords from the code (remove size indicators, suffixes)
-    // XFMR-PAD-L → look for "TRANSFORMER" and "PAD"
-    // XFMR → look for "TRANSFORMER"
-    const keywords = cleanCode
-      .replace(/XFMR/g, 'TRANSFORMER')
-      .replace(/-L$|-M$|-S$/g, '') // Remove size suffixes
-      .split('-')
-      .filter(word => word.length > 2); // Keep words longer than 2 chars
-
-    console.log(`🔍 Extracted keywords:`, keywords);
-
-    for (const keyword of keywords) {
-      const { data: descData, error: descError } = await supabase
-        .from('material_pricing')
-        .select('material_cost, labor_hours, description, item_code')
-        .ilike('description', `%${keyword}%`)
-        .limit(1)
-        .maybeSingle();
-
-      if (descError && descError.code !== 'PGRST116') {
-        console.error(`❌ Error looking up material pricing (description keyword "${keyword}"):`, descError);
-        continue;
-      }
-
-      if (descData) {
-        console.log(`✅ Found description match for keyword "${keyword}":`, descData);
-        return {
-          materialCost: Number(descData.material_cost) || 0,
-          laborHours: Number(descData.labor_hours) || 0
-        };
-      }
-    }
-
-    console.error(`❌ No pricing found for code "${cleanCode}" after trying all strategies`);
+    // Strategy 3: DISABLED - description matching is too unreliable
+    // It causes false matches (e.g., XFMR-150KVA matching "TRANSFORMER SLAB BOX" instead of "150 KVA Transformer")
+    // Users should either:
+    //   1. Use exact database item codes in their tags, OR
+    //   2. Set custom pricing for tags that don't match database codes
+    console.log(`⚠️ No pricing found for code "${cleanCode}" after trying all strategies`);
+    console.log(`💡 TIP: Either use exact database item_codes in your tags, or set custom pricing`);
     return null;
   } catch (error) {
     console.error('❌ Exception in lookupMaterialPricingByCode:', error);
