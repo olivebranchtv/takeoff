@@ -251,6 +251,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         const { error } = await supabase
           .from('material_pricing')
           .insert({
+            user_id: '00000000-0000-0000-0000-000000000000',
             item_code: code,
             description: name,
             category: category,
