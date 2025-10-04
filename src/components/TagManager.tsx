@@ -5,7 +5,7 @@ import type { Tag } from '@/types';
 import { downloadTagsFile } from '@/utils/persist';
 import { DEFAULT_MASTER_TAGS } from '@/constants/masterTags';
 import { getAssemblyIdForTag } from '@/utils/tagAssemblyMapping';
-import { lookupMaterialPricingByCode } from '@/utils/supabasePricing';
+import { lookupMaterialPricingByCode, saveTagToMasterDatabase } from '@/utils/supabasePricing';
 import { DatabaseItemBrowser } from './DatabaseItemBrowser';
 
 type Props = {
@@ -62,6 +62,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const [customCategory, setCustomCategory] = useState<string>('');
   const [editorCollapsed, setEditorCollapsed] = useState(false);
   const [showDatabaseBrowser, setShowDatabaseBrowser] = useState(false);
+  const [saveToMasterDB, setSaveToMasterDB] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const editorCardRef = useRef<HTMLDivElement>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
@@ -359,6 +360,19 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     if (msg) { setError(msg); return; }
 
     await upsertByCode(next, null);
+
+    // If checkbox is checked, also save to master database
+    if (saveToMasterDB) {
+      const tagData = {
+        code: next.code,
+        name: next.name,
+        category: next.category,
+        customMaterialCost: next.customMaterialCost,
+        customLaborHours: next.customLaborHours
+      };
+      await saveTagToMasterDatabase(tagData);
+    }
+
     setDraft(d => ({ ...d, code: '', name: '' }));
     setError('');
     codeInputRef.current?.focus();
@@ -439,6 +453,22 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
 
     console.log('[TagManager] saveEdit - calling updateTag with ID:', editId, 'patch:', patch);
     updateTag(editId, patch);
+
+    // If checkbox is checked, also save to master database
+    if (saveToMasterDB) {
+      const tagData = {
+        code: next.code,
+        name: next.name,
+        category: next.category,
+        customMaterialCost: next.customMaterialCost,
+        customLaborHours: next.customLaborHours
+      };
+      saveTagToMasterDatabase(tagData).then(success => {
+        if (success) {
+          console.log(`✅ Tag "${next.code}" saved to master database`);
+        }
+      });
+    }
 
     if (category) scrollToCategory(category);
     // Clear editor after successful save
@@ -826,7 +856,26 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                 </div>
               </div>
 
-              <div style={{ marginTop: 24, paddingTop: 20, borderTop: '2px solid #d1d5db', display:'flex', alignItems:'center', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ marginTop: 24, paddingTop: 20, borderTop: '2px solid #d1d5db' }}>
+                {/* Master Database Checkbox */}
+                <div style={{ marginBottom: 16, padding: '12px', background: '#f0f9ff', border: '2px solid #3b82f6', borderRadius: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontWeight: 500 }}>
+                    <input
+                      type="checkbox"
+                      checked={saveToMasterDB}
+                      onChange={(e) => setSaveToMasterDB(e.target.checked)}
+                      style={{ width: 18, height: 18, cursor: 'pointer' }}
+                    />
+                    <span style={{ color: '#1e40af' }}>
+                      💾 Also save to Master Pricing Database (material_pricing table)
+                    </span>
+                  </label>
+                  <div style={{ marginLeft: 28, marginTop: 6, fontSize: '12px', color: '#1e40af' }}>
+                    When checked, this tag's pricing will be permanently added to the master database for all projects
+                  </div>
+                </div>
+
+                <div style={{ display:'flex', alignItems:'center', gap: 12, flexWrap: 'wrap' }}>
                 {editId ? (
                   <>
                     <button
@@ -903,6 +952,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     )}
                   </>
                 )}
+                </div>
               </div>
             </div>
 
