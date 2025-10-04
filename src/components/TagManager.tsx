@@ -281,7 +281,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     console.log('[TagManager] upsertByCode - has assemblyId property:', 'assemblyId' in next);
 
     // If user wants to save to master database, insert/update material_pricing
-    if (shouldSaveToMasterDb && ('customMaterialCost' in next) && ('customLaborHours' in next)) {
+    if (shouldSaveToMasterDb && ('customMaterialCost' in next || 'customLaborHours' in next)) {
       const cost = next.customMaterialCost ?? 0;
       const labor = next.customLaborHours ?? 0;
       await insertIntoMasterDatabase(codeKey, next.name || '', next.category || '', cost, labor);
@@ -424,7 +424,8 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     const msg = validate(next);
     if (msg) { setError(msg); return; }
 
-    await upsertByCode(next, null, saveToMasterDb);
+    const shouldSaveToDb = saveToMasterDb;
+    await upsertByCode(next, null, shouldSaveToDb);
     setDraft(d => ({ ...d, code: '', name: '' }));
     setError('');
     setSaveToMasterDb(false);
@@ -438,7 +439,8 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     const msg = validate(next);
     if (msg) { setError(msg); return; }
 
-    const canonicalId = await upsertByCode(next, null, saveToMasterDb);
+    const shouldSaveToDb = saveToMasterDb;
+    const canonicalId = await upsertByCode(next, null, shouldSaveToDb);
     setSaveToMasterDb(false);
 
     // Also add to current project if callback provided
@@ -485,7 +487,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     console.log('[TagManager] saveEdit - assemblyId in draft:', 'assemblyId' in draft, draft.assemblyId);
 
     // If user wants to save to master database, insert/update material_pricing
-    if (saveToMasterDb && ('customMaterialCost' in next) && ('customLaborHours' in next)) {
+    if (saveToMasterDb && ('customMaterialCost' in next || 'customLaborHours' in next)) {
       const cost = next.customMaterialCost ?? 0;
       const labor = next.customLaborHours ?? 0;
       await insertIntoMasterDatabase(next.code, next.name || '', next.category || '', cost, labor);
@@ -814,7 +816,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                   onChange={e => {
                     const value = e.target.value;
                     console.log('[TagManager] Assembly dropdown changed to:', value);
-                    if (value === '' || value === 'NONE') {
+                    if (value === '') {
                       // Explicitly remove assemblyId
                       setDraft(d => {
                         const newDraft = { ...d };
