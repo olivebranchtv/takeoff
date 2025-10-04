@@ -163,17 +163,28 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         return;
       }
 
-      const items = jsonData.map((row: any) => ({
-        user_id: '00000000-0000-0000-0000-000000000000',
-        item_code: row['Item Code'] || row['item_code'] || null,
-        category: String(row['Category'] || row['category'] || ''),
-        description: String(row['Description'] || row['description'] || ''),
-        unit: String(row['Unit'] || row['unit'] || 'EA'),
-        material_cost: parseFloat(String(row['Material Cost'] || row['material_cost'] || row['Cost'] || '0')),
-        labor_hours: parseFloat(String(row['Labor Hours'] || row['labor_hours'] || '0')),
-        vendor: row['Vendor'] || row['vendor'] || null,
-        notes: row['Notes'] || row['notes'] || null
-      })).filter(item => item.category && item.description);
+      const seenItemCodes = new Set<string>();
+      const items = jsonData.map((row: any, index: number) => {
+        let itemCode = row['Item Code'] || row['item_code'] || null;
+
+        // If item_code is null or duplicate, generate a unique one
+        if (!itemCode || seenItemCodes.has(itemCode)) {
+          itemCode = `AUTO-${Date.now()}-${index}`;
+        }
+        seenItemCodes.add(itemCode);
+
+        return {
+          user_id: '00000000-0000-0000-0000-000000000000',
+          item_code: itemCode,
+          category: String(row['Category'] || row['category'] || ''),
+          description: String(row['Description'] || row['description'] || ''),
+          unit: String(row['Unit'] || row['unit'] || 'EA'),
+          material_cost: parseFloat(String(row['Material Cost'] || row['material_cost'] || row['Cost'] || '0')),
+          labor_hours: parseFloat(String(row['Labor Hours'] || row['labor_hours'] || '0')),
+          vendor: row['Vendor'] || row['vendor'] || null,
+          notes: row['Notes'] || row['notes'] || null
+        };
+      }).filter(item => item.category && item.description);
 
       if (items.length === 0) {
         setDbMessage('No valid items found in file');
