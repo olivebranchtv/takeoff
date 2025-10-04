@@ -531,26 +531,70 @@ export async function lookupMaterialPricingByCode(code: string): Promise<{ mater
   if (!supabase) return null;
 
   try {
-    // Try exact match first on description
-    const { data, error } = await supabase
+    const cleanCode = code.trim().toUpperCase();
+
+    // Strategy 1: Try exact match on item_code
+    let { data, error } = await supabase
       .from('material_pricing')
-      .select('material_cost, labor_hours, description')
-      .ilike('description', code)
+      .select('material_cost, labor_hours, item_code')
+      .eq('item_code', cleanCode)
       .limit(1)
       .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
-      console.error('Error looking up material pricing:', error);
-      return null;
+      console.error('Error looking up material pricing (exact):', error);
     }
 
     if (data) {
+      console.log(`✓ Found exact match for code "${cleanCode}":`, data);
       return {
         materialCost: Number(data.material_cost) || 0,
         laborHours: Number(data.labor_hours) || 0
       };
     }
 
+    // Strategy 2: Try partial match on item_code (e.g., "XFMR-PAD" matches "XFMR-PAD-L")
+    // Look for item_code that matches the beginning of the tag code
+    const { data: partialData, error: partialError } = await supabase
+      .from('material_pricing')
+      .select('material_cost, labor_hours, item_code')
+      .ilike('item_code', `${cleanCode.split('-').slice(0, -1).join('-')}%`)
+      .limit(1)
+      .maybeSingle();
+
+    if (partialError && partialError.code !== 'PGRST116') {
+      console.error('Error looking up material pricing (partial):', partialError);
+    }
+
+    if (partialData) {
+      console.log(`✓ Found partial match for code "${cleanCode}":`, partialData);
+      return {
+        materialCost: Number(partialData.material_cost) || 0,
+        laborHours: Number(partialData.labor_hours) || 0
+      };
+    }
+
+    // Strategy 3: Try matching on description
+    const { data: descData, error: descError } = await supabase
+      .from('material_pricing')
+      .select('material_cost, labor_hours, description')
+      .ilike('description', `%${cleanCode}%`)
+      .limit(1)
+      .maybeSingle();
+
+    if (descError && descError.code !== 'PGRST116') {
+      console.error('Error looking up material pricing (description):', descError);
+    }
+
+    if (descData) {
+      console.log(`✓ Found description match for code "${cleanCode}":`, descData);
+      return {
+        materialCost: Number(descData.material_cost) || 0,
+        laborHours: Number(descData.labor_hours) || 0
+      };
+    }
+
+    console.log(`✗ No pricing found for code "${cleanCode}"`);
     return null;
   } catch (error) {
     console.error('Error looking up material pricing:', error);
