@@ -208,6 +208,7 @@ type State = {
   // tag DB ops (persisted, upsert-by-code)
   addTag: (t: Omit<Tag,'id'>) => Promise<void>;
   updateTag: (id: string, patch: Partial<Tag>) => Promise<void>;
+  batchUpdateTags: (updates: Array<{ id: string; patch: Partial<Tag> }>) => Promise<void>;
   deleteTag: (id: string) => Promise<void>;
   importTags: (list: Tag[] | Omit<Tag,'id'>[]) => void;
   exportTags: () => Tag[];
@@ -563,6 +564,29 @@ export const useStore = create<State>()((set, get) => ({
         // Save immediately to database
         set({ tags, colorOverrides: overrides, projectTagIds: s.projectTagIds.filter(pid => pid !== id) });
 
+        const { saveTagsToSupabase } = await import('@/utils/supabasePricing');
+        if (saveTagsToSupabase) {
+          const currentState = get();
+          await saveTagsToSupabase(currentState.tags, currentState.colorOverrides, currentState.deletedTagCodes);
+        }
+      },
+
+      batchUpdateTags: async (updates) => {
+        const s = get();
+        let tags = [...s.tags];
+
+        // Apply all updates
+        for (const { id, patch } of updates) {
+          const idx = tags.findIndex(t => t.id === id);
+          if (idx >= 0) {
+            tags[idx] = { ...tags[idx], ...patch };
+          }
+        }
+
+        // Update store
+        set({ tags });
+
+        // Save to database once
         const { saveTagsToSupabase } = await import('@/utils/supabasePricing');
         if (saveTagsToSupabase) {
           const currentState = get();

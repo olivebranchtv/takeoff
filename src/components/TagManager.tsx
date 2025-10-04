@@ -52,7 +52,7 @@ const CUSTOM_CAT_VALUE = '__CUSTOM__';
 
 export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const store = useStore() as any;
-  const { tags, palette, addTag, updateTag, deleteTag, importTags, exportTags, assemblies, deletedTagCodes, hasLoadedFromSupabase } = store;
+  const { tags, palette, addTag, updateTag, batchUpdateTags, deleteTag, importTags, exportTags, assemblies, deletedTagCodes, hasLoadedFromSupabase } = store;
 
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -495,83 +495,53 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     if (!confirm('Auto-assign assemblies to all tags based on their codes and categories?\n\nNote: ALL lights will get the Standard Lighting Fixture Installation assembly (box, conduit, wire, fittings).')) return;
 
     console.log('🔄 Starting auto-assign assemblies...');
-    let updated = 0;
 
-    // Batch update: modify all tags in memory first
-    const updatedTags = (tags as Tag[]).map(tag => {
-      // Only auto-assign if no assembly is currently set
-      if (!(tag as any).assemblyId) {
+    // Build batch updates for tags without assemblies
+    const updates = (tags as Tag[])
+      .filter(tag => !(tag as any).assemblyId)
+      .map(tag => {
         const assemblyId = getAssemblyIdForTag(tag.code, tag.category);
         if (assemblyId) {
           console.log(`  Auto-assigning assembly to ${tag.code}: ${assemblyId}`);
-          updated++;
-          return { ...tag, assemblyId };
+          return { id: tag.id, patch: { assemblyId } };
         }
-      }
-      return tag;
-    });
+        return null;
+      })
+      .filter(Boolean) as Array<{ id: string; patch: Partial<Tag> }>;
 
-    if (updated > 0) {
-      // Save all changes at once
-      console.log(`💾 Saving ${updated} assembly assignments to database...`);
-      const { saveTagsToSupabase } = await import('@/utils/supabasePricing');
-
-      // Update store
-      useStore.setState({ tags: updatedTags });
-
-      // Save to database
-      if (saveTagsToSupabase) {
-        const currentState = useStore.getState();
-        const success = await saveTagsToSupabase(currentState.tags, currentState.colorOverrides, currentState.deletedTagCodes);
-        if (success) {
-          console.log(`✅ Auto-assigned assemblies to ${updated} tags`);
-          alert(`Auto-assigned assemblies to ${updated} tags.`);
-        } else {
-          console.error(`❌ Failed to save assembly assignments to database`);
-          alert(`Failed to save changes to database.`);
-        }
-      }
-    } else {
+    if (updates.length === 0) {
       alert('No tags needed assembly assignment.');
+      return;
     }
+
+    console.log(`💾 Batch updating ${updates.length} tags...`);
+    await batchUpdateTags(updates);
+    console.log(`✅ Auto-assigned assemblies to ${updates.length} tags`);
+    alert(`Auto-assigned assemblies to ${updates.length} tags.`);
   }
 
   async function assignLightAssemblies() {
     if (!confirm('Assign Standard Lighting Assembly to ALL light tags?\n\nThis will add the Standard Lighting Fixture Installation assembly (box, conduit, wire, fittings) to all lights category tags.')) return;
 
     console.log('🔄 Starting light assembly assignment...');
-    let assigned = 0;
 
-    // Batch update: modify all tags in memory first
-    const updatedTags = (tags as Tag[]).map(tag => {
-      const isLightCategory = tag.category?.toLowerCase().includes('light');
-      if (isLightCategory) {
-        console.log(`  Assigning light assembly to ${tag.code} (${tag.name})`);
-        assigned++;
-        return { ...tag, assemblyId: 'light-standard-install' };
-      }
-      return tag;
-    });
+    // Build batch updates for all light tags
+    const updates = (tags as Tag[])
+      .filter(tag => tag.category?.toLowerCase().includes('light'))
+      .map(tag => ({
+        id: tag.id,
+        patch: { assemblyId: 'light-standard-install' }
+      }));
 
-    // Save all changes at once
-    console.log(`💾 Saving ${assigned} light assembly assignments to database...`);
-    const { saveTagsToSupabase } = await import('@/utils/supabasePricing');
-
-    // Update store
-    useStore.setState({ tags: updatedTags });
-
-    // Save to database
-    if (saveTagsToSupabase) {
-      const currentState = useStore.getState();
-      const success = await saveTagsToSupabase(currentState.tags, currentState.colorOverrides, currentState.deletedTagCodes);
-      if (success) {
-        console.log(`✅ Assigned Standard Lighting Assembly to ${assigned} light tags`);
-        alert(`Assigned Standard Lighting Assembly to ${assigned} light tags. Each light now includes installation materials (box, conduit, wire, fittings).`);
-      } else {
-        console.error(`❌ Failed to save light assembly assignments to database`);
-        alert(`Failed to save changes to database.`);
-      }
+    if (updates.length === 0) {
+      alert('No light tags found.');
+      return;
     }
+
+    console.log(`💾 Batch updating ${updates.length} light tags...`);
+    await batchUpdateTags(updates);
+    console.log(`✅ Assigned Standard Lighting Assembly to ${updates.length} light tags`);
+    alert(`Assigned Standard Lighting Assembly to ${updates.length} light tags. Each light now includes installation materials (box, conduit, wire, fittings).`);
   }
 
   function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
