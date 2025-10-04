@@ -5,6 +5,7 @@ import type { Tag } from '@/types';
 import { downloadTagsFile } from '@/utils/persist';
 import { DEFAULT_MASTER_TAGS } from '@/constants/masterTags';
 import { getAssemblyIdForTag } from '@/utils/tagAssemblyMapping';
+import { lookupMaterialPricingByCode } from '@/utils/supabasePricing';
 
 type Props = {
   open: boolean;
@@ -148,6 +149,20 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     return final.map(cat => ({ category: cat, items: byCat.get(cat) || [] }));
   }, [tags, query, sortedCategories]);
 
+  // State for database lookup pricing
+  const [databasePricing, setDatabasePricing] = useState<{ materialCost: number; laborHours: number } | null>(null);
+
+  // Fetch database pricing when tag code changes
+  useEffect(() => {
+    if (draft.code && draft.code.trim()) {
+      lookupMaterialPricingByCode(draft.code.trim()).then(pricing => {
+        setDatabasePricing(pricing);
+      });
+    } else {
+      setDatabasePricing(null);
+    }
+  }, [draft.code]);
+
   // Calculate default/current cost and labor for the draft tag
   const currentDefaults = useMemo(() => {
     const selectedAssembly = draft.assemblyId
@@ -168,8 +183,15 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       });
 
       return { cost: totalCost, labor: totalLabor, source: 'assembly' };
+    } else if (databasePricing) {
+      // Use actual database values for this specific material code
+      return {
+        cost: databasePricing.materialCost,
+        labor: databasePricing.laborHours,
+        source: 'database'
+      };
     } else {
-      // Use category-based defaults
+      // Fallback to category-based defaults if no database match
       const isLight = draft.category?.toLowerCase().includes('light');
       return {
         cost: 0,
@@ -177,7 +199,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
         source: isLight ? 'default (lights)' : 'default'
       };
     }
-  }, [draft.assemblyId, draft.category, assemblies]);
+  }, [draft.assemblyId, draft.category, assemblies, databasePricing]);
 
   if (!open) return null;
 
@@ -734,7 +756,11 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                   <div style={{ fontSize: '12px', color: draft.customMaterialCost !== undefined ? '#059669' : '#666', marginTop: '4px', fontWeight: draft.customMaterialCost !== undefined ? 600 : 400 }}>
                     {draft.customMaterialCost !== undefined
                       ? `✓ Custom override: $${draft.customMaterialCost.toFixed(2)}/unit`
-                      : `Current from ${currentDefaults.source}: $${currentDefaults.cost.toFixed(2)}/unit`
+                      : currentDefaults.source === 'database'
+                        ? `Database default: $${currentDefaults.cost.toFixed(2)}/unit`
+                        : currentDefaults.source === 'assembly'
+                          ? `Assembly total: $${currentDefaults.cost.toFixed(2)}/unit`
+                          : `Fallback default: $${currentDefaults.cost.toFixed(2)}/unit`
                     }
                   </div>
                 </div>
@@ -763,7 +789,11 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                   <div style={{ fontSize: '12px', color: draft.customLaborHours !== undefined ? '#059669' : '#666', marginTop: '4px', fontWeight: draft.customLaborHours !== undefined ? 600 : 400 }}>
                     {draft.customLaborHours !== undefined
                       ? `✓ Custom override: ${draft.customLaborHours.toFixed(2)} hrs/unit`
-                      : `Current from ${currentDefaults.source}: ${currentDefaults.labor.toFixed(2)} hrs/unit`
+                      : currentDefaults.source === 'database'
+                        ? `Database default: ${currentDefaults.labor.toFixed(2)} hrs/unit`
+                        : currentDefaults.source === 'assembly'
+                          ? `Assembly total: ${currentDefaults.labor.toFixed(2)} hrs/unit`
+                          : `Fallback default: ${currentDefaults.labor.toFixed(2)} hrs/unit`
                     }
                   </div>
                 </div>

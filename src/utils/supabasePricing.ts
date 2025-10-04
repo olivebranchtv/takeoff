@@ -526,3 +526,34 @@ export async function loadTagsFromSupabase(): Promise<{ tags: any[]; colorOverri
     return null;
   }
 }
+
+export async function lookupMaterialPricingByCode(code: string): Promise<{ materialCost: number; laborHours: number } | null> {
+  if (!supabase) return null;
+
+  try {
+    // Try exact match first on description
+    const { data, error } = await supabase
+      .from('material_pricing')
+      .select('material_cost, labor_hours, description')
+      .ilike('description', code)
+      .limit(1)
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error looking up material pricing:', error);
+      return null;
+    }
+
+    if (data) {
+      return {
+        materialCost: Number(data.material_cost) || 0,
+        laborHours: Number(data.labor_hours) || 0
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error looking up material pricing:', error);
+    return null;
+  }
+}
