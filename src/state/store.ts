@@ -510,13 +510,13 @@ export const useStore = create<State>()((set, get) => ({
             category: nextCat,
             color: nextColor,
           };
-          if (nextAssemblyId !== undefined) {
+          if (nextAssemblyId !== undefined && nextAssemblyId !== null) {
             updatedTag.assemblyId = nextAssemblyId;
           }
-          if (nextCustomMaterialCost !== undefined) {
+          if (nextCustomMaterialCost !== undefined && nextCustomMaterialCost !== null) {
             updatedTag.customMaterialCost = nextCustomMaterialCost;
           }
-          if (nextCustomLaborHours !== undefined) {
+          if (nextCustomLaborHours !== undefined && nextCustomLaborHours !== null) {
             updatedTag.customLaborHours = nextCustomLaborHours;
           }
           console.log('[Store] updateTag - final updatedTag (canonical):', updatedTag);
@@ -531,13 +531,13 @@ export const useStore = create<State>()((set, get) => ({
             category: nextCat,
             color: nextColor,
           };
-          if (nextAssemblyId !== undefined) {
+          if (nextAssemblyId !== undefined && nextAssemblyId !== null) {
             updatedTag.assemblyId = nextAssemblyId;
           }
-          if (nextCustomMaterialCost !== undefined) {
+          if (nextCustomMaterialCost !== undefined && nextCustomMaterialCost !== null) {
             updatedTag.customMaterialCost = nextCustomMaterialCost;
           }
-          if (nextCustomLaborHours !== undefined) {
+          if (nextCustomLaborHours !== undefined && nextCustomLaborHours !== null) {
             updatedTag.customLaborHours = nextCustomLaborHours;
           }
           console.log('[Store] updateTag - final updatedTag:', updatedTag);

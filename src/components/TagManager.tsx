@@ -427,13 +427,14 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     // Only include optional fields if they're present in draft
     // This allows both setting AND removing them
     if ('assemblyId' in draft) {
-      patch.assemblyId = next.assemblyId;
+      // If undefined, explicitly remove by setting to null (Supabase/JSON way to delete)
+      patch.assemblyId = next.assemblyId === undefined ? null : next.assemblyId;
     }
     if ('customMaterialCost' in draft) {
-      patch.customMaterialCost = next.customMaterialCost;
+      patch.customMaterialCost = next.customMaterialCost === undefined ? null : next.customMaterialCost;
     }
     if ('customLaborHours' in draft) {
-      patch.customLaborHours = next.customLaborHours;
+      patch.customLaborHours = next.customLaborHours === undefined ? null : next.customLaborHours;
     }
 
     console.log('[TagManager] saveEdit - calling updateTag with ID:', editId, 'patch:', patch);
@@ -740,12 +741,8 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     const value = e.target.value;
                     console.log('[TagManager] Assembly dropdown changed to:', value);
                     if (value === '' || value === 'NONE') {
-                      // Explicitly remove assemblyId
-                      setDraft(d => {
-                        const newDraft = { ...d };
-                        delete newDraft.assemblyId;
-                        return newDraft;
-                      });
+                      // Set to undefined to clear assembly (must keep property to trigger save)
+                      setDraft(d => ({ ...d, assemblyId: undefined }));
                     } else {
                       setDraft(d => ({ ...d, assemblyId: value }));
                     }
