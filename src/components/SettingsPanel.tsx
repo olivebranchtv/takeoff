@@ -164,6 +164,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
       }
 
       const items = jsonData.map((row: any) => ({
+        user_id: '00000000-0000-0000-0000-000000000000',
         item_code: row['Item Code'] || row['item_code'] || null,
         category: String(row['Category'] || row['category'] || ''),
         description: String(row['Description'] || row['description'] || ''),
