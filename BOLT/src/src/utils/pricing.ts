@@ -662,16 +662,13 @@ export function calculateProjectCosts(
   // Calculate material costs from tagged/measured items
   let materialCostTotal = 0;
   for (const mat of materials) {
+    // Check if this is a tag with custom pricing (itemCode starts with TAG-)
     let price: number;
 
-    // ALWAYS prioritize custom values first, regardless of itemCode
-    if (mat.customMaterialCost !== undefined && mat.customMaterialCost !== null) {
-      price = mat.customMaterialCost;
-      console.log(`✓ Custom material cost for ${mat.description}: $${price}/unit × ${mat.totalQty} = $${price * mat.totalQty}`);
-    } else if (mat.itemCode?.startsWith('TAG-')) {
-      // Legacy support: TAG- prefix items
-      price = 0;
-      console.log(`🏷️ Tag-based item ${mat.description} has no custom cost, using $0`);
+    if (mat.itemCode?.startsWith('TAG-')) {
+      // This is a tag-based item with custom pricing already embedded
+      price = mat.customMaterialCost ?? 0;
+      console.log(`🏷️ Tag-based material cost for ${mat.description}: $${price}/unit × ${mat.totalQty} = $${price * mat.totalQty}`);
     } else {
       // Regular database lookup
       price = pricingDb.getMaterialPrice(mat.category, mat.description, mat.itemCode) || 0;
@@ -695,19 +692,15 @@ export function calculateProjectCosts(
       console.log(`🔍 Looking up WIRE: category="${mat.category}", desc="${mat.description}", itemCode="${mat.itemCode}", qty=${mat.totalQty}`);
     }
 
+    // Check if this is a tag with custom pricing (itemCode starts with TAG-)
     let laborPerUnit: number;
     let price: number;
 
-    // ALWAYS prioritize custom values first, regardless of itemCode
-    if (mat.customMaterialCost !== undefined && mat.customMaterialCost !== null) {
-      price = mat.customMaterialCost;
+    if (mat.itemCode?.startsWith('TAG-')) {
+      // This is a tag-based item with custom pricing already embedded
+      price = mat.customMaterialCost ?? 0;
       laborPerUnit = mat.customLaborHoursPerUnit ?? 0;
-      console.log(`✓ Custom pricing for ${mat.description}: $${price}/unit, ${laborPerUnit}hrs/unit (total qty: ${mat.totalQty})`);
-    } else if (mat.itemCode?.startsWith('TAG-')) {
-      // Legacy support: TAG- prefix items without custom values
-      price = 0;
-      laborPerUnit = 0;
-      console.log(`🏷️ Tag-based item ${mat.description} has no custom pricing, using $0 and 0hrs`);
+      console.log(`🏷️ Tag-based pricing for ${mat.description}: $${price}/unit, ${laborPerUnit}hrs/unit (total qty: ${mat.totalQty})`);
     } else {
       // Try database lookup first
       const dbLaborPerUnit = pricingDb.getMaterialLaborHours(mat.category, mat.description, mat.itemCode);

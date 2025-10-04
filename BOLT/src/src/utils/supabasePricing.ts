@@ -158,6 +158,80 @@ export async function saveMaterialPricingToSupabase(materials: Omit<MaterialPric
   }
 }
 
+/**
+ * Save or update a single tag to the master material_pricing database
+ * @param tag - The tag with item code, description, material cost, and labor hours
+ * @returns true if successful, false otherwise
+ */
+export async function saveTagToMasterDatabase(tag: {
+  code: string;
+  name: string;
+  category: string;
+  customMaterialCost?: number;
+  customLaborHours?: number;
+}): Promise<boolean> {
+  if (!supabase) {
+    console.warn('❌ Supabase not configured. Cannot save to master database.');
+    return false;
+  }
+
+  try {
+    const defaultUserId = '00000000-0000-0000-0000-000000000000';
+
+    // Check if item already exists
+    const { data: existing } = await supabase
+      .from('material_pricing')
+      .select('id')
+      .eq('item_code', tag.code)
+      .eq('user_id', defaultUserId)
+      .maybeSingle();
+
+    const materialData = {
+      item_code: tag.code,
+      category: tag.category,
+      description: tag.name,
+      unit: 'EA',
+      material_cost: tag.customMaterialCost || 0,
+      labor_hours: tag.customLaborHours || 0,
+      user_id: defaultUserId,
+      last_updated: new Date().toISOString()
+    };
+
+    if (existing) {
+      // Update existing record
+      const { error } = await supabase
+        .from('material_pricing')
+        .update(materialData)
+        .eq('id', existing.id);
+
+      if (error) {
+        console.error('❌ Error updating master database:', error);
+        alert(`Failed to update master database: ${error.message}`);
+        return false;
+      }
+      console.log(`✅ Updated "${tag.code}" in master database`);
+    } else {
+      // Insert new record
+      const { error } = await supabase
+        .from('material_pricing')
+        .insert(materialData);
+
+      if (error) {
+        console.error('❌ Error inserting to master database:', error);
+        alert(`Failed to save to master database: ${error.message}`);
+        return false;
+      }
+      console.log(`✅ Saved "${tag.code}" to master database`);
+    }
+
+    return true;
+  } catch (error: any) {
+    console.error('❌ Unexpected error saving to master database:', error);
+    alert(`Unexpected error: ${error.message || error}`);
+    return false;
+  }
+}
+
 export async function loadCompanySettings(): Promise<CompanySettings | null> {
   if (!supabase) return null;
 
@@ -453,26 +527,47 @@ export async function saveTagsToSupabase(tags: any[], colorOverrides: any, delet
       return sanitized;
     });
 
-    // Use UPSERT to insert or update in one operation (prevents duplicates)
-    const upsertData: any = {
-      user_id: defaultUserId,
+    // Check if tag library exists
+    const { data: existing } = await supabase
+      .from('tag_library')
+      .select('id')
+      .eq('user_id', defaultUserId)
+      .maybeSingle();
+
+    const updateData: any = {
       tags: sanitizedTags,
       color_overrides: colorOverrides,
       updated_at: new Date().toISOString()
     };
 
     if (deletedTagCodes) {
-      upsertData.deleted_tag_codes = deletedTagCodes;
+      updateData.deleted_tag_codes = deletedTagCodes;
     }
 
-    // onConflict: 'user_id' means if user_id already exists, update that row
-    const { error } = await supabase
-      .from('tag_library')
-      .upsert(upsertData, { onConflict: 'user_id' });
+    if (existing) {
+      // Update existing
+      const { error } = await supabase
+        .from('tag_library')
+        .update(updateData)
+        .eq('id', existing.id);
 
-    if (error) {
-      console.error('Error upserting tags:', error);
-      return false;
+      if (error) {
+        console.error('Error updating tags:', error);
+        return false;
+      }
+    } else {
+      // Insert new
+      const { error } = await supabase
+        .from('tag_library')
+        .insert({
+          user_id: defaultUserId,
+          ...updateData
+        });
+
+      if (error) {
+        console.error('Error inserting tags:', error);
+        return false;
+      }
     }
 
     return true;
@@ -527,150 +622,34 @@ export async function loadTagsFromSupabase(): Promise<{ tags: any[]; colorOverri
   }
 }
 
+/**
+ * Lookup material pricing by item_code to get cost and labor hours
+ */
 export async function lookupMaterialPricingByCode(code: string): Promise<{ materialCost: number; laborHours: number } | null> {
-  console.log(`🔍 lookupMaterialPricingByCode called with code: "${code}"`);
-
-  if (!supabase) {
-    console.error('❌ Supabase client is not initialized!');
-    return null;
-  }
+  if (!supabase) return null;
 
   try {
-    const cleanCode = code.trim().toUpperCase();
-    console.log(`🔍 Cleaned code: "${cleanCode}"`);
+    const { data, error } = await supabase
+      .from('material_pricing')
+      .select('material_cost, labor_hours')
+      .eq('item_code', code)
+      .maybeSingle();
 
-    // Skip lookup for simple single-letter codes (A, B, C, etc.) WITHOUT dashes
-    // These are typically user-defined lighting tags that shouldn't match database items
-    // But allow codes like "A-1" or multi-part codes like "XFMR-PAD-L"
-    if (cleanCode.length === 1 || (cleanCode.length === 2 && !cleanCode.includes('-'))) {
-      console.log(`⏩ Skipping lookup for short code "${cleanCode}" - likely a user tag`);
+    if (error) {
+      console.error(`Error looking up pricing for code "${code}":`, error);
       return null;
     }
 
-    // Strategy 0: Check tag-to-item mapping table first
-    console.log(`🔍 Strategy 0: Checking tag mapping for "${cleanCode}"...`);
-    const { data: mappingData, error: mappingError } = await supabase
-      .from('tag_item_mapping')
-      .select('item_code')
-      .ilike('tag_code', cleanCode)
-      .limit(1)
-      .maybeSingle();
-
-    if (mappingError && mappingError.code !== 'PGRST116') {
-      console.error('❌ Error looking up tag mapping:', mappingError);
+    if (!data) {
+      return null;
     }
 
-    if (mappingData?.item_code) {
-      const mappedCode = mappingData.item_code.trim().toUpperCase();
-      console.log(`✅ Found mapping: "${cleanCode}" → "${mappedCode}"`);
-
-      // Now lookup the mapped item code
-      const { data: itemData, error: itemError } = await supabase
-        .from('material_pricing')
-        .select('material_cost, labor_hours, item_code')
-        .ilike('item_code', mappedCode)
-        .limit(1)
-        .maybeSingle();
-
-      if (itemError && itemError.code !== 'PGRST116') {
-        console.error(`❌ Error looking up mapped item "${mappedCode}":`, itemError);
-      }
-
-      if (itemData) {
-        console.log(`✅ Found pricing for mapped code "${mappedCode}":`, itemData);
-        return {
-          materialCost: Number(itemData.material_cost) || 0,
-          laborHours: Number(itemData.labor_hours) || 0
-        };
-      }
-    }
-    console.log(`⚠️ No mapping found for "${cleanCode}"`);
-
-    // Strategy 1: Try exact match on item_code (case-insensitive)
-    console.log(`🔍 Strategy 1: Trying exact match for "${cleanCode}"...`);
-    let { data, error } = await supabase
-      .from('material_pricing')
-      .select('material_cost, labor_hours, item_code')
-      .ilike('item_code', cleanCode) // Use ilike for case-insensitive match
-      .limit(1)
-      .maybeSingle();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('❌ Error looking up material pricing (exact):', error);
-    }
-
-    if (data) {
-      console.log(`✅ Found exact match for code "${cleanCode}":`, data);
-      return {
-        materialCost: Number(data.material_cost) || 0,
-        laborHours: Number(data.labor_hours) || 0
-      };
-    }
-    console.log(`⚠️ No exact match found for "${cleanCode}"`);
-
-
-    // Strategy 2: Try prefix match - find database codes that are prefixes of the tag code
-    // Example: tag "XFMR-PAD-L" should match database "XFMR-PAD"
-    console.log(`🔍 Strategy 2: Trying prefix matching...`);
-    const parts = cleanCode.split('-');
-    console.log(`🔍 Code parts:`, parts);
-
-    if (parts.length > 1) {
-      // Try progressively shorter prefixes: XFMR-PAD-L → XFMR-PAD → XFMR
-      for (let i = parts.length - 1; i > 0; i--) {
-        const prefix = parts.slice(0, i).join('-');
-        console.log(`🔍 Trying prefix: "${prefix}%"`);
-
-        const { data: prefixData, error: prefixError } = await supabase
-          .from('material_pricing')
-          .select('material_cost, labor_hours, item_code')
-          .ilike('item_code', `${prefix}%`)
-          .limit(10); // Get up to 10 matches
-
-        if (prefixError && prefixError.code !== 'PGRST116') {
-          console.error(`❌ Error looking up material pricing (prefix ${prefix}):`, prefixError);
-          continue;
-        }
-
-        console.log(`🔍 Found ${prefixData?.length || 0} matches for prefix "${prefix}":`, prefixData);
-
-        if (prefixData && prefixData.length > 0) {
-          // Find the best match (longest item_code that's a prefix of cleanCode)
-          let bestMatch = null;
-          let bestMatchLength = 0;
-
-          for (const item of prefixData) {
-            const dbCode = (item.item_code || '').trim().toUpperCase();
-            console.log(`🔍 Checking if "${cleanCode}" starts with "${dbCode}"`);
-            if (dbCode && cleanCode.startsWith(dbCode) && dbCode.length > bestMatchLength) {
-              bestMatch = item;
-              bestMatchLength = dbCode.length;
-              console.log(`✅ Best match updated:`, bestMatch);
-            }
-          }
-
-          if (bestMatch) {
-            console.log(`✅ Found prefix match for code "${cleanCode}":`, bestMatch);
-            return {
-              materialCost: Number(bestMatch.material_cost) || 0,
-              laborHours: Number(bestMatch.labor_hours) || 0
-            };
-          }
-        }
-      }
-      console.log(`⚠️ No prefix match found after trying all prefixes`);
-    }
-
-    // Strategy 3: DISABLED - description matching is too unreliable
-    // It causes false matches (e.g., XFMR-150KVA matching "TRANSFORMER SLAB BOX" instead of "150 KVA Transformer")
-    // Users should either:
-    //   1. Use exact database item codes in their tags, OR
-    //   2. Set custom pricing for tags that don't match database codes
-    console.log(`⚠️ No pricing found for code "${cleanCode}" after trying all strategies`);
-    console.log(`💡 TIP: Either use exact database item_codes in your tags, or set custom pricing`);
-    return null;
+    return {
+      materialCost: data.material_cost || 0,
+      laborHours: data.labor_hours || 0
+    };
   } catch (error) {
-    console.error('❌ Exception in lookupMaterialPricingByCode:', error);
+    console.error(`Error looking up pricing for code "${code}":`, error);
     return null;
   }
 }

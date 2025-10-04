@@ -23,27 +23,16 @@ export function useInitialize() {
       try {
         const result = await loadTagsFromSupabase();
 
-        // Check if we have ANY data from Supabase (even if tags array is empty)
-        // This prevents re-importing master tags when user has deleted all tags
         if (result) {
-          console.log(`✅ Loaded tag library from Supabase (${result.tags?.length || 0} tags, ${result.deletedTagCodes?.length || 0} deleted codes)`);
-
-          // Apply deletedTagCodes BEFORE importing tags (CRITICAL: this prevents re-import of deleted tags)
+          // Apply deletedTagCodes FIRST (even if no tags)
           if (result.deletedTagCodes && result.deletedTagCodes.length > 0) {
             console.log(`🗑️ Loading ${result.deletedTagCodes.length} deleted tag codes:`, result.deletedTagCodes);
             useStore.setState({ deletedTagCodes: result.deletedTagCodes });
           }
 
-          // Only import tags if we have any
+          // Only import if we have tags
           if (result.tags && result.tags.length > 0) {
-            // Count how many tags have assemblies assigned
-            const tagsWithAssemblies = result.tags.filter((t: any) => t.assemblyId).length;
-            console.log(`   📋 ${tagsWithAssemblies} tags have assemblies assigned`);
-
-            // Check specifically for lights with assemblies
-            const lightTags = result.tags.filter((t: any) => t.category?.toLowerCase().includes('light'));
-            const lightsWithAssemblies = lightTags.filter((t: any) => t.assemblyId).length;
-            console.log(`   💡 ${lightsWithAssemblies} of ${lightTags.length} light tags have assemblies assigned`);
+            console.log(`✅ Loaded ${result.tags.length} tags from Supabase`);
 
             // Check if TCLK has custom pricing
             const tclk = result.tags.find(t => t.code === 'TCLK');
@@ -57,7 +46,7 @@ export function useInitialize() {
               console.warn('⚠️ TCLK tag NOT found in Supabase tags!');
             }
 
-            console.log('📥 About to importTags() - this will merge with store and save to Supabase');
+            console.log('📥 About to importTags() - this will merge with store');
 
             // Import tags into store (this will trigger Supabase save)
             importTags(result.tags);
@@ -75,8 +64,10 @@ export function useInitialize() {
             } else {
               console.error('   ❌ TCLK NOT FOUND in store after import!');
             }
+
+            console.log('✅ Tags loaded successfully from Supabase');
           } else {
-            console.log('ℹ️ Tag library loaded from Supabase but contains 0 tags (all deleted)');
+            console.log('ℹ️ No tags found in Supabase database');
           }
 
           // Apply color overrides
@@ -85,17 +76,8 @@ export function useInitialize() {
               setTagColorOverride(code, color as string);
             });
           }
-
-          console.log('✅ Tags loaded successfully from Supabase');
         } else {
-          console.log('ℹ️ No tags found in Supabase, loading master tags...');
-          // Load master tags from constants
-          const { DEFAULT_MASTER_TAGS } = await import('@/constants/masterTags');
-          if (DEFAULT_MASTER_TAGS && DEFAULT_MASTER_TAGS.length > 0) {
-            console.log(`📥 Importing ${DEFAULT_MASTER_TAGS.length} master tags into database...`);
-            importTags(DEFAULT_MASTER_TAGS);
-            console.log('✅ Master tags loaded');
-          }
+          console.log('ℹ️ No tag library found in Supabase');
         }
 
         // Mark that we've completed Supabase load

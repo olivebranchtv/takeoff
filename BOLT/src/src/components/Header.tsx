@@ -7,7 +7,6 @@ export const Header: React.FC = () => {
   const name = useStore(s => s.projectName);
   const rename = useStore(s => s.setProjectName);
   const lastSaveTime = useStore(s => s.lastSaveTime);
-  const isSaving = useStore(s => s.isSaving);
   const pages = useStore(s => s.pages);
 
   const [editing, setEditing] = useState(false);
@@ -104,31 +103,6 @@ export const Header: React.FC = () => {
       )}
 
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-        {/* Tag library auto-save indicator */}
-        {isSaving && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '4px 10px',
-              background: '#1e3a8a',
-              border: '1px solid #3b82f6',
-              borderRadius: 6,
-              fontSize: '12px',
-              color: '#60a5fa',
-              fontWeight: 500
-            }}
-            title="Saving tags to database..."
-          >
-            <div style={{ animation: 'spin 1s linear infinite' }}>
-              <Cloud size={12} />
-            </div>
-            <span>Tags saving...</span>
-          </div>
-        )}
-
-        {/* Project save status */}
         {pages.length > 0 && (
           <div
             style={{
@@ -142,7 +116,7 @@ export const Header: React.FC = () => {
               fontSize: '13px',
               color: lastSaveTime ? '#10b981' : '#94a3b8'
             }}
-            title={lastSaveTime ? `Project last saved: ${(lastSaveTime instanceof Date ? lastSaveTime : new Date(lastSaveTime)).toLocaleString()}` : 'Project not saved yet'}
+            title={lastSaveTime ? `Last saved: ${(lastSaveTime instanceof Date ? lastSaveTime : new Date(lastSaveTime)).toLocaleString()}` : 'Not saved to database yet'}
           >
             {lastSaveTime ? <Cloud size={14} /> : <CloudOff size={14} />}
             <span>{timeSinceLastSave}</span>

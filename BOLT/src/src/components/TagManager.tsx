@@ -5,7 +5,7 @@ import type { Tag } from '@/types';
 import { downloadTagsFile } from '@/utils/persist';
 import { DEFAULT_MASTER_TAGS } from '@/constants/masterTags';
 import { getAssemblyIdForTag } from '@/utils/tagAssemblyMapping';
-import { lookupMaterialPricingByCode } from '@/utils/supabasePricing';
+import { lookupMaterialPricingByCode, saveTagToMasterDatabase } from '@/utils/supabasePricing';
 import { DatabaseItemBrowser } from './DatabaseItemBrowser';
 
 type Props = {
@@ -51,8 +51,17 @@ const MASTER_CATEGORY_ORDER = [
 const CUSTOM_CAT_VALUE = '__CUSTOM__';
 
 export default function TagManager({ open, onClose, onAddToProject }: Props) {
-  const store = useStore() as any;
-  const { tags, palette, addTag, updateTag, deleteTag, importTags, exportTags, assemblies, deletedTagCodes, hasLoadedFromSupabase } = store;
+  const tags = useStore(s => s.tags);
+  const assemblies = useStore(s => s.assemblies);
+  const palette = useStore(s => s.palette);
+  const deletedTagCodes = useStore(s => s.deletedTagCodes);
+  const hasLoadedFromSupabase = useStore(s => s.hasLoadedFromSupabase);
+  const addTag = useStore(s => s.addTag);
+  const updateTag = useStore(s => s.updateTag);
+  const batchUpdateTags = useStore(s => s.batchUpdateTags);
+  const deleteTag = useStore(s => s.deleteTag);
+  const importTags = useStore(s => s.importTags);
+  const exportTags = useStore(s => s.exportTags);
 
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -62,6 +71,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
   const [customCategory, setCustomCategory] = useState<string>('');
   const [editorCollapsed, setEditorCollapsed] = useState(false);
   const [showDatabaseBrowser, setShowDatabaseBrowser] = useState(false);
+  const [saveToMasterDB, setSaveToMasterDB] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const editorCardRef = useRef<HTMLDivElement>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
@@ -359,6 +369,19 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     if (msg) { setError(msg); return; }
 
     await upsertByCode(next, null);
+
+    // If checkbox is checked, also save to master database
+    if (saveToMasterDB) {
+      const tagData = {
+        code: next.code,
+        name: next.name,
+        category: next.category,
+        customMaterialCost: next.customMaterialCost,
+        customLaborHours: next.customLaborHours
+      };
+      await saveTagToMasterDatabase(tagData);
+    }
+
     setDraft(d => ({ ...d, code: '', name: '' }));
     setError('');
     codeInputRef.current?.focus();
@@ -427,17 +450,34 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     // Only include optional fields if they're present in draft
     // This allows both setting AND removing them
     if ('assemblyId' in draft) {
-      patch.assemblyId = next.assemblyId;
+      // If undefined, explicitly remove by setting to null (Supabase/JSON way to delete)
+      patch.assemblyId = next.assemblyId === undefined ? null : next.assemblyId;
     }
     if ('customMaterialCost' in draft) {
-      patch.customMaterialCost = next.customMaterialCost;
+      patch.customMaterialCost = next.customMaterialCost === undefined ? null : next.customMaterialCost;
     }
     if ('customLaborHours' in draft) {
-      patch.customLaborHours = next.customLaborHours;
+      patch.customLaborHours = next.customLaborHours === undefined ? null : next.customLaborHours;
     }
 
     console.log('[TagManager] saveEdit - calling updateTag with ID:', editId, 'patch:', patch);
     updateTag(editId, patch);
+
+    // If checkbox is checked, also save to master database
+    if (saveToMasterDB) {
+      const tagData = {
+        code: next.code,
+        name: next.name,
+        category: next.category,
+        customMaterialCost: next.customMaterialCost,
+        customLaborHours: next.customLaborHours
+      };
+      saveTagToMasterDatabase(tagData).then(success => {
+        if (success) {
+          console.log(`✅ Tag "${next.code}" saved to master database`);
+        }
+      });
+    }
 
     if (category) scrollToCategory(category);
     // Clear editor after successful save
@@ -460,40 +500,57 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
     }
   }
 
-  function autoPopulateAssemblies() {
+  async function autoPopulateAssemblies() {
     if (!confirm('Auto-assign assemblies to all tags based on their codes and categories?\n\nNote: ALL lights will get the Standard Lighting Fixture Installation assembly (box, conduit, wire, fittings).')) return;
 
-    let updated = 0;
-    (tags as Tag[]).forEach((tag: Tag) => {
-      // Only auto-assign if no assembly is currently set
-      if (!(tag as any).assemblyId) {
+    console.log('🔄 Starting auto-assign assemblies...');
+
+    // Build batch updates for tags without assemblies
+    const updates = (tags as Tag[])
+      .filter(tag => !(tag as any).assemblyId)
+      .map(tag => {
         const assemblyId = getAssemblyIdForTag(tag.code, tag.category);
         if (assemblyId) {
-          updateTag(tag.id, { ...tag, assemblyId } as any);
-          updated++;
+          console.log(`  Auto-assigning assembly to ${tag.code}: ${assemblyId}`);
+          return { id: tag.id, patch: { assemblyId } };
         }
-      }
-    });
+        return null;
+      })
+      .filter(Boolean) as Array<{ id: string; patch: Partial<Tag> }>;
 
-    alert(`Auto-assigned assemblies to ${updated} tags.`);
+    if (updates.length === 0) {
+      alert('No tags needed assembly assignment.');
+      return;
+    }
+
+    console.log(`💾 Batch updating ${updates.length} tags...`);
+    await batchUpdateTags(updates);
+    console.log(`✅ Auto-assigned assemblies to ${updates.length} tags`);
+    alert(`Auto-assigned assemblies to ${updates.length} tags.`);
   }
 
-  function assignLightAssemblies() {
+  async function assignLightAssemblies() {
     if (!confirm('Assign Standard Lighting Assembly to ALL light tags?\n\nThis will add the Standard Lighting Fixture Installation assembly (box, conduit, wire, fittings) to all lights category tags.')) return;
 
-    let assigned = 0;
-    (tags as Tag[]).forEach((tag: Tag) => {
-      // Check if it's a Lights category tag
-      const isLightCategory = tag.category?.toLowerCase().includes('light');
+    console.log('🔄 Starting light assembly assignment...');
 
-      if (isLightCategory) {
-        // Assign the standard lighting assembly
-        updateTag(tag.id, { ...tag, assemblyId: 'light-standard-install' } as any);
-        assigned++;
-      }
-    });
+    // Build batch updates for all light tags
+    const updates = (tags as Tag[])
+      .filter(tag => tag.category?.toLowerCase().includes('light'))
+      .map(tag => ({
+        id: tag.id,
+        patch: { assemblyId: 'light-standard-install' }
+      }));
 
-    alert(`Assigned Standard Lighting Assembly to ${assigned} light tags. Each light now includes installation materials (box, conduit, wire, fittings).`);
+    if (updates.length === 0) {
+      alert('No light tags found.');
+      return;
+    }
+
+    console.log(`💾 Batch updating ${updates.length} light tags...`);
+    await batchUpdateTags(updates);
+    console.log(`✅ Assigned Standard Lighting Assembly to ${updates.length} light tags`);
+    alert(`Assigned Standard Lighting Assembly to ${updates.length} light tags. Each light now includes installation materials (box, conduit, wire, fittings).`);
   }
 
   function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -527,6 +584,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       });
     }
     if (onAddToProject) { onAddToProject(tag); return; }
+    const store = useStore.getState();
     const tried =
       (store as any)?.addProjectTag?.(tag) ??
       (store as any)?.addProjectTagById?.(tag.id) ??
@@ -740,12 +798,8 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     const value = e.target.value;
                     console.log('[TagManager] Assembly dropdown changed to:', value);
                     if (value === '' || value === 'NONE') {
-                      // Explicitly remove assemblyId
-                      setDraft(d => {
-                        const newDraft = { ...d };
-                        delete newDraft.assemblyId;
-                        return newDraft;
-                      });
+                      // Set to undefined to clear assembly (must keep property to trigger save)
+                      setDraft(d => ({ ...d, assemblyId: undefined }));
                     } else {
                       setDraft(d => ({ ...d, assemblyId: value }));
                     }
@@ -829,7 +883,26 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                 </div>
               </div>
 
-              <div style={{ marginTop: 24, paddingTop: 20, borderTop: '2px solid #d1d5db', display:'flex', alignItems:'center', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ marginTop: 24, paddingTop: 20, borderTop: '2px solid #d1d5db' }}>
+                {/* Master Database Checkbox */}
+                <div style={{ marginBottom: 16, padding: '12px', background: '#f0f9ff', border: '2px solid #3b82f6', borderRadius: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontWeight: 500 }}>
+                    <input
+                      type="checkbox"
+                      checked={saveToMasterDB}
+                      onChange={(e) => setSaveToMasterDB(e.target.checked)}
+                      style={{ width: 18, height: 18, cursor: 'pointer' }}
+                    />
+                    <span style={{ color: '#1e40af' }}>
+                      💾 Also save to Master Pricing Database (material_pricing table)
+                    </span>
+                  </label>
+                  <div style={{ marginLeft: 28, marginTop: 6, fontSize: '12px', color: '#1e40af' }}>
+                    When checked, this tag's pricing will be permanently added to the master database for all projects
+                  </div>
+                </div>
+
+                <div style={{ display:'flex', alignItems:'center', gap: 12, flexWrap: 'wrap' }}>
                 {editId ? (
                   <>
                     <button
@@ -906,6 +979,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
                     )}
                   </>
                 )}
+                </div>
               </div>
             </div>
 
