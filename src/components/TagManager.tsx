@@ -51,8 +51,17 @@ const MASTER_CATEGORY_ORDER = [
 const CUSTOM_CAT_VALUE = '__CUSTOM__';
 
 export default function TagManager({ open, onClose, onAddToProject }: Props) {
-  const store = useStore() as any;
-  const { tags, palette, addTag, updateTag, batchUpdateTags, deleteTag, importTags, exportTags, assemblies, deletedTagCodes, hasLoadedFromSupabase } = store;
+  const tags = useStore(s => s.tags);
+  const assemblies = useStore(s => s.assemblies);
+  const palette = useStore(s => s.palette);
+  const deletedTagCodes = useStore(s => s.deletedTagCodes);
+  const hasLoadedFromSupabase = useStore(s => s.hasLoadedFromSupabase);
+  const addTag = useStore(s => s.addTag);
+  const updateTag = useStore(s => s.updateTag);
+  const batchUpdateTags = useStore(s => s.batchUpdateTags);
+  const deleteTag = useStore(s => s.deleteTag);
+  const importTags = useStore(s => s.importTags);
+  const exportTags = useStore(s => s.exportTags);
 
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -575,6 +584,7 @@ export default function TagManager({ open, onClose, onAddToProject }: Props) {
       });
     }
     if (onAddToProject) { onAddToProject(tag); return; }
+    const store = useStore.getState();
     const tried =
       (store as any)?.addProjectTag?.(tag) ??
       (store as any)?.addProjectTagById?.(tag.id) ??
