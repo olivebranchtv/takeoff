@@ -161,6 +161,7 @@ export default function App() {
     setProjectName,
     reorderProjectTags,
     removeProjectTag,
+    addProjectTag,
     lastSaveTime,
   } = useStore();
 
@@ -1549,6 +1550,8 @@ export default function App() {
                     }
                     const countToRemove = projectTags.filter(t => t.category?.toLowerCase() === normalizedInput).length;
                     if (confirm(`Remove all ${countToRemove} tags from category "${matchingCategory}"?`)) {
+                      const tagsToRemove = projectTags.filter(t => t.category?.toLowerCase() === normalizedInput);
+                      tagsToRemove.forEach(t => removeProjectTag(t.id));
                       setProjectTags(list => list.filter(t => t.category?.toLowerCase() !== normalizedInput));
                       if (projectTags.some(t => t.code === currentTag && t.category?.toLowerCase() === normalizedInput)) {
                         setCurrentTag('');
@@ -1564,6 +1567,7 @@ export default function App() {
                   className="btn"
                   onClick={() => {
                     if (confirm(`Remove all ${projectTags.length} tags from project?`)) {
+                      projectTags.forEach(t => removeProjectTag(t.id));
                       setProjectTags([]);
                       setCurrentTag('');
                     }
@@ -1642,6 +1646,7 @@ export default function App() {
                   onClick={()=>{
                     const pick = flatPickerList.find(t => t.id === pickerSel);
                     if (!pick) return;
+                    addProjectTag(pick);
                     setProjectTags(list => (list.some(x => x.id === pick.id) ? list : [...list, pick]));
                     setCurrentTag(pick.code);
                     setTool('count');
@@ -1711,6 +1716,7 @@ export default function App() {
         open={tagsOpen}
         onClose={()=>setTagsOpen(false)}
         onAddToProject={(t: Tag) => {
+          addProjectTag(t);
           setProjectTags(list => (list.some(x => x.id === t.id) ? list
             : [...list, { id: t.id, code: t.code, name: t.name, color: t.color, category: t.category }]));
           setCurrentTag(t.code);
